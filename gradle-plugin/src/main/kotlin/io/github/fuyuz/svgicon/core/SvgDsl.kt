@@ -1,0 +1,1142 @@
+package io.github.fuyuz.svgicon.core
+
+/**
+ * SVG DSL for representing icons.
+ * Mirrors SVG structure directly in Kotlin.
+ */
+
+/**
+ * Base interface for all SVG elements.
+ */
+sealed interface SvgElement
+
+/**
+ * SVG root element.
+ * Represents the <svg> tag with its attributes.
+ *
+ * @param width Width of the SVG (default: 24)
+ * @param height Height of the SVG (default: 24)
+ * @param viewBox ViewBox string (default: "0 0 24 24")
+ * @param fill Default fill (default: "none")
+ * @param stroke Default stroke (default: "currentColor")
+ * @param strokeWidth Default stroke width (default: 2)
+ * @param strokeLinecap Default stroke linecap (default: Round)
+ * @param strokeLinejoin Default stroke linejoin (default: Round)
+ * @param children Child SVG elements
+ */
+data class Svg(
+    val width: Int = 24,
+    val height: Int = 24,
+    val viewBox: String = "0 0 24 24",
+    val fill: String = "none",
+    val stroke: String = "currentColor",
+    val strokeWidth: Float = 2f,
+    val strokeLinecap: LineCap = LineCap.ROUND,
+    val strokeLinejoin: LineJoin = LineJoin.ROUND,
+    val children: List<SvgElement> = emptyList()
+)
+
+/**
+ * SVG style attributes for presentation.
+ * These correspond to SVG presentation attributes.
+ *
+ * @param fill Fill color (null = inherit, "none" = no fill)
+ * @param fillOpacity Fill opacity (0.0 - 1.0)
+ * @param fillRule Fill rule ("nonzero" or "evenodd")
+ * @param stroke Stroke color (null = inherit, "none" = no stroke)
+ * @param strokeWidth Stroke width
+ * @param strokeOpacity Stroke opacity (0.0 - 1.0)
+ * @param strokeLinecap Line cap style ("butt", "round", "square")
+ * @param strokeLinejoin Line join style ("miter", "round", "bevel")
+ * @param strokeDasharray Dash pattern
+ * @param strokeDashoffset Dash offset
+ * @param strokeMiterlimit Miter limit
+ * @param opacity Overall opacity (0.0 - 1.0)
+ * @param transform Transform string
+ * @param paintOrder Order of fill/stroke painting
+ * @param vectorEffect Special rendering effects (e.g., non-scaling-stroke)
+ * @param clipPathId Reference to a clip path by ID
+ * @param maskId Reference to a mask by ID
+ */
+data class SvgStyle(
+    val fill: String? = null,
+    val fillOpacity: Float? = null,
+    val fillRule: FillRule? = null,
+    val stroke: String? = null,
+    val strokeWidth: Float? = null,
+    val strokeOpacity: Float? = null,
+    val strokeLinecap: LineCap? = null,
+    val strokeLinejoin: LineJoin? = null,
+    val strokeDasharray: List<Float>? = null,
+    val strokeDashoffset: Float? = null,
+    val strokeMiterlimit: Float? = null,
+    val opacity: Float? = null,
+    val transform: SvgTransform? = null,
+    val paintOrder: PaintOrder? = null,
+    val vectorEffect: VectorEffect? = null,
+    val clipPathId: String? = null,
+    val maskId: String? = null
+)
+
+enum class FillRule { NONZERO, EVENODD }
+enum class LineCap { BUTT, ROUND, SQUARE }
+enum class LineJoin { MITER, ROUND, BEVEL }
+
+/**
+ * Paint order determines the order in which fill and stroke are painted.
+ * Default SVG behavior is FILL_STROKE (fill first, then stroke on top).
+ */
+enum class PaintOrder {
+    FILL_STROKE,   // Default: fill first, stroke on top
+    STROKE_FILL    // Stroke first, fill on top
+}
+
+/**
+ * Vector effect for special rendering behaviors.
+ */
+enum class VectorEffect {
+    NONE,              // Default behavior
+    NON_SCALING_STROKE // Stroke width is not affected by transformations
+}
+
+/**
+ * SVG transform.
+ */
+sealed interface SvgTransform {
+    data class Translate(val x: Float, val y: Float = 0f) : SvgTransform
+    data class Scale(val sx: Float, val sy: Float = sx) : SvgTransform
+    data class Rotate(val angle: Float, val cx: Float = 0f, val cy: Float = 0f) : SvgTransform
+    data class SkewX(val angle: Float) : SvgTransform
+    data class SkewY(val angle: Float) : SvgTransform
+    data class Matrix(val a: Float, val b: Float, val c: Float, val d: Float, val e: Float, val f: Float) : SvgTransform
+    data class Combined(val transforms: List<SvgTransform>) : SvgTransform
+}
+
+/**
+ * SVG element with style attributes.
+ */
+data class SvgStyled(
+    val element: SvgElement,
+    val style: SvgStyle
+) : SvgElement
+
+/**
+ * SVG path element with parsed commands.
+ * @param commands List of path commands
+ */
+data class SvgPath(val commands: List<PathCommand>) : SvgElement {
+    companion object {
+        /**
+         * Creates SvgPath from path data string.
+         */
+        operator fun invoke(d: String): SvgPath = SvgPath(parsePathCommands(d))
+    }
+}
+
+/**
+ * SVG path commands.
+ */
+sealed interface PathCommand {
+    /** Move to absolute position */
+    data class MoveTo(val x: Float, val y: Float) : PathCommand
+    /** Move to relative position */
+    data class MoveToRelative(val dx: Float, val dy: Float) : PathCommand
+    /** Line to absolute position */
+    data class LineTo(val x: Float, val y: Float) : PathCommand
+    /** Line to relative position */
+    data class LineToRelative(val dx: Float, val dy: Float) : PathCommand
+    /** Horizontal line to absolute x */
+    data class HorizontalLineTo(val x: Float) : PathCommand
+    /** Horizontal line to relative dx */
+    data class HorizontalLineToRelative(val dx: Float) : PathCommand
+    /** Vertical line to absolute y */
+    data class VerticalLineTo(val y: Float) : PathCommand
+    /** Vertical line to relative dy */
+    data class VerticalLineToRelative(val dy: Float) : PathCommand
+    /** Cubic bezier curve (absolute) */
+    data class CubicTo(val x1: Float, val y1: Float, val x2: Float, val y2: Float, val x: Float, val y: Float) : PathCommand
+    /** Cubic bezier curve (relative) */
+    data class CubicToRelative(val dx1: Float, val dy1: Float, val dx2: Float, val dy2: Float, val dx: Float, val dy: Float) : PathCommand
+    /** Smooth cubic bezier curve (absolute) */
+    data class SmoothCubicTo(val x2: Float, val y2: Float, val x: Float, val y: Float) : PathCommand
+    /** Smooth cubic bezier curve (relative) */
+    data class SmoothCubicToRelative(val dx2: Float, val dy2: Float, val dx: Float, val dy: Float) : PathCommand
+    /** Quadratic bezier curve (absolute) */
+    data class QuadTo(val x1: Float, val y1: Float, val x: Float, val y: Float) : PathCommand
+    /** Quadratic bezier curve (relative) */
+    data class QuadToRelative(val dx1: Float, val dy1: Float, val dx: Float, val dy: Float) : PathCommand
+    /** Smooth quadratic bezier curve (absolute) */
+    data class SmoothQuadTo(val x: Float, val y: Float) : PathCommand
+    /** Smooth quadratic bezier curve (relative) */
+    data class SmoothQuadToRelative(val dx: Float, val dy: Float) : PathCommand
+    /** Arc (absolute) */
+    data class ArcTo(val rx: Float, val ry: Float, val xAxisRotation: Float, val largeArcFlag: Boolean, val sweepFlag: Boolean, val x: Float, val y: Float) : PathCommand
+    /** Arc (relative) */
+    data class ArcToRelative(val rx: Float, val ry: Float, val xAxisRotation: Float, val largeArcFlag: Boolean, val sweepFlag: Boolean, val dx: Float, val dy: Float) : PathCommand
+    /** Close path */
+    data object Close : PathCommand
+}
+
+/**
+ * SVG circle element.
+ * @param cx Center x coordinate
+ * @param cy Center y coordinate
+ * @param r Radius
+ */
+data class SvgCircle(
+    val cx: Float,
+    val cy: Float,
+    val r: Float
+) : SvgElement
+
+/**
+ * SVG ellipse element.
+ * @param cx Center x coordinate
+ * @param cy Center y coordinate
+ * @param rx Radius in x direction
+ * @param ry Radius in y direction
+ */
+data class SvgEllipse(
+    val cx: Float,
+    val cy: Float,
+    val rx: Float,
+    val ry: Float
+) : SvgElement
+
+/**
+ * SVG rectangle element.
+ * @param x X coordinate of top-left corner
+ * @param y Y coordinate of top-left corner
+ * @param width Width of the rectangle
+ * @param height Height of the rectangle
+ * @param rx Horizontal corner radius (optional)
+ * @param ry Vertical corner radius (optional, defaults to rx)
+ */
+data class SvgRect(
+    val x: Float = 0f,
+    val y: Float = 0f,
+    val width: Float,
+    val height: Float,
+    val rx: Float = 0f,
+    val ry: Float = rx
+) : SvgElement
+
+/**
+ * SVG line element.
+ * @param x1 Start x coordinate
+ * @param y1 Start y coordinate
+ * @param x2 End x coordinate
+ * @param y2 End y coordinate
+ */
+data class SvgLine(
+    val x1: Float,
+    val y1: Float,
+    val x2: Float,
+    val y2: Float
+) : SvgElement
+
+/**
+ * SVG polyline element (open shape).
+ * @param points List of (x, y) coordinate pairs
+ */
+data class SvgPolyline(val points: List<Pair<Float, Float>>) : SvgElement
+
+/**
+ * SVG polygon element (closed shape).
+ * @param points List of (x, y) coordinate pairs
+ */
+data class SvgPolygon(val points: List<Pair<Float, Float>>) : SvgElement
+
+/**
+ * SVG group element (g tag).
+ * @param children Child elements
+ */
+data class SvgGroup(val children: List<SvgElement>) : SvgElement
+
+/**
+ * SVG clipPath element.
+ * Defines a clipping region that restricts the visible area of elements.
+ * @param id Unique identifier for referencing this clip path
+ * @param children Child elements that define the clipping shape
+ * @param clipPathUnits Coordinate system: "userSpaceOnUse" or "objectBoundingBox"
+ */
+data class SvgClipPath(
+    val id: String,
+    val children: List<SvgElement>,
+    val clipPathUnits: ClipPathUnits = ClipPathUnits.USER_SPACE_ON_USE
+) : SvgElement
+
+/**
+ * SVG mask element.
+ * Defines a mask that controls the transparency of elements.
+ * @param id Unique identifier for referencing this mask
+ * @param children Child elements that define the mask
+ * @param maskUnits Coordinate system for mask positioning
+ * @param maskContentUnits Coordinate system for mask content
+ */
+data class SvgMask(
+    val id: String,
+    val children: List<SvgElement>,
+    val maskUnits: MaskUnits = MaskUnits.OBJECT_BOUNDING_BOX,
+    val maskContentUnits: MaskUnits = MaskUnits.USER_SPACE_ON_USE,
+    val x: Float = -0.1f,
+    val y: Float = -0.1f,
+    val width: Float = 1.2f,
+    val height: Float = 1.2f
+) : SvgElement
+
+/**
+ * SVG defs element.
+ * Container for reusable elements like clipPath, mask, gradients, etc.
+ * @param children Child definition elements
+ */
+data class SvgDefs(val children: List<SvgElement>) : SvgElement
+
+enum class ClipPathUnits {
+    USER_SPACE_ON_USE,
+    OBJECT_BOUNDING_BOX
+}
+
+enum class MaskUnits {
+    USER_SPACE_ON_USE,
+    OBJECT_BOUNDING_BOX
+}
+
+// ============================================
+// Animation DSL
+// ============================================
+
+/**
+ * SVG animate element.
+ * Corresponds to SVG <animate>, <animateTransform>, <animateMotion> elements.
+ */
+sealed interface SvgAnimate {
+    val dur: Int // duration in milliseconds
+    val delay: Int // delay in milliseconds
+
+    // ============================================
+    // Stroke Properties
+    // ============================================
+
+    /**
+     * Stroke drawing animation (stroke-dashoffset).
+     * Draws the stroke from start to end.
+     */
+    data class StrokeDraw(
+        override val dur: Int = 500,
+        override val delay: Int = 0,
+        val reverse: Boolean = false
+    ) : SvgAnimate
+
+    /**
+     * stroke-width animation.
+     */
+    data class StrokeWidth(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * stroke-opacity animation.
+     */
+    data class StrokeOpacity(
+        val from: Float = 0f,
+        val to: Float = 1f,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * stroke-dasharray animation.
+     */
+    data class StrokeDasharray(
+        val from: List<Float>,
+        val to: List<Float>,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * stroke-dashoffset animation (raw value, not drawing effect).
+     */
+    data class StrokeDashoffset(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    // ============================================
+    // Fill Properties
+    // ============================================
+
+    /**
+     * fill-opacity animation.
+     */
+    data class FillOpacity(
+        val from: Float = 0f,
+        val to: Float = 1f,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    // ============================================
+    // Opacity & Visibility
+    // ============================================
+
+    /**
+     * opacity animation.
+     */
+    data class Opacity(
+        val from: Float = 0f,
+        val to: Float = 1f,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    // ============================================
+    // Geometric Properties
+    // ============================================
+
+    /**
+     * cx (center x) animation for circle/ellipse.
+     */
+    data class Cx(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * cy (center y) animation for circle/ellipse.
+     */
+    data class Cy(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * r (radius) animation for circle.
+     */
+    data class R(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * rx animation for ellipse/rect.
+     */
+    data class Rx(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * ry animation for ellipse/rect.
+     */
+    data class Ry(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * x position animation.
+     */
+    data class X(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * y position animation.
+     */
+    data class Y(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * width animation.
+     */
+    data class Width(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * height animation.
+     */
+    data class Height(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * x1 animation for line.
+     */
+    data class X1(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * y1 animation for line.
+     */
+    data class Y1(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * x2 animation for line.
+     */
+    data class X2(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * y2 animation for line.
+     */
+    data class Y2(
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * d (path data) animation - path morphing.
+     */
+    data class D(
+        val from: String,
+        val to: String,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    /**
+     * points animation for polygon/polyline.
+     */
+    data class Points(
+        val from: List<Pair<Float, Float>>,
+        val to: List<Pair<Float, Float>>,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    // ============================================
+    // Transform (animateTransform)
+    // ============================================
+
+    /**
+     * Transform animation (animateTransform).
+     */
+    data class Transform(
+        val type: TransformType,
+        val from: Float,
+        val to: Float,
+        override val dur: Int = 500,
+        override val delay: Int = 0
+    ) : SvgAnimate
+
+    // ============================================
+    // Motion (animateMotion)
+    // ============================================
+
+    /**
+     * Motion animation (animateMotion).
+     * Moves the element along a path.
+     */
+    data class Motion(
+        val path: String,
+        override val dur: Int = 500,
+        override val delay: Int = 0,
+        val rotate: MotionRotate = MotionRotate.NONE
+    ) : SvgAnimate
+}
+
+enum class TransformType {
+    TRANSLATE,   // translate(x, y)
+    TRANSLATE_X,
+    TRANSLATE_Y,
+    SCALE,       // scale(s) or scale(sx, sy)
+    SCALE_X,
+    SCALE_Y,
+    ROTATE,      // rotate(angle)
+    SKEW_X,
+    SKEW_Y
+}
+
+enum class MotionRotate {
+    NONE,       // No rotation
+    AUTO,       // Rotate to follow the path direction
+    AUTO_REVERSE // Rotate to follow path direction + 180°
+}
+
+/**
+ * SVG element with animation.
+ */
+data class SvgAnimated(
+    val element: SvgElement,
+    val animations: List<SvgAnimate>
+) : SvgElement
+
+/**
+ * DSL builder for SVG elements.
+ */
+@DslMarker
+annotation class SvgDslMarker
+
+@SvgDslMarker
+class SvgBuilder {
+    private val elements = mutableListOf<SvgElement>()
+
+    fun path(d: String) {
+        elements.add(SvgPath(d))
+    }
+
+    /**
+     * Path with animation builder.
+     */
+    fun path(d: String, block: AnimationBuilder.() -> Unit) {
+        val animations = AnimationBuilder().apply(block).build()
+        elements.add(SvgAnimated(SvgPath(d), animations))
+    }
+
+    fun circle(cx: Float, cy: Float, r: Float) {
+        elements.add(SvgCircle(cx, cy, r))
+    }
+
+    fun circle(cx: Number, cy: Number, r: Number) {
+        elements.add(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()))
+    }
+
+    fun circle(cx: Number, cy: Number, r: Number, block: AnimationBuilder.() -> Unit) {
+        val animations = AnimationBuilder().apply(block).build()
+        elements.add(SvgAnimated(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()), animations))
+    }
+
+    fun ellipse(cx: Float, cy: Float, rx: Float, ry: Float) {
+        elements.add(SvgEllipse(cx, cy, rx, ry))
+    }
+
+    fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number) {
+        elements.add(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()))
+    }
+
+    fun rect(
+        x: Float = 0f,
+        y: Float = 0f,
+        width: Float,
+        height: Float,
+        rx: Float = 0f,
+        ry: Float = rx
+    ) {
+        elements.add(SvgRect(x, y, width, height, rx, ry))
+    }
+
+    fun rect(
+        x: Number = 0,
+        y: Number = 0,
+        width: Number,
+        height: Number,
+        rx: Number = 0,
+        ry: Number = rx
+    ) {
+        elements.add(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()))
+    }
+
+    fun line(x1: Float, y1: Float, x2: Float, y2: Float) {
+        elements.add(SvgLine(x1, y1, x2, y2))
+    }
+
+    fun line(x1: Number, y1: Number, x2: Number, y2: Number) {
+        elements.add(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()))
+    }
+
+    fun line(x1: Number, y1: Number, x2: Number, y2: Number, block: AnimationBuilder.() -> Unit) {
+        val animations = AnimationBuilder().apply(block).build()
+        elements.add(SvgAnimated(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()), animations))
+    }
+
+    fun polyline(vararg points: Pair<Number, Number>) {
+        elements.add(SvgPolyline(points.map { it.first.toFloat() to it.second.toFloat() }))
+    }
+
+    fun polygon(vararg points: Pair<Number, Number>) {
+        elements.add(SvgPolygon(points.map { it.first.toFloat() to it.second.toFloat() }))
+    }
+
+    fun group(block: SvgBuilder.() -> Unit) {
+        val children = SvgBuilder().apply(block).build()
+        elements.add(SvgGroup(children))
+    }
+
+    /**
+     * Defines a clipping region.
+     * @param id Unique identifier for referencing this clip path
+     * @param clipPathUnits Coordinate system (default: userSpaceOnUse)
+     * @param block Builder for clip path children
+     */
+    fun clipPath(
+        id: String,
+        clipPathUnits: ClipPathUnits = ClipPathUnits.USER_SPACE_ON_USE,
+        block: SvgBuilder.() -> Unit
+    ) {
+        val children = SvgBuilder().apply(block).build()
+        elements.add(SvgClipPath(id, children, clipPathUnits))
+    }
+
+    /**
+     * Defines a mask.
+     * @param id Unique identifier for referencing this mask
+     * @param block Builder for mask children
+     */
+    fun mask(
+        id: String,
+        maskUnits: MaskUnits = MaskUnits.OBJECT_BOUNDING_BOX,
+        maskContentUnits: MaskUnits = MaskUnits.USER_SPACE_ON_USE,
+        block: SvgBuilder.() -> Unit
+    ) {
+        val children = SvgBuilder().apply(block).build()
+        elements.add(SvgMask(id, children, maskUnits, maskContentUnits))
+    }
+
+    /**
+     * Defs container for reusable elements.
+     * @param block Builder for defs children (clipPath, mask, etc.)
+     */
+    fun defs(block: SvgBuilder.() -> Unit) {
+        val children = SvgBuilder().apply(block).build()
+        elements.add(SvgDefs(children))
+    }
+
+    /**
+     * Animated path with stroke draw animation.
+     */
+    fun animatedPath(
+        d: String,
+        dur: Int = 500,
+        delay: Int = 0,
+        reverse: Boolean = false
+    ) {
+        elements.add(SvgAnimated(
+            element = SvgPath(d),
+            animations = listOf(SvgAnimate.StrokeDraw(dur, delay, reverse))
+        ))
+    }
+
+    /**
+     * Animated circle with stroke draw animation.
+     */
+    fun animatedCircle(
+        cx: Number,
+        cy: Number,
+        r: Number,
+        dur: Int = 500,
+        delay: Int = 0
+    ) {
+        elements.add(SvgAnimated(
+            element = SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()),
+            animations = listOf(SvgAnimate.StrokeDraw(dur, delay))
+        ))
+    }
+
+    /**
+     * Animated line with stroke draw animation.
+     */
+    fun animatedLine(
+        x1: Number,
+        y1: Number,
+        x2: Number,
+        y2: Number,
+        dur: Int = 500,
+        delay: Int = 0
+    ) {
+        elements.add(SvgAnimated(
+            element = SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()),
+            animations = listOf(SvgAnimate.StrokeDraw(dur, delay))
+        ))
+    }
+
+    /**
+     * Generic animated element builder.
+     */
+    fun animated(element: SvgElement, block: AnimationBuilder.() -> Unit) {
+        val animations = AnimationBuilder().apply(block).build()
+        elements.add(SvgAnimated(element, animations))
+    }
+
+    fun build(): List<SvgElement> = elements.toList()
+}
+
+/**
+ * Builder for animations.
+ */
+@SvgDslMarker
+class AnimationBuilder {
+    private val animations = mutableListOf<SvgAnimate>()
+
+    fun strokeDraw(dur: Int = 500, delay: Int = 0, reverse: Boolean = false) {
+        animations.add(SvgAnimate.StrokeDraw(dur, delay, reverse))
+    }
+
+    fun opacity(from: Float = 0f, to: Float = 1f, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Opacity(from, to, dur, delay))
+    }
+
+    fun translateX(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_X, from, to, dur, delay))
+    }
+
+    fun translateY(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_Y, from, to, dur, delay))
+    }
+
+    fun scale(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Transform(TransformType.SCALE, from, to, dur, delay))
+    }
+
+    fun rotate(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Transform(TransformType.ROTATE, from, to, dur, delay))
+    }
+
+    fun skewX(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Transform(TransformType.SKEW_X, from, to, dur, delay))
+    }
+
+    fun skewY(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Transform(TransformType.SKEW_Y, from, to, dur, delay))
+    }
+
+    fun motion(path: String, dur: Int = 500, delay: Int = 0, rotate: MotionRotate = MotionRotate.NONE) {
+        animations.add(SvgAnimate.Motion(path, dur, delay, rotate))
+    }
+
+    // Stroke properties
+    fun strokeWidth(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.StrokeWidth(from, to, dur, delay))
+    }
+
+    fun strokeOpacity(from: Float = 0f, to: Float = 1f, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.StrokeOpacity(from, to, dur, delay))
+    }
+
+    fun strokeDasharray(from: List<Float>, to: List<Float>, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.StrokeDasharray(from, to, dur, delay))
+    }
+
+    fun strokeDashoffset(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.StrokeDashoffset(from, to, dur, delay))
+    }
+
+    // Fill properties
+    fun fillOpacity(from: Float = 0f, to: Float = 1f, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.FillOpacity(from, to, dur, delay))
+    }
+
+    // Geometric properties
+    fun cx(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Cx(from, to, dur, delay))
+    }
+
+    fun cy(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Cy(from, to, dur, delay))
+    }
+
+    fun r(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.R(from, to, dur, delay))
+    }
+
+    fun rx(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Rx(from, to, dur, delay))
+    }
+
+    fun ry(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Ry(from, to, dur, delay))
+    }
+
+    fun x(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.X(from, to, dur, delay))
+    }
+
+    fun y(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Y(from, to, dur, delay))
+    }
+
+    fun width(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Width(from, to, dur, delay))
+    }
+
+    fun height(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Height(from, to, dur, delay))
+    }
+
+    fun x1(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.X1(from, to, dur, delay))
+    }
+
+    fun y1(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Y1(from, to, dur, delay))
+    }
+
+    fun x2(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.X2(from, to, dur, delay))
+    }
+
+    fun y2(from: Float, to: Float, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Y2(from, to, dur, delay))
+    }
+
+    fun d(from: String, to: String, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.D(from, to, dur, delay))
+    }
+
+    fun points(from: List<Pair<Float, Float>>, to: List<Pair<Float, Float>>, dur: Int = 500, delay: Int = 0) {
+        animations.add(SvgAnimate.Points(from, to, dur, delay))
+    }
+
+    fun build(): List<SvgAnimate> = animations.toList()
+}
+
+/**
+ * DSL entry point for building SVG elements.
+ */
+inline fun svg(block: SvgBuilder.() -> Unit): List<SvgElement> {
+    return SvgBuilder().apply(block).build()
+}
+
+/**
+ * Exception thrown when SVG path data parsing fails.
+ */
+class SvgPathParseException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
+/**
+ * Parses SVG path data string into a list of PathCommands.
+ * @throws SvgPathParseException if the path data is invalid
+ */
+internal fun parsePathCommands(pathData: String): List<PathCommand> {
+    val commands = mutableListOf<PathCommand>()
+    val tokens = tokenizePathData(pathData)
+    var i = 0
+    var lastCommand = ' '
+
+    try {
+        while (i < tokens.size) {
+            val token = tokens[i]
+            val command = if (token.length == 1 && token[0].isLetter()) {
+                i++
+                token[0]
+            } else {
+                // Repeat last command (except for M which becomes L)
+                when (lastCommand) {
+                    'M' -> 'L'
+                    'm' -> 'l'
+                    ' ' -> throw SvgPathParseException("Path must start with a move command (M or m), got: $token")
+                    else -> lastCommand
+                }
+            }
+
+            when (command) {
+                'M' -> {
+                    val x = tokens[i++].toFloat()
+                    val y = tokens[i++].toFloat()
+                    commands.add(PathCommand.MoveTo(x, y))
+                }
+                'm' -> {
+                    val dx = tokens[i++].toFloat()
+                    val dy = tokens[i++].toFloat()
+                    commands.add(PathCommand.MoveToRelative(dx, dy))
+                }
+                'L' -> {
+                    val x = tokens[i++].toFloat()
+                    val y = tokens[i++].toFloat()
+                    commands.add(PathCommand.LineTo(x, y))
+                }
+                'l' -> {
+                    val dx = tokens[i++].toFloat()
+                    val dy = tokens[i++].toFloat()
+                    commands.add(PathCommand.LineToRelative(dx, dy))
+                }
+                'H' -> {
+                    val x = tokens[i++].toFloat()
+                    commands.add(PathCommand.HorizontalLineTo(x))
+                }
+                'h' -> {
+                    val dx = tokens[i++].toFloat()
+                    commands.add(PathCommand.HorizontalLineToRelative(dx))
+                }
+                'V' -> {
+                    val y = tokens[i++].toFloat()
+                    commands.add(PathCommand.VerticalLineTo(y))
+                }
+                'v' -> {
+                    val dy = tokens[i++].toFloat()
+                    commands.add(PathCommand.VerticalLineToRelative(dy))
+                }
+                'C' -> {
+                    val x1 = tokens[i++].toFloat()
+                    val y1 = tokens[i++].toFloat()
+                    val x2 = tokens[i++].toFloat()
+                    val y2 = tokens[i++].toFloat()
+                    val x = tokens[i++].toFloat()
+                    val y = tokens[i++].toFloat()
+                    commands.add(PathCommand.CubicTo(x1, y1, x2, y2, x, y))
+                }
+                'c' -> {
+                    val dx1 = tokens[i++].toFloat()
+                    val dy1 = tokens[i++].toFloat()
+                    val dx2 = tokens[i++].toFloat()
+                    val dy2 = tokens[i++].toFloat()
+                    val dx = tokens[i++].toFloat()
+                    val dy = tokens[i++].toFloat()
+                    commands.add(PathCommand.CubicToRelative(dx1, dy1, dx2, dy2, dx, dy))
+                }
+                'S' -> {
+                    val x2 = tokens[i++].toFloat()
+                    val y2 = tokens[i++].toFloat()
+                    val x = tokens[i++].toFloat()
+                    val y = tokens[i++].toFloat()
+                    commands.add(PathCommand.SmoothCubicTo(x2, y2, x, y))
+                }
+                's' -> {
+                    val dx2 = tokens[i++].toFloat()
+                    val dy2 = tokens[i++].toFloat()
+                    val dx = tokens[i++].toFloat()
+                    val dy = tokens[i++].toFloat()
+                    commands.add(PathCommand.SmoothCubicToRelative(dx2, dy2, dx, dy))
+                }
+                'Q' -> {
+                    val x1 = tokens[i++].toFloat()
+                    val y1 = tokens[i++].toFloat()
+                    val x = tokens[i++].toFloat()
+                    val y = tokens[i++].toFloat()
+                    commands.add(PathCommand.QuadTo(x1, y1, x, y))
+                }
+                'q' -> {
+                    val dx1 = tokens[i++].toFloat()
+                    val dy1 = tokens[i++].toFloat()
+                    val dx = tokens[i++].toFloat()
+                    val dy = tokens[i++].toFloat()
+                    commands.add(PathCommand.QuadToRelative(dx1, dy1, dx, dy))
+                }
+                'T' -> {
+                    val x = tokens[i++].toFloat()
+                    val y = tokens[i++].toFloat()
+                    commands.add(PathCommand.SmoothQuadTo(x, y))
+                }
+                't' -> {
+                    val dx = tokens[i++].toFloat()
+                    val dy = tokens[i++].toFloat()
+                    commands.add(PathCommand.SmoothQuadToRelative(dx, dy))
+                }
+                'A' -> {
+                    val rx = tokens[i++].toFloat()
+                    val ry = tokens[i++].toFloat()
+                    val xAxisRotation = tokens[i++].toFloat()
+                    val largeArcFlag = tokens[i++].toFloat() != 0f
+                    val sweepFlag = tokens[i++].toFloat() != 0f
+                    val x = tokens[i++].toFloat()
+                    val y = tokens[i++].toFloat()
+                    commands.add(PathCommand.ArcTo(rx, ry, xAxisRotation, largeArcFlag, sweepFlag, x, y))
+                }
+                'a' -> {
+                    val rx = tokens[i++].toFloat()
+                    val ry = tokens[i++].toFloat()
+                    val xAxisRotation = tokens[i++].toFloat()
+                    val largeArcFlag = tokens[i++].toFloat() != 0f
+                    val sweepFlag = tokens[i++].toFloat() != 0f
+                    val dx = tokens[i++].toFloat()
+                    val dy = tokens[i++].toFloat()
+                    commands.add(PathCommand.ArcToRelative(rx, ry, xAxisRotation, largeArcFlag, sweepFlag, dx, dy))
+                }
+                'Z', 'z' -> {
+                    commands.add(PathCommand.Close)
+                }
+                else -> throw SvgPathParseException("Unknown path command: $command")
+            }
+            lastCommand = command
+        }
+    } catch (e: SvgPathParseException) {
+        throw e
+    } catch (e: IndexOutOfBoundsException) {
+        throw SvgPathParseException("Unexpected end of path data: not enough parameters for command", e)
+    } catch (e: NumberFormatException) {
+        throw SvgPathParseException("Invalid number in path data: ${e.message}", e)
+    }
+
+    return commands
+}
+
+private fun tokenizePathData(pathData: String): List<String> {
+    val tokens = mutableListOf<String>()
+    val current = StringBuilder()
+
+    for (char in pathData) {
+        when {
+            char.isLetter() -> {
+                if (current.isNotEmpty()) {
+                    tokens.add(current.toString())
+                    current.clear()
+                }
+                tokens.add(char.toString())
+            }
+            char == ',' || char == ' ' || char == '\n' || char == '\t' -> {
+                if (current.isNotEmpty()) {
+                    tokens.add(current.toString())
+                    current.clear()
+                }
+            }
+            char == '-' -> {
+                if (current.isNotEmpty() && !current.endsWith("e") && !current.endsWith("E")) {
+                    tokens.add(current.toString())
+                    current.clear()
+                }
+                current.append(char)
+            }
+            char == '.' -> {
+                // Handle consecutive decimals like ".5.5" which means "0.5 0.5"
+                if (current.contains('.')) {
+                    tokens.add(current.toString())
+                    current.clear()
+                }
+                current.append(char)
+            }
+            else -> {
+                current.append(char)
+            }
+        }
+    }
+
+    if (current.isNotEmpty()) {
+        tokens.add(current.toString())
+    }
+
+    return tokens
+}
