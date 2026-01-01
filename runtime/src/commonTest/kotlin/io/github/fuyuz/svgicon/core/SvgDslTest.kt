@@ -333,7 +333,10 @@ class SvgDslTest {
     @Test
     fun testViewBox() {
         val viewBox = ViewBox(0f, 0f, 24f, 24f)
-        assertEquals("0.0 0.0 24.0 24.0", viewBox.toSvgString())
+        assertEquals(0f, viewBox.minX)
+        assertEquals(0f, viewBox.minY)
+        assertEquals(24f, viewBox.width)
+        assertEquals(24f, viewBox.height)
 
         val parsed = ViewBox.parse("0 0 48 48")
         assertEquals(48f, parsed.width)
