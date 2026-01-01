@@ -31,7 +31,12 @@ jobs:
 
       - name: Generate snapshot version
         run: |
-          SNAPSHOT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null | awk -F. '{$NF++;print}' OFS=. || echo "0.0.1")-SNAPSHOT
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LATEST_TAG" ]; then
+            SNAPSHOT_VERSION="0.1.0-SNAPSHOT"
+          else
+            SNAPSHOT_VERSION=$(echo "$LATEST_TAG" | awk -F. '{$NF++;print}' OFS=.)-SNAPSHOT
+          fi
           echo "ORG_GRADLE_PROJECT_VERSION_NAME=$SNAPSHOT_VERSION" >> $GITHUB_ENV
           echo "Generated snapshot version: $SNAPSHOT_VERSION"
 
