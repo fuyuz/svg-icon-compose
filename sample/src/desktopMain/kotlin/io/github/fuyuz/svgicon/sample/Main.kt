@@ -172,13 +172,19 @@ private val DslAnimatedCheck = Svg(
 )
 
 /**
- * Icon with inline styles using stroke/fill parameters.
+ * Icon with inline styles using withStyle scope.
  */
 private val DslStyledIcon = svg {
     // Circle with custom fill and stroke
-    circle(12, 12, 10, fill = Color(0xFF3B82F6).copy(alpha = 0.2f), stroke = Color(0xFF3B82F6))
+    circle(12, 12, 10, svgStyle {
+        fill = Color(0xFF3B82F6).withAlpha(0.2f)
+        stroke = Color(0xFF3B82F6)
+    })
     // Path with custom stroke color
-    path("M8 12l3 3 5-6", stroke = Color(0xFF22C55E), strokeWidth = 3f)
+    path("M8 12l3 3 5-6", svgStyle {
+        stroke = Color(0xFF22C55E)
+        strokeWidth = 3f
+    })
 }
 
 /**

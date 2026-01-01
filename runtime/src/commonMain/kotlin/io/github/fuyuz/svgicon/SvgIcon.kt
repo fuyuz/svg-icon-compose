@@ -1108,6 +1108,10 @@ private fun DrawScope.drawSvgElement(element: SvgElement, ctx: DrawContext, regi
         is SvgText -> drawSvgText(element, ctx, registry.textMeasurer)
         is SvgLinearGradient -> {} // Gradients are referenced, not drawn directly
         is SvgRadialGradient -> {} // Gradients are referenced, not drawn directly
+        is SvgMarker -> {} // Markers are referenced, not drawn directly
+        is SvgPattern -> {} // Patterns are referenced, not drawn directly
+        is SvgSymbol -> {} // Symbols are referenced via use, not drawn directly
+        is SvgUse -> {} // TODO: Implement use element rendering
     }
 }
 
@@ -1806,6 +1810,10 @@ private fun DrawScope.drawAnimatedSvgElement(
         is SvgText -> drawSvgText(element, ctx, registry.textMeasurer)
         is SvgLinearGradient -> {}
         is SvgRadialGradient -> {}
+        is SvgMarker -> {}
+        is SvgPattern -> {}
+        is SvgSymbol -> {}
+        is SvgUse -> {}
     }
 }
 

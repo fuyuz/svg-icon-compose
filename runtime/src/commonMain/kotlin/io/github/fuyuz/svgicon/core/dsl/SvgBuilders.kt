@@ -36,6 +36,9 @@ class SvgStyleBuilder {
     var vectorEffect: VectorEffect? = null
     var clipPathId: String? = null
     var maskId: String? = null
+    var markerStart: String? = null
+    var markerMid: String? = null
+    var markerEnd: String? = null
 
     fun build(): SvgStyle = SvgStyle(
         fill = fill,
@@ -54,7 +57,10 @@ class SvgStyleBuilder {
         paintOrder = paintOrder,
         vectorEffect = vectorEffect,
         clipPathId = clipPathId,
-        maskId = maskId
+        maskId = maskId,
+        markerStart = markerStart,
+        markerMid = markerMid,
+        markerEnd = markerEnd
     )
 
     fun isEmpty(): Boolean =
@@ -64,7 +70,8 @@ class SvgStyleBuilder {
         strokeDasharray == null && strokeDashoffset == null &&
         strokeMiterlimit == null && opacity == null && transform == null &&
         paintOrder == null && vectorEffect == null &&
-        clipPathId == null && maskId == null
+        clipPathId == null && maskId == null &&
+        markerStart == null && markerMid == null && markerEnd == null
 }
 
 /**
@@ -198,14 +205,12 @@ class PathBuilder {
      */
     fun rect(x: Float, y: Float, width: Float, height: Float, rx: Float = 0f, ry: Float = rx) {
         if (rx <= 0 && ry <= 0) {
-            // Simple rectangle
             moveTo(x, y)
             lineTo(x + width, y)
             lineTo(x + width, y + height)
             lineTo(x, y + height)
             close()
         } else {
-            // Rounded rectangle
             val cornerRx = rx.coerceAtMost(width / 2)
             val cornerRy = ry.coerceAtMost(height / 2)
             moveTo(x + cornerRx, y)
@@ -223,12 +228,6 @@ class PathBuilder {
 
     /**
      * Draw a star shape.
-     * @param cx Center x coordinate
-     * @param cy Center y coordinate
-     * @param points Number of points (5 = classic star)
-     * @param outerRadius Radius to outer points
-     * @param innerRadius Radius to inner points
-     * @param rotation Rotation angle in degrees (0 = first point at top)
      */
     fun star(cx: Float, cy: Float, points: Int, outerRadius: Float, innerRadius: Float, rotation: Float = -90f) {
         require(points >= 3) { "Star must have at least 3 points" }
@@ -240,11 +239,7 @@ class PathBuilder {
             val angle = startAngle + i * angleStep
             val px = cx + radius * cos(angle)
             val py = cy + radius * sin(angle)
-            if (i == 0) {
-                moveTo(px, py)
-            } else {
-                lineTo(px, py)
-            }
+            if (i == 0) moveTo(px, py) else lineTo(px, py)
         }
         close()
     }
@@ -292,11 +287,7 @@ class PathBuilder {
             val angle = startAngle + i * angleStep
             val px = cx + radius * cos(angle)
             val py = cy + radius * sin(angle)
-            if (i == 0) {
-                moveTo(px, py)
-            } else {
-                lineTo(px, py)
-            }
+            if (i == 0) moveTo(px, py) else lineTo(px, py)
         }
         close()
     }
@@ -308,9 +299,24 @@ class PathBuilder {
 class SvgBuilder {
     private val elements = mutableListOf<SvgElement>()
 
-    /** Helper to wrap element with style if any style properties are set */
-    private fun addWithStyle(
-        element: SvgElement,
+    // ============================================
+    // Style Scope
+    // ============================================
+
+    /**
+     * Apply styles to all nested elements.
+     *
+     * Example:
+     * ```kotlin
+     * svg {
+     *     withStyle(stroke = Color.Blue, strokeWidth = 2f) {
+     *         path("M10 10 L20 20")
+     *         circle(12, 12, 5)
+     *     }
+     * }
+     * ```
+     */
+    fun withStyle(
         stroke: Color? = null,
         fill: Color? = null,
         strokeWidth: Float? = null,
@@ -324,85 +330,78 @@ class SvgBuilder {
         fillRule: FillRule? = null,
         transform: SvgTransform? = null,
         clipPathId: String? = null,
-        maskId: String? = null
+        maskId: String? = null,
+        block: SvgBuilder.() -> Unit
     ) {
-        val hasStyle = stroke != null || fill != null || strokeWidth != null || opacity != null ||
-            strokeLinecap != null || strokeLinejoin != null || strokeDasharray != null ||
-            strokeDashoffset != null || fillOpacity != null || strokeOpacity != null ||
-            fillRule != null || transform != null || clipPathId != null || maskId != null
+        val children = SvgBuilder().apply(block).build()
+        val style = SvgStyle(
+            stroke = stroke,
+            fill = fill,
+            strokeWidth = strokeWidth,
+            opacity = opacity,
+            strokeLinecap = strokeLinecap,
+            strokeLinejoin = strokeLinejoin,
+            strokeDasharray = strokeDasharray,
+            strokeDashoffset = strokeDashoffset,
+            fillOpacity = fillOpacity,
+            strokeOpacity = strokeOpacity,
+            fillRule = fillRule,
+            transform = transform,
+            clipPathId = clipPathId,
+            maskId = maskId
+        )
+        elements.add(SvgGroup(children, style))
+    }
 
-        if (hasStyle) {
-            elements.add(SvgStyled(element, SvgStyle(
-                stroke = stroke,
-                fill = fill,
-                strokeWidth = strokeWidth,
-                opacity = opacity,
-                strokeLinecap = strokeLinecap,
-                strokeLinejoin = strokeLinejoin,
-                strokeDasharray = strokeDasharray,
-                strokeDashoffset = strokeDashoffset,
-                fillOpacity = fillOpacity,
-                strokeOpacity = strokeOpacity,
-                fillRule = fillRule,
-                transform = transform,
-                clipPathId = clipPathId,
-                maskId = maskId
-            )))
-        } else {
-            elements.add(element)
-        }
+    /**
+     * Apply styles using builder syntax.
+     *
+     * Example:
+     * ```kotlin
+     * svg {
+     *     styled({
+     *         stroke = Color.Blue
+     *         strokeWidth = 2f
+     *     }) {
+     *         path("M10 10 L20 20")
+     *         circle(12, 12, 5)
+     *     }
+     * }
+     * ```
+     */
+    fun styled(styleBlock: SvgStyleBuilder.() -> Unit, contentBlock: SvgBuilder.() -> Unit) {
+        val style = SvgStyleBuilder().apply(styleBlock).build()
+        val children = SvgBuilder().apply(contentBlock).build()
+        elements.add(SvgGroup(children, style))
     }
 
     // ============================================
     // Path
     // ============================================
 
-    /**
-     * Path from string data.
-     */
-    fun path(
-        d: String,
-        stroke: Color? = null,
-        fill: Color? = null,
-        strokeWidth: Float? = null,
-        opacity: Float? = null,
-        strokeLinecap: LineCap? = null,
-        strokeLinejoin: LineJoin? = null,
-        strokeDasharray: List<Float>? = null,
-        strokeDashoffset: Float? = null
-    ) {
-        addWithStyle(SvgPath(d), stroke, fill, strokeWidth, opacity, strokeLinecap, strokeLinejoin, strokeDasharray, strokeDashoffset)
+    /** Path from string data. */
+    fun path(d: String) {
+        elements.add(SvgPath(d))
     }
 
-    /**
-     * Path from string with animation.
-     */
+    /** Path from string with animation. */
     fun path(d: String, block: AnimationBuilder.() -> Unit) {
         val animations = AnimationBuilder().apply(block).build()
         elements.add(SvgAnimated(SvgPath(d), animations))
     }
 
-    /**
-     * Type-safe path builder.
-     */
-    fun path(
-        stroke: Color? = null,
-        fill: Color? = null,
-        strokeWidth: Float? = null,
-        opacity: Float? = null,
-        strokeLinecap: LineCap? = null,
-        strokeLinejoin: LineJoin? = null,
-        strokeDasharray: List<Float>? = null,
-        strokeDashoffset: Float? = null,
-        block: PathBuilder.() -> Unit
-    ) {
-        val commands = PathBuilder().apply(block).build()
-        addWithStyle(SvgPath(commands = commands), stroke, fill, strokeWidth, opacity, strokeLinecap, strokeLinejoin, strokeDasharray, strokeDashoffset)
+    /** Path from string with style. */
+    fun path(d: String, style: SvgStyle) {
+        elements.add(SvgStyled(SvgPath(d), style))
     }
 
-    /**
-     * Type-safe path with animation builder.
-     */
+    /** Type-safe path builder. */
+    fun path(block: PathBuilder.() -> Unit) {
+        val commands = PathBuilder().apply(block).build()
+        elements.add(SvgPath(commands = commands))
+    }
+
+    /** Type-safe path with animation builder. */
     fun animatedPath(pathBlock: PathBuilder.() -> Unit, animBlock: AnimationBuilder.() -> Unit) {
         val commands = PathBuilder().apply(pathBlock).build()
         val animations = AnimationBuilder().apply(animBlock).build()
@@ -413,20 +412,8 @@ class SvgBuilder {
     // Circle
     // ============================================
 
-    fun circle(
-        cx: Number,
-        cy: Number,
-        r: Number,
-        stroke: Color? = null,
-        fill: Color? = null,
-        strokeWidth: Float? = null,
-        opacity: Float? = null,
-        strokeLinecap: LineCap? = null,
-        strokeLinejoin: LineJoin? = null,
-        strokeDasharray: List<Float>? = null,
-        strokeDashoffset: Float? = null
-    ) {
-        addWithStyle(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()), stroke, fill, strokeWidth, opacity, strokeLinecap, strokeLinejoin, strokeDasharray, strokeDashoffset)
+    fun circle(cx: Number, cy: Number, r: Number) {
+        elements.add(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()))
     }
 
     fun circle(cx: Number, cy: Number, r: Number, block: AnimationBuilder.() -> Unit) {
@@ -434,25 +421,16 @@ class SvgBuilder {
         elements.add(SvgAnimated(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()), animations))
     }
 
+    fun circle(cx: Number, cy: Number, r: Number, style: SvgStyle) {
+        elements.add(SvgStyled(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()), style))
+    }
+
     // ============================================
     // Ellipse
     // ============================================
 
-    fun ellipse(
-        cx: Number,
-        cy: Number,
-        rx: Number,
-        ry: Number,
-        stroke: Color? = null,
-        fill: Color? = null,
-        strokeWidth: Float? = null,
-        opacity: Float? = null,
-        strokeLinecap: LineCap? = null,
-        strokeLinejoin: LineJoin? = null,
-        strokeDasharray: List<Float>? = null,
-        strokeDashoffset: Float? = null
-    ) {
-        addWithStyle(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()), stroke, fill, strokeWidth, opacity, strokeLinecap, strokeLinejoin, strokeDasharray, strokeDashoffset)
+    fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number) {
+        elements.add(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()))
     }
 
     fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number, block: AnimationBuilder.() -> Unit) {
@@ -460,27 +438,16 @@ class SvgBuilder {
         elements.add(SvgAnimated(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()), animations))
     }
 
+    fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number, style: SvgStyle) {
+        elements.add(SvgStyled(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()), style))
+    }
+
     // ============================================
     // Rectangle
     // ============================================
 
-    fun rect(
-        x: Number = 0,
-        y: Number = 0,
-        width: Number,
-        height: Number,
-        rx: Number = 0,
-        ry: Number = rx,
-        stroke: Color? = null,
-        fill: Color? = null,
-        strokeWidth: Float? = null,
-        opacity: Float? = null,
-        strokeLinecap: LineCap? = null,
-        strokeLinejoin: LineJoin? = null,
-        strokeDasharray: List<Float>? = null,
-        strokeDashoffset: Float? = null
-    ) {
-        addWithStyle(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()), stroke, fill, strokeWidth, opacity, strokeLinecap, strokeLinejoin, strokeDasharray, strokeDashoffset)
+    fun rect(x: Number = 0, y: Number = 0, width: Number, height: Number, rx: Number = 0, ry: Number = rx) {
+        elements.add(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()))
     }
 
     fun rect(x: Number, y: Number, width: Number, height: Number, rx: Number = 0, ry: Number = rx, block: AnimationBuilder.() -> Unit) {
@@ -488,23 +455,16 @@ class SvgBuilder {
         elements.add(SvgAnimated(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()), animations))
     }
 
+    fun rect(x: Number, y: Number, width: Number, height: Number, rx: Number = 0, ry: Number = rx, style: SvgStyle) {
+        elements.add(SvgStyled(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()), style))
+    }
+
     // ============================================
     // Line
     // ============================================
 
-    fun line(
-        x1: Number,
-        y1: Number,
-        x2: Number,
-        y2: Number,
-        stroke: Color? = null,
-        strokeWidth: Float? = null,
-        opacity: Float? = null,
-        strokeLinecap: LineCap? = null,
-        strokeDasharray: List<Float>? = null,
-        strokeDashoffset: Float? = null
-    ) {
-        addWithStyle(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()), stroke, null, strokeWidth, opacity, strokeLinecap, null, strokeDasharray, strokeDashoffset)
+    fun line(x1: Number, y1: Number, x2: Number, y2: Number) {
+        elements.add(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()))
     }
 
     fun line(x1: Number, y1: Number, x2: Number, y2: Number, block: AnimationBuilder.() -> Unit) {
@@ -512,13 +472,14 @@ class SvgBuilder {
         elements.add(SvgAnimated(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()), animations))
     }
 
+    fun line(x1: Number, y1: Number, x2: Number, y2: Number, style: SvgStyle) {
+        elements.add(SvgStyled(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()), style))
+    }
+
     // ============================================
     // Text
     // ============================================
 
-    /**
-     * Text element with full options.
-     */
     fun text(
         text: String,
         x: Number = 0,
@@ -530,13 +491,9 @@ class SvgBuilder {
         fontWeight: String? = null,
         letterSpacing: Float? = null,
         dx: Float? = null,
-        dy: Float? = null,
-        stroke: Color? = null,
-        fill: Color? = null,
-        strokeWidth: Float? = null,
-        opacity: Float? = null
+        dy: Float? = null
     ) {
-        val textElement = SvgText(
+        elements.add(SvgText(
             text = text,
             x = x.toFloat(),
             y = y.toFloat(),
@@ -548,13 +505,9 @@ class SvgBuilder {
             letterSpacing = letterSpacing,
             dx = dx,
             dy = dy
-        )
-        addWithStyle(textElement, stroke, fill, strokeWidth, opacity)
+        ))
     }
 
-    /**
-     * Text element with animation.
-     */
     fun text(
         text: String,
         x: Number = 0,
@@ -580,39 +533,15 @@ class SvgBuilder {
     // Polyline
     // ============================================
 
-    /**
-     * Polyline with vararg points: polyline(5 to 12, 12 to 5, 19 to 12)
-     */
-    fun polyline(
-        vararg points: Pair<Number, Number>,
-        stroke: Color? = null,
-        fill: Color? = null,
-        strokeWidth: Float? = null,
-        opacity: Float? = null,
-        strokeLinecap: LineCap? = null,
-        strokeLinejoin: LineJoin? = null,
-        strokeDasharray: List<Float>? = null,
-        strokeDashoffset: Float? = null
-    ) {
+    /** Polyline with vararg points: polyline(5 to 12, 12 to 5, 19 to 12) */
+    fun polyline(vararg points: Pair<Number, Number>) {
         val offsets = points.map { Offset(it.first.toFloat(), it.second.toFloat()) }
-        addWithStyle(SvgPolyline(offsets), stroke, fill, strokeWidth, opacity, strokeLinecap, strokeLinejoin, strokeDasharray, strokeDashoffset)
+        elements.add(SvgPolyline(offsets))
     }
 
-    /**
-     * Polyline from points string: polyline("5,12 12,5 19,12")
-     */
-    fun polyline(
-        points: String,
-        stroke: Color? = null,
-        fill: Color? = null,
-        strokeWidth: Float? = null,
-        opacity: Float? = null,
-        strokeLinecap: LineCap? = null,
-        strokeLinejoin: LineJoin? = null,
-        strokeDasharray: List<Float>? = null,
-        strokeDashoffset: Float? = null
-    ) {
-        addWithStyle(SvgPolyline(parsePointsString(points)), stroke, fill, strokeWidth, opacity, strokeLinecap, strokeLinejoin, strokeDasharray, strokeDashoffset)
+    /** Polyline from points string: polyline("5,12 12,5 19,12") */
+    fun polyline(points: String) {
+        elements.add(SvgPolyline(parsePointsString(points)))
     }
 
     fun polyline(vararg points: Pair<Number, Number>, block: AnimationBuilder.() -> Unit) {
@@ -630,39 +559,15 @@ class SvgBuilder {
     // Polygon
     // ============================================
 
-    /**
-     * Polygon with vararg points: polygon(12 to 2, 22 to 22, 2 to 22)
-     */
-    fun polygon(
-        vararg points: Pair<Number, Number>,
-        stroke: Color? = null,
-        fill: Color? = null,
-        strokeWidth: Float? = null,
-        opacity: Float? = null,
-        strokeLinecap: LineCap? = null,
-        strokeLinejoin: LineJoin? = null,
-        strokeDasharray: List<Float>? = null,
-        strokeDashoffset: Float? = null
-    ) {
+    /** Polygon with vararg points: polygon(12 to 2, 22 to 22, 2 to 22) */
+    fun polygon(vararg points: Pair<Number, Number>) {
         val offsets = points.map { Offset(it.first.toFloat(), it.second.toFloat()) }
-        addWithStyle(SvgPolygon(offsets), stroke, fill, strokeWidth, opacity, strokeLinecap, strokeLinejoin, strokeDasharray, strokeDashoffset)
+        elements.add(SvgPolygon(offsets))
     }
 
-    /**
-     * Polygon from points string: polygon("12,2 22,22 2,22")
-     */
-    fun polygon(
-        points: String,
-        stroke: Color? = null,
-        fill: Color? = null,
-        strokeWidth: Float? = null,
-        opacity: Float? = null,
-        strokeLinecap: LineCap? = null,
-        strokeLinejoin: LineJoin? = null,
-        strokeDasharray: List<Float>? = null,
-        strokeDashoffset: Float? = null
-    ) {
-        addWithStyle(SvgPolygon(parsePointsString(points)), stroke, fill, strokeWidth, opacity, strokeLinecap, strokeLinejoin, strokeDasharray, strokeDashoffset)
+    /** Polygon from points string: polygon("12,2 22,22 2,22") */
+    fun polygon(points: String) {
+        elements.add(SvgPolygon(parsePointsString(points)))
     }
 
     fun polygon(vararg points: Pair<Number, Number>, block: AnimationBuilder.() -> Unit) {
@@ -680,49 +585,16 @@ class SvgBuilder {
     // Group
     // ============================================
 
-    /**
-     * Group without style.
-     */
+    /** Group elements without style. */
     fun group(block: SvgBuilder.() -> Unit) {
         val children = SvgBuilder().apply(block).build()
         elements.add(SvgGroup(children))
     }
 
-    /**
-     * Group with style that applies to all children.
-     */
-    fun group(
-        stroke: Color? = null,
-        fill: Color? = null,
-        strokeWidth: Float? = null,
-        opacity: Float? = null,
-        strokeLinecap: LineCap? = null,
-        strokeLinejoin: LineJoin? = null,
-        strokeDasharray: List<Float>? = null,
-        strokeDashoffset: Float? = null,
-        transform: SvgTransform? = null,
-        clipPathId: String? = null,
-        maskId: String? = null,
-        block: SvgBuilder.() -> Unit
-    ) {
+    /** Group elements with transform. */
+    fun group(transform: SvgTransform, block: SvgBuilder.() -> Unit) {
         val children = SvgBuilder().apply(block).build()
-        val style = SvgStyle(
-            stroke = stroke,
-            fill = fill,
-            strokeWidth = strokeWidth,
-            opacity = opacity,
-            strokeLinecap = strokeLinecap,
-            strokeLinejoin = strokeLinejoin,
-            strokeDasharray = strokeDasharray,
-            strokeDashoffset = strokeDashoffset,
-            transform = transform,
-            clipPathId = clipPathId,
-            maskId = maskId
-        )
-        val hasStyle = stroke != null || fill != null || strokeWidth != null || opacity != null ||
-            strokeLinecap != null || strokeLinejoin != null || strokeDasharray != null ||
-            strokeDashoffset != null || transform != null || clipPathId != null || maskId != null
-        elements.add(SvgGroup(children, if (hasStyle) style else null))
+        elements.add(SvgGroup(children, SvgStyle(transform = transform)))
     }
 
     // ============================================
@@ -754,12 +626,105 @@ class SvgBuilder {
     }
 
     // ============================================
-    // Gradients
+    // Marker
     // ============================================
 
     /**
-     * Define a linear gradient.
+     * Define a marker (for arrowheads, dots, etc.)
+     *
+     * Example:
+     * ```kotlin
+     * svg {
+     *     defs {
+     *         marker(id = "arrow", refX = 5, refY = 5, viewBox = ViewBox.square(10)) {
+     *             path("M0 0L10 5L0 10z")
+     *         }
+     *     }
+     *     line(0, 12, 20, 12, svgStyle { markerEnd = "url(#arrow)" })
+     * }
+     * ```
      */
+    fun marker(
+        id: String,
+        viewBox: ViewBox? = null,
+        refX: Float = 0f,
+        refY: Float = 0f,
+        markerWidth: Float = 3f,
+        markerHeight: Float = 3f,
+        orient: MarkerOrient = MarkerOrient.Auto,
+        block: SvgBuilder.() -> Unit
+    ) {
+        val children = SvgBuilder().apply(block).build()
+        elements.add(SvgMarker(id, viewBox, refX, refY, markerWidth, markerHeight, orient, children))
+    }
+
+    // ============================================
+    // Symbol and Use
+    // ============================================
+
+    /**
+     * Define a reusable symbol.
+     *
+     * Example:
+     * ```kotlin
+     * svg {
+     *     defs {
+     *         symbol(id = "checkIcon") {
+     *             circle(12, 12, 10)
+     *             path("M8 12l3 3 5-6")
+     *         }
+     *     }
+     *     use(href = "#checkIcon", x = 0, y = 0)
+     *     use(href = "#checkIcon", x = 30, y = 0)
+     * }
+     * ```
+     */
+    fun symbol(id: String, viewBox: ViewBox? = null, block: SvgBuilder.() -> Unit) {
+        val children = SvgBuilder().apply(block).build()
+        elements.add(SvgSymbol(id, viewBox, children))
+    }
+
+    /** Reference and instantiate a symbol or other element. */
+    fun use(href: String, x: Number = 0, y: Number = 0, width: Number? = null, height: Number? = null) {
+        elements.add(SvgUse(href, x.toFloat(), y.toFloat(), width?.toFloat(), height?.toFloat()))
+    }
+
+    // ============================================
+    // Pattern
+    // ============================================
+
+    /**
+     * Define a repeating pattern.
+     *
+     * Example:
+     * ```kotlin
+     * svg {
+     *     defs {
+     *         pattern(id = "dots", width = 10, height = 10) {
+     *             circle(5, 5, 2)
+     *         }
+     *     }
+     *     rect(0, 0, 100, 100, svgStyle { fill = "url(#dots)".toPatternFill() })
+     * }
+     * ```
+     */
+    fun pattern(
+        id: String,
+        width: Number,
+        height: Number,
+        patternUnits: PatternUnits = PatternUnits.USER_SPACE_ON_USE,
+        patternContentUnits: PatternUnits = PatternUnits.USER_SPACE_ON_USE,
+        patternTransform: SvgTransform? = null,
+        block: SvgBuilder.() -> Unit
+    ) {
+        val children = SvgBuilder().apply(block).build()
+        elements.add(SvgPattern(id, width.toFloat(), height.toFloat(), patternUnits, patternContentUnits, patternTransform, children))
+    }
+
+    // ============================================
+    // Gradients
+    // ============================================
+
     fun linearGradient(
         id: String,
         x1: Float = 0f,
@@ -775,9 +740,6 @@ class SvgBuilder {
         elements.add(SvgLinearGradient(id, x1, y1, x2, y2, stops, gradientUnits, spreadMethod, gradientTransform))
     }
 
-    /**
-     * Define a radial gradient.
-     */
     fun radialGradient(
         id: String,
         cx: Float = 0.5f,
@@ -843,6 +805,15 @@ class SvgBuilder {
     }
 
     // ============================================
+    // Raw element addition
+    // ============================================
+
+    /** Add a raw SvgElement. */
+    operator fun SvgElement.unaryPlus() {
+        elements.add(this)
+    }
+
+    // ============================================
     // Utilities
     // ============================================
 
@@ -869,33 +840,13 @@ class SvgBuilder {
 class GradientBuilder {
     private val stops = mutableListOf<GradientStop>()
 
-    /**
-     * Add a gradient stop.
-     */
     fun stop(offset: Float, color: Color, opacity: Float = 1f) {
         stops.add(GradientStop(offset, color, opacity))
     }
 
-    /**
-     * Add a stop at 0%.
-     */
-    fun start(color: Color, opacity: Float = 1f) {
-        stops.add(GradientStop(0f, color, opacity))
-    }
-
-    /**
-     * Add a stop at 100%.
-     */
-    fun end(color: Color, opacity: Float = 1f) {
-        stops.add(GradientStop(1f, color, opacity))
-    }
-
-    /**
-     * Add a stop at 50%.
-     */
-    fun middle(color: Color, opacity: Float = 1f) {
-        stops.add(GradientStop(0.5f, color, opacity))
-    }
+    fun start(color: Color, opacity: Float = 1f) = stop(0f, color, opacity)
+    fun end(color: Color, opacity: Float = 1f) = stop(1f, color, opacity)
+    fun middle(color: Color, opacity: Float = 1f) = stop(0.5f, color, opacity)
 
     fun build(): List<GradientStop> = stops.toList()
 }
@@ -1363,7 +1314,6 @@ class AnimationBuilder {
 
 /**
  * DSL entry point for building a complete Svg object with default attributes.
- * Returns an Svg object that can be used directly in SvgIcon.
  *
  * Example:
  * ```kotlin
@@ -1379,41 +1329,21 @@ inline fun svg(block: SvgBuilder.() -> Unit): Svg {
 
 /**
  * DSL entry point for building a complete Svg object with customizable attributes.
- * Returns an Svg object that can be used directly in SvgIcon.
- *
- * Color handling:
- * - Color.Unspecified = "currentColor" (uses tint from SvgIcon composable)
- * - null = "none" (no color / transparent)
- * - Any other Color = that specific color
  *
  * Example:
  * ```kotlin
- * object MyIcon : SvgIcon {
- *     override val svg = svg(
- *         strokeWidth = 3f,
- *         stroke = Color.Red,
- *         fill = Color.Blue.copy(alpha = 0.3f)
- *     ) {
- *         path("M20 6L9 17l-5-5")
- *         circle(12, 12, 10)
- *     }
+ * val icon = svg(
+ *     size = 48,
+ *     strokeWidth = 3f,
+ *     stroke = Color.Red
+ * ) {
+ *     path("M20 6L9 17l-5-5")
+ *     circle(12, 12, 10)
  * }
  * ```
- *
- * @param width Width of the SVG (default: 24)
- * @param height Height of the SVG (default: 24)
- * @param viewBox ViewBox (default: derived from width/height as "0 0 width height")
- * @param fill Default fill color (default: null = no fill)
- * @param stroke Default stroke color (default: Unspecified = uses tint color)
- * @param strokeWidth Default stroke width (default: 2f)
- * @param strokeLinecap Default stroke line cap (default: ROUND)
- * @param strokeLinejoin Default stroke line join (default: ROUND)
- * @param preserveAspectRatio Aspect ratio handling (default: xMidYMid meet)
- * @param block Builder block for adding SVG elements
  */
 inline fun svg(
-    width: Int = 24,
-    height: Int = 24,
+    size: Number = 24,
     viewBox: ViewBox? = null,
     fill: Color? = null,
     stroke: Color? = Color.Unspecified,
@@ -1423,10 +1353,49 @@ inline fun svg(
     preserveAspectRatio: PreserveAspectRatio = PreserveAspectRatio.Default,
     block: SvgBuilder.() -> Unit
 ): Svg {
+    val s = size.toFloat()
     return Svg(
-        width = width.toFloat(),
-        height = height.toFloat(),
-        viewBox = viewBox ?: ViewBox(0f, 0f, width.toFloat(), height.toFloat()),
+        width = s,
+        height = s,
+        viewBox = viewBox ?: ViewBox(0f, 0f, s, s),
+        preserveAspectRatio = preserveAspectRatio,
+        fill = fill,
+        stroke = stroke,
+        strokeWidth = strokeWidth,
+        strokeLinecap = strokeLinecap,
+        strokeLinejoin = strokeLinejoin,
+        children = SvgBuilder().apply(block).build()
+    )
+}
+
+/**
+ * DSL entry point for building a complete Svg object with width and height.
+ *
+ * Example:
+ * ```kotlin
+ * val icon = svg(width = 100, height = 50) {
+ *     rect(0, 0, 100, 50)
+ * }
+ * ```
+ */
+inline fun svg(
+    width: Number,
+    height: Number,
+    viewBox: ViewBox? = null,
+    fill: Color? = null,
+    stroke: Color? = Color.Unspecified,
+    strokeWidth: Float = 2f,
+    strokeLinecap: LineCap = LineCap.ROUND,
+    strokeLinejoin: LineJoin = LineJoin.ROUND,
+    preserveAspectRatio: PreserveAspectRatio = PreserveAspectRatio.Default,
+    block: SvgBuilder.() -> Unit
+): Svg {
+    val w = width.toFloat()
+    val h = height.toFloat()
+    return Svg(
+        width = w,
+        height = h,
+        viewBox = viewBox ?: ViewBox(0f, 0f, w, h),
         preserveAspectRatio = preserveAspectRatio,
         fill = fill,
         stroke = stroke,
