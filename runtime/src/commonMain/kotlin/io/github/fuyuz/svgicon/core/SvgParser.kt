@@ -414,6 +414,10 @@ internal object SvgXmlParser {
         val repeatCount = attrs["repeatCount"]
         val isInfinite = repeatCount == "indefinite"
 
+        // Parse calcMode and keySplines for easing
+        val calcMode = parseCalcMode(attrs["calcMode"])
+        val keySplines = parseKeySplines(attrs["keySplines"])
+
         // Parse from/to values
         val from = attrs["from"]?.toFloatOrNull()
         val to = attrs["to"]?.toFloatOrNull()
@@ -440,63 +444,64 @@ internal object SvgXmlParser {
         return when (attributeName.lowercase()) {
             "opacity" -> {
                 if (effectiveFrom != null && effectiveTo != null) {
-                    SvgAnimate.Opacity(effectiveFrom, effectiveTo, dur, delay)
+                    SvgAnimate.Opacity(effectiveFrom, effectiveTo, dur, delay, calcMode, keySplines)
                 } else null
             }
             "stroke-width" -> {
                 if (effectiveFrom != null && effectiveTo != null) {
-                    SvgAnimate.StrokeWidth(effectiveFrom, effectiveTo, dur, delay)
+                    SvgAnimate.StrokeWidth(effectiveFrom, effectiveTo, dur, delay, calcMode, keySplines)
                 } else null
             }
             "stroke-opacity" -> {
                 if (effectiveFrom != null && effectiveTo != null) {
-                    SvgAnimate.StrokeOpacity(effectiveFrom, effectiveTo, dur, delay)
+                    SvgAnimate.StrokeOpacity(effectiveFrom, effectiveTo, dur, delay, calcMode, keySplines)
                 } else null
             }
             "fill-opacity" -> {
                 if (effectiveFrom != null && effectiveTo != null) {
-                    SvgAnimate.FillOpacity(effectiveFrom, effectiveTo, dur, delay)
+                    SvgAnimate.FillOpacity(effectiveFrom, effectiveTo, dur, delay, calcMode, keySplines)
                 } else null
             }
             "stroke-dashoffset" -> {
                 if (effectiveFrom != null && effectiveTo != null) {
-                    // If it's a dashoffset animation, use StrokeDraw for drawing effect
-                    SvgAnimate.StrokeDraw(dur, delay, reverse = effectiveFrom > effectiveTo)
+                    // stroke-dashoffset from high to low (e.g., 50 to 0) = stroke appearing (normal)
+                    // stroke-dashoffset from low to high (e.g., 0 to 50) = stroke disappearing (reverse)
+                    SvgAnimate.StrokeDraw(dur, delay, reverse = effectiveFrom < effectiveTo, calcMode, keySplines)
                 } else null
             }
             "cx" -> {
                 if (effectiveFrom != null && effectiveTo != null) {
-                    SvgAnimate.Cx(effectiveFrom, effectiveTo, dur, delay)
+                    SvgAnimate.Cx(effectiveFrom, effectiveTo, dur, delay, calcMode, keySplines)
                 } else null
             }
             "cy" -> {
                 if (effectiveFrom != null && effectiveTo != null) {
-                    SvgAnimate.Cy(effectiveFrom, effectiveTo, dur, delay)
+                    SvgAnimate.Cy(effectiveFrom, effectiveTo, dur, delay, calcMode, keySplines)
                 } else null
             }
             "r" -> {
                 if (effectiveFrom != null && effectiveTo != null) {
-                    SvgAnimate.R(effectiveFrom, effectiveTo, dur, delay)
+                    SvgAnimate.R(effectiveFrom, effectiveTo, dur, delay, calcMode, keySplines)
                 } else null
             }
             "x" -> {
                 if (effectiveFrom != null && effectiveTo != null) {
-                    SvgAnimate.X(effectiveFrom, effectiveTo, dur, delay)
+                    SvgAnimate.X(effectiveFrom, effectiveTo, dur, delay, calcMode, keySplines)
                 } else null
             }
             "y" -> {
                 if (effectiveFrom != null && effectiveTo != null) {
-                    SvgAnimate.Y(effectiveFrom, effectiveTo, dur, delay)
+                    SvgAnimate.Y(effectiveFrom, effectiveTo, dur, delay, calcMode, keySplines)
                 } else null
             }
             "width" -> {
                 if (effectiveFrom != null && effectiveTo != null) {
-                    SvgAnimate.Width(effectiveFrom, effectiveTo, dur, delay)
+                    SvgAnimate.Width(effectiveFrom, effectiveTo, dur, delay, calcMode, keySplines)
                 } else null
             }
             "height" -> {
                 if (effectiveFrom != null && effectiveTo != null) {
-                    SvgAnimate.Height(effectiveFrom, effectiveTo, dur, delay)
+                    SvgAnimate.Height(effectiveFrom, effectiveTo, dur, delay, calcMode, keySplines)
                 } else null
             }
             else -> null
@@ -510,6 +515,10 @@ internal object SvgXmlParser {
         val type = attrs["type"]?.lowercase() ?: return null
         val dur = parseDuration(attrs["dur"] ?: "0s")
         val delay = parseDuration(attrs["begin"] ?: "0s")
+
+        // Parse calcMode and keySplines for easing
+        val calcMode = parseCalcMode(attrs["calcMode"])
+        val keySplines = parseKeySplines(attrs["keySplines"])
 
         // Parse from/to values
         val fromStr = attrs["from"]
@@ -550,7 +559,7 @@ internal object SvgXmlParser {
         }
 
         return if (from != null && to != null) {
-            SvgAnimate.Transform(transformType, from, to, dur, delay)
+            SvgAnimate.Transform(transformType, from, to, dur, delay, calcMode, keySplines)
         } else null
     }
 
@@ -574,6 +583,32 @@ internal object SvgXmlParser {
             else -> trimmed.toFloatOrNull()?.toInt() ?: 0
         }
         return millis.milliseconds
+    }
+
+    /**
+     * Parse SVG calcMode attribute.
+     */
+    private fun parseCalcMode(calcModeStr: String?): CalcMode {
+        return when (calcModeStr?.lowercase()) {
+            "discrete" -> CalcMode.DISCRETE
+            "paced" -> CalcMode.PACED
+            "spline" -> CalcMode.SPLINE
+            else -> CalcMode.LINEAR
+        }
+    }
+
+    /**
+     * Parse SVG keySplines attribute.
+     * Format: "x1 y1 x2 y2" or "x1,y1,x2,y2"
+     */
+    private fun parseKeySplines(keySplinesStr: String?): KeySplines? {
+        if (keySplinesStr == null) return null
+        val values = keySplinesStr.trim()
+            .split(Regex("[,\\s;]+"))
+            .mapNotNull { it.toFloatOrNull() }
+        return if (values.size >= 4) {
+            KeySplines(values[0], values[1], values[2], values[3])
+        } else null
     }
 
     /**

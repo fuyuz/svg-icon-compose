@@ -9,6 +9,9 @@ This document explains how to use the Kotlin DSL to define SVG icons programmati
 - [Styling](#styling)
 - [Transforms](#transforms)
 - [Animations](#animations)
+  - [Using AnimatedSvgIcon](#using-animatedsvgicon)
+  - [External Animation State Control](#external-animation-state-control)
+  - [Animation Easing](#animation-easing)
 - [DSL Builder](#dsl-builder)
 - [Complete Examples](#complete-examples)
 
@@ -428,6 +431,130 @@ AnimatedSvgIcon(
     onAnimationEnd = { }         // Callback when animation ends
 )
 ```
+
+### External Animation State Control
+
+For fine-grained control over animations, use `rememberSvgIconAnimationState()`:
+
+```kotlin
+@Composable
+fun ControlledAnimation() {
+    val animationState = rememberSvgIconAnimationState()
+    val scope = rememberCoroutineScope()
+
+    // Use AnimatedSvgIcon with external state
+    AnimatedSvgIcon(
+        icon = myAnimatedIcon,
+        animationState = animationState,
+        contentDescription = "Controlled animation"
+    )
+
+    // Control the animation programmatically
+    Button(onClick = {
+        scope.launch {
+            animationState.animateTo(1f, durationMillis = 1000)
+        }
+    }) {
+        Text("Play")
+    }
+}
+```
+
+#### SvgIconAnimatable Interface
+
+The `SvgIconAnimatable` interface provides full control over animation state:
+
+```kotlin
+interface SvgIconAnimatable {
+    val progress: Float      // Current progress (0.0 - 1.0)
+    val isPlaying: Boolean   // Whether animation is running
+
+    suspend fun snapTo(progress: Float)  // Jump to position immediately
+    suspend fun animateTo(progress: Float, durationMillis: Int? = null)  // Animate to position
+    suspend fun stop()       // Stop current animation
+}
+```
+
+Example usage:
+
+```kotlin
+@Composable
+fun InteractiveIcon() {
+    val animationState = rememberSvgIconAnimationState()
+    val scope = rememberCoroutineScope()
+
+    AnimatedSvgIcon(
+        icon = HeartPulseIcon,
+        animationState = animationState,
+        contentDescription = "Heart",
+        modifier = Modifier.pointerInput(Unit) {
+            detectTapGestures(
+                onPress = {
+                    // Animate forward on press
+                    scope.launch { animationState.animateTo(1f) }
+                    tryAwaitRelease()
+                    // Animate back on release
+                    scope.launch { animationState.animateTo(0f) }
+                }
+            )
+        }
+    )
+}
+```
+
+### Animation Easing
+
+Control animation timing with `calcMode` and `keySplines`:
+
+```kotlin
+import io.github.fuyuz.svgicon.core.CalcMode
+import io.github.fuyuz.svgicon.core.KeySplines
+
+// Linear interpolation (default)
+SvgAnimate.StrokeDraw(
+    dur = 500.milliseconds,
+    calcMode = CalcMode.LINEAR
+)
+
+// Discrete (no interpolation - jump between values)
+SvgAnimate.Opacity(
+    from = 0f, to = 1f,
+    dur = 500.milliseconds,
+    calcMode = CalcMode.DISCRETE
+)
+
+// Spline easing with cubic bezier
+SvgAnimate.StrokeDraw(
+    dur = 500.milliseconds,
+    calcMode = CalcMode.SPLINE,
+    keySplines = KeySplines.EASE_OUT  // Predefined ease-out curve
+)
+
+// Custom cubic bezier curve
+SvgAnimate.StrokeDraw(
+    dur = 500.milliseconds,
+    calcMode = CalcMode.SPLINE,
+    keySplines = KeySplines(0.4f, 0f, 0.2f, 1f)  // Custom curve
+)
+```
+
+#### Predefined Easing Curves
+
+| Constant | Cubic Bezier | Description |
+|----------|--------------|-------------|
+| `KeySplines.EASE` | (0.25, 0.1, 0.25, 1) | CSS ease |
+| `KeySplines.EASE_IN` | (0.42, 0, 1, 1) | Slow start |
+| `KeySplines.EASE_OUT` | (0, 0, 0.58, 1) | Slow end |
+| `KeySplines.EASE_IN_OUT` | (0.42, 0, 0.58, 1) | Slow start and end |
+
+#### CalcMode Values
+
+| Mode | Description |
+|------|-------------|
+| `LINEAR` | Linear interpolation between values (default) |
+| `DISCRETE` | Jump directly between values with no interpolation |
+| `PACED` | Constant velocity interpolation |
+| `SPLINE` | Cubic bezier interpolation using `keySplines` |
 
 ## DSL Builder
 

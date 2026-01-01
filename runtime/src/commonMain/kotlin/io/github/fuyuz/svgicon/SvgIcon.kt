@@ -8,13 +8,16 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.MutatorMutex
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,6 +76,8 @@ import io.github.fuyuz.svgicon.core.SvgStyle
 import io.github.fuyuz.svgicon.core.SvgStyled
 import io.github.fuyuz.svgicon.core.SvgTransform
 import io.github.fuyuz.svgicon.core.TransformType
+import io.github.fuyuz.svgicon.core.CalcMode
+import io.github.fuyuz.svgicon.core.KeySplines
 import io.github.fuyuz.svgicon.core.VectorEffect
 import io.github.fuyuz.svgicon.core.toPath
 
@@ -84,6 +89,151 @@ interface SvgIcon {
      * SVG data for this icon.
      */
     val svg: Svg
+}
+
+// ============================================
+// External Animation State Control API
+// ============================================
+
+/**
+ * Read-only animation state for SvgIcon.
+ * Use [SvgIconAnimatable] for mutable state.
+ */
+@Stable
+interface SvgIconAnimationState {
+    /** Current animation progress (0.0 to 1.0) */
+    val progress: Float
+
+    /** Whether the animation is currently playing */
+    val isPlaying: Boolean
+
+    /** Whether the animation is at the end (progress >= 1.0) */
+    val isAtEnd: Boolean get() = progress >= 1f
+
+    /** Whether the animation is at the start (progress <= 0.0) */
+    val isAtStart: Boolean get() = progress <= 0f
+}
+
+/**
+ * Mutable animation state for SvgIcon with control methods.
+ * Allows external control of animation playback similar to Lottie's API.
+ *
+ * Example usage:
+ * ```kotlin
+ * val animationState = rememberSvgIconAnimationState()
+ *
+ * Box(
+ *     modifier = Modifier.pointerInput(Unit) {
+ *         detectTapGestures(
+ *             onPress = {
+ *                 animationState.animateTo(1f)  // Play forward
+ *                 tryAwaitRelease()
+ *                 animationState.animateTo(0f)  // Play reverse
+ *             }
+ *         )
+ *     }
+ * ) {
+ *     AnimatedSvgIcon(
+ *         icon = Icons.Check,
+ *         animationState = animationState,
+ *         contentDescription = "Check"
+ *     )
+ * }
+ * ```
+ */
+@Stable
+interface SvgIconAnimatable : SvgIconAnimationState {
+    /**
+     * Instantly jump to the specified progress value.
+     * @param progress Target progress (0.0 to 1.0)
+     */
+    suspend fun snapTo(progress: Float)
+
+    /**
+     * Animate to the specified progress value.
+     * @param progress Target progress (0.0 to 1.0)
+     * @param durationMillis Animation duration in milliseconds. If null, uses a default duration.
+     */
+    suspend fun animateTo(progress: Float, durationMillis: Int? = null)
+
+    /**
+     * Stop the current animation.
+     */
+    suspend fun stop()
+}
+
+/**
+ * Internal implementation of [SvgIconAnimatable].
+ * Uses MutatorMutex to ensure mutual exclusion between animation operations,
+ * similar to Lottie Compose's approach.
+ */
+@Stable
+private class SvgIconAnimatableImpl : SvgIconAnimatable {
+    private val animatable = Animatable(0f)
+    private val mutatorMutex = MutatorMutex()
+
+    override val progress: Float get() = animatable.value
+    override val isPlaying: Boolean get() = animatable.isRunning
+
+    override suspend fun snapTo(progress: Float) {
+        mutatorMutex.mutate {
+            animatable.snapTo(progress.coerceIn(0f, 1f))
+        }
+    }
+
+    override suspend fun animateTo(progress: Float, durationMillis: Int?) {
+        mutatorMutex.mutate {
+            val targetProgress = progress.coerceIn(0f, 1f)
+            val duration = durationMillis ?: calculateDefaultDuration(animatable.value, targetProgress)
+            animatable.animateTo(
+                targetValue = targetProgress,
+                animationSpec = tween(
+                    durationMillis = duration,
+                    easing = LinearEasing
+                )
+            )
+        }
+    }
+
+    override suspend fun stop() {
+        mutatorMutex.mutate {
+            animatable.stop()
+        }
+    }
+
+    private fun calculateDefaultDuration(from: Float, to: Float): Int {
+        // Default: 300ms for full animation, proportional for partial
+        val distance = kotlin.math.abs(to - from)
+        return (300 * distance).toInt().coerceAtLeast(50)
+    }
+}
+
+/**
+ * Creates and remembers a [SvgIconAnimatable] for controlling SVG icon animations.
+ *
+ * Example:
+ * ```kotlin
+ * val animationState = rememberSvgIconAnimationState()
+ *
+ * // Control animation externally
+ * LaunchedEffect(isHovered) {
+ *     if (isHovered) {
+ *         animationState.animateTo(1f)
+ *     } else {
+ *         animationState.animateTo(0f)
+ *     }
+ * }
+ *
+ * AnimatedSvgIcon(
+ *     icon = Icons.Check,
+ *     animationState = animationState,
+ *     contentDescription = "Check"
+ * )
+ * ```
+ */
+@Composable
+fun rememberSvgIconAnimationState(): SvgIconAnimatable {
+    return remember { SvgIconAnimatableImpl() }
 }
 
 /**
@@ -308,6 +458,175 @@ fun AnimatedSvgIcon(
 }
 
 /**
+ * Composable that renders an animated SVG icon with external animation state control.
+ * This overload allows you to control the animation progress from outside the composable,
+ * enabling interactive animations like onPress, onHover, and scroll-linked effects.
+ *
+ * Example:
+ * ```kotlin
+ * val animationState = rememberSvgIconAnimationState()
+ *
+ * Box(
+ *     modifier = Modifier.pointerInput(Unit) {
+ *         detectTapGestures(
+ *             onPress = {
+ *                 animationState.animateTo(1f)  // Play forward while pressed
+ *                 tryAwaitRelease()
+ *                 animationState.animateTo(0f)  // Play reverse on release
+ *             }
+ *         )
+ *     }
+ * ) {
+ *     AnimatedSvgIcon(
+ *         icon = Icons.Check,
+ *         animationState = animationState,
+ *         contentDescription = "Check"
+ *     )
+ * }
+ * ```
+ *
+ * @param icon The SvgIcon to render (must contain SvgAnimated elements for animation)
+ * @param animationState External animation state for controlling the animation
+ * @param contentDescription Text used by accessibility services to describe what this icon represents.
+ * @param modifier Modifier to be applied to the icon. Use Modifier.size() to control the icon size.
+ * @param tint Color to tint the icon. Defaults to LocalContentColor.
+ * @param strokeWidth Override the stroke width. If null, uses the SVG's default strokeWidth.
+ */
+@Composable
+fun AnimatedSvgIcon(
+    icon: SvgIcon,
+    animationState: SvgIconAnimatable,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    tint: Color = LocalContentColor.current,
+    strokeWidth: Float? = null
+) {
+    val svg = remember(icon) { icon.svg }
+    val semanticsModifier = if (contentDescription != null) {
+        Modifier.semantics {
+            this.contentDescription = contentDescription
+            this.role = Role.Image
+        }
+    } else {
+        Modifier
+    }
+
+    // Collect animations to build progress map
+    val animations = remember(svg) { collectAllAnimations(svg.children) }
+
+    // Build path cache once to avoid per-frame Path and PathMeasure creation
+    val pathCache = remember(svg) { buildPathCache(svg.children) }
+
+    // Build progress map based on external state using derivedStateOf for proper Compose state tracking
+    val progressMap = animations.associate { entry ->
+        val anim = entry.animation
+        val totalDuration = (anim.delay.inWholeMilliseconds + anim.dur.inWholeMilliseconds).coerceAtLeast(1L)
+        val delayRatio = anim.delay.inWholeMilliseconds.toFloat() / totalDuration
+        val durationRatio = anim.dur.inWholeMilliseconds.toFloat() / totalDuration
+
+        entry.key to derivedStateOf {
+            val masterProgress = animationState.progress
+            when {
+                masterProgress < delayRatio -> 0f
+                masterProgress >= delayRatio + durationRatio -> 1f
+                else -> {
+                    val localProgress = ((masterProgress - delayRatio) / durationRatio).coerceIn(0f, 1f)
+                    applyEasing(localProgress, anim.calcMode, anim.keySplines)
+                }
+            }
+        }
+    }
+
+    Layout(
+        modifier = modifier.then(semanticsModifier),
+        content = {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawAnimatedSvg(svg, tint, strokeWidth, progressMap, pathCache)
+            }
+        }
+    ) { measurables, constraints ->
+        val defaultWidth = (svg.effectiveWidth * density).toInt()
+        val defaultHeight = (svg.effectiveHeight * density).toInt()
+
+        val width = when {
+            constraints.hasFixedWidth -> constraints.maxWidth
+            constraints.hasBoundedWidth -> constraints.maxWidth
+            else -> defaultWidth
+        }
+        val height = when {
+            constraints.hasFixedHeight -> constraints.maxHeight
+            constraints.hasBoundedHeight -> constraints.maxHeight
+            else -> defaultHeight
+        }
+
+        val placeable = measurables.first().measure(
+            Constraints.fixed(width, height)
+        )
+
+        layout(width, height) {
+            placeable.place(0, 0)
+        }
+    }
+}
+
+/**
+ * Applies easing based on calcMode and keySplines.
+ */
+private fun applyEasing(progress: Float, calcMode: CalcMode, keySplines: KeySplines?): Float {
+    return when (calcMode) {
+        CalcMode.LINEAR -> progress
+        CalcMode.DISCRETE -> if (progress >= 1f) 1f else 0f
+        CalcMode.PACED -> progress // Same as linear for single segment
+        CalcMode.SPLINE -> {
+            if (keySplines != null) {
+                cubicBezierEasing(progress, keySplines.x1, keySplines.y1, keySplines.x2, keySplines.y2)
+            } else {
+                progress
+            }
+        }
+    }
+}
+
+/**
+ * Cubic bezier easing implementation.
+ * Matches CSS cubic-bezier() behavior.
+ */
+private fun cubicBezierEasing(t: Float, x1: Float, y1: Float, x2: Float, y2: Float): Float {
+    // Newton-Raphson iteration to find t for given x
+    var guess = t
+    for (i in 0 until 8) {
+        val x = bezierX(guess, x1, x2) - t
+        if (kotlin.math.abs(x) < 0.001f) break
+        val dx = bezierDx(guess, x1, x2)
+        if (kotlin.math.abs(dx) < 0.0001f) break
+        guess -= x / dx
+    }
+    return bezierY(guess, y1, y2).coerceIn(0f, 1f)
+}
+
+private fun bezierX(t: Float, x1: Float, x2: Float): Float {
+    val t2 = t * t
+    val t3 = t2 * t
+    val mt = 1 - t
+    val mt2 = mt * mt
+    return 3 * mt2 * t * x1 + 3 * mt * t2 * x2 + t3
+}
+
+private fun bezierY(t: Float, y1: Float, y2: Float): Float {
+    val t2 = t * t
+    val t3 = t2 * t
+    val mt = 1 - t
+    val mt2 = mt * mt
+    return 3 * mt2 * t * y1 + 3 * mt * t2 * y2 + t3
+}
+
+private fun bezierDx(t: Float, x1: Float, x2: Float): Float {
+    val t2 = t * t
+    val mt = 1 - t
+    return 3 * mt * mt * x1 + 6 * mt * t * (x2 - x1) + 3 * t2 * (1 - x2)
+}
+
+/**
  * Checks if any element in the tree has animations.
  */
 private fun hasAnimatedElements(elements: List<SvgElement>): Boolean {
@@ -361,6 +680,113 @@ private fun collectAllAnimations(elements: List<SvgElement>): List<AnimationEntr
 }
 
 /**
+ * Cached path information for stroke-draw animations.
+ * Pre-computes Path and pathLength to avoid per-frame allocations.
+ */
+private data class CachedPathInfo(
+    val path: Path,
+    val pathLength: Float
+)
+
+/**
+ * Builds a cache of Path objects and their lengths for animated elements.
+ * This avoids creating new Path and PathMeasure objects on every frame.
+ */
+private fun buildPathCache(elements: List<SvgElement>): Map<SvgElement, CachedPathInfo> {
+    val cache = mutableMapOf<SvgElement, CachedPathInfo>()
+
+    fun cacheElement(element: SvgElement) {
+        when (element) {
+            is SvgAnimated -> {
+                // Check if this element has stroke-draw animation
+                val hasStrokeDraw = element.animations.any { it is SvgAnimate.StrokeDraw }
+                if (hasStrokeDraw) {
+                    val path = elementToPath(element.element)
+                    if (path != null) {
+                        val pathMeasure = androidx.compose.ui.graphics.PathMeasure()
+                        pathMeasure.setPath(path, false)
+                        cache[element.element] = CachedPathInfo(path, pathMeasure.length)
+                    }
+                }
+            }
+            is SvgGroup -> element.children.forEach { cacheElement(it) }
+            is SvgStyled -> cacheElement(element.element)
+            else -> {}
+        }
+    }
+
+    elements.forEach { cacheElement(it) }
+    return cache
+}
+
+/**
+ * Converts an SvgElement to a Path, or null if not applicable.
+ */
+private fun elementToPath(element: SvgElement): Path? = when (element) {
+    is SvgPath -> element.toPath()
+    is SvgCircle -> Path().apply {
+        addOval(
+            androidx.compose.ui.geometry.Rect(
+                element.cx - element.r, element.cy - element.r,
+                element.cx + element.r, element.cy + element.r
+            )
+        )
+    }
+    is SvgRect -> Path().apply {
+        if (element.rx > 0f || element.ry > 0f) {
+            addRoundRect(
+                androidx.compose.ui.geometry.RoundRect(
+                    element.x, element.y,
+                    element.x + element.width, element.y + element.height,
+                    CornerRadius(element.rx, element.ry)
+                )
+            )
+        } else {
+            addRect(
+                androidx.compose.ui.geometry.Rect(
+                    element.x, element.y,
+                    element.x + element.width, element.y + element.height
+                )
+            )
+        }
+    }
+    is SvgEllipse -> Path().apply {
+        addOval(
+            androidx.compose.ui.geometry.Rect(
+                element.cx - element.rx, element.cy - element.ry,
+                element.cx + element.rx, element.cy + element.ry
+            )
+        )
+    }
+    is SvgLine -> Path().apply {
+        moveTo(element.x1, element.y1)
+        lineTo(element.x2, element.y2)
+    }
+    is SvgPolyline -> if (element.points.isNotEmpty()) {
+        Path().apply {
+            val first = element.points.first()
+            moveTo(first.x, first.y)
+            for (i in 1 until element.points.size) {
+                val point = element.points[i]
+                lineTo(point.x, point.y)
+            }
+        }
+    } else null
+    is SvgPolygon -> if (element.points.isNotEmpty()) {
+        Path().apply {
+            val first = element.points.first()
+            moveTo(first.x, first.y)
+            for (i in 1 until element.points.size) {
+                val point = element.points[i]
+                lineTo(point.x, point.y)
+            }
+            close()
+        }
+    } else null
+    else -> null
+}
+
+/**
  * Internal composable for rendering animated SVG icons with SMIL animations.
  */
 @Composable
@@ -374,6 +800,9 @@ private fun AnimatedSvgIconCanvas(
 ) {
     // Collect all animations
     val animations = remember(svg) { collectAllAnimations(svg.children) }
+
+    // Build path cache once to avoid per-frame Path and PathMeasure creation
+    val pathCache = remember(svg) { buildPathCache(svg.children) }
 
     // Find the maximum duration among all animations
     val maxDuration = remember(animations) {
@@ -404,7 +833,7 @@ private fun AnimatedSvgIconCanvas(
             label = "master_timeline"
         )
 
-        // Calculate individual animation progress based on master timeline
+        // Calculate individual animation progress based on master timeline with easing
         val progressMap = remember(animations) {
             animations.associate { entry ->
                 entry.key to object : State<Float> {
@@ -415,7 +844,7 @@ private fun AnimatedSvgIconCanvas(
                             val durationMs = anim.dur.inWholeMilliseconds.toFloat()
                             val currentTimeMs = masterProgress * totalCycleDuration
 
-                            return when {
+                            val rawProgress = when {
                                 currentTimeMs < delayMs -> 0f  // Still in delay period
                                 currentTimeMs >= delayMs + durationMs -> 1f  // Animation complete
                                 else -> {
@@ -423,58 +852,64 @@ private fun AnimatedSvgIconCanvas(
                                     ((currentTimeMs - delayMs) / durationMs).coerceIn(0f, 1f)
                                 }
                             }
+                            // Apply easing based on calcMode and keySplines
+                            return applyEasing(rawProgress, anim.calcMode, anim.keySplines)
                         }
                 }
             }
         }
 
         Canvas(modifier = modifier) {
-            drawAnimatedSvg(svg, tint, strokeWidthOverride, progressMap)
+            drawAnimatedSvg(svg, tint, strokeWidthOverride, progressMap, pathCache)
         }
     } else {
-        // Use finite animation with iteration count
+        // Use finite animation with iteration count using master timeline approach
+        // This ensures proper delay handling and reliable onAnimationEnd callback
         var currentIteration by remember { mutableStateOf(0) }
-        var animationCompleted by remember { mutableStateOf(false) }
+        val masterProgress = remember { Animatable(0f) }
 
-        val animationValues = animations.map { entry ->
-            val anim = entry.animation
-            val duration = anim.dur.inWholeMilliseconds.toInt().coerceAtLeast(1)
-
-            val progress = remember { Animatable(0f) }
-
-            LaunchedEffect(currentIteration, animationCompleted) {
-                if (!animationCompleted && currentIteration < iterations) {
-                    progress.snapTo(0f)
-                    progress.animateTo(
-                        targetValue = 1f,
-                        animationSpec = tween(duration, easing = LinearEasing)
-                    )
-                }
+        // Run the animation for the specified number of iterations
+        LaunchedEffect(iterations) {
+            for (i in 0 until iterations) {
+                currentIteration = i
+                masterProgress.snapTo(0f)
+                masterProgress.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(totalCycleDuration, easing = LinearEasing)
+                )
             }
-
-            progress
+            // Animation completed - call callback reliably after actual animation finishes
+            onAnimationEnd?.invoke()
         }
 
-        // Track when all animations in an iteration complete
-        LaunchedEffect(Unit) {
-            while (currentIteration < iterations) {
-                kotlinx.coroutines.delay(maxDuration.toLong())
-                currentIteration++
-                if (currentIteration >= iterations) {
-                    animationCompleted = true
-                    onAnimationEnd?.invoke()
+        // Calculate individual animation progress based on master timeline with proper delay handling
+        val progressMap = remember(animations) {
+            animations.associate { entry ->
+                entry.key to object : State<Float> {
+                    override val value: Float
+                        get() {
+                            val anim = entry.animation
+                            val delayMs = anim.delay.inWholeMilliseconds.toFloat()
+                            val durationMs = anim.dur.inWholeMilliseconds.toFloat()
+                            val currentTimeMs = masterProgress.value * totalCycleDuration
+
+                            val rawProgress = when {
+                                currentTimeMs < delayMs -> 0f  // Still in delay period
+                                currentTimeMs >= delayMs + durationMs -> 1f  // Animation complete
+                                else -> {
+                                    // During animation
+                                    ((currentTimeMs - delayMs) / durationMs).coerceIn(0f, 1f)
+                                }
+                            }
+                            // Apply easing based on calcMode and keySplines
+                            return applyEasing(rawProgress, anim.calcMode, anim.keySplines)
+                        }
                 }
             }
-        }
-
-        val progressMap = remember(animations, animationValues) {
-            animations.mapIndexed { idx, entry ->
-                entry.key to animationValues[idx].asState()
-            }.toMap()
         }
 
         Canvas(modifier = modifier) {
-            drawAnimatedSvg(svg, tint, strokeWidthOverride, progressMap)
+            drawAnimatedSvg(svg, tint, strokeWidthOverride, progressMap, pathCache)
         }
     }
 }
@@ -1214,7 +1649,8 @@ private fun DrawScope.drawAnimatedSvg(
     svg: Svg,
     tint: Color,
     strokeWidthOverride: Float?,
-    progressMap: Map<AnimationKey, State<Float>>
+    progressMap: Map<AnimationKey, State<Float>>,
+    pathCache: Map<SvgElement, CachedPathInfo>
 ) {
     val viewBox = svg.effectiveViewBox
     val strokeWidth = strokeWidthOverride ?: svg.strokeWidth
@@ -1259,7 +1695,7 @@ private fun DrawScope.drawAnimatedSvg(
             // Translate to handle viewBox minX/minY
             translate(-viewBox.minX, -viewBox.minY) {
                 svg.children.forEach { element ->
-                    drawAnimatedSvgElement(element, ctx, registry, progressMap)
+                    drawAnimatedSvgElement(element, ctx, registry, progressMap, pathCache)
                 }
             }
         }
@@ -1273,11 +1709,12 @@ private fun DrawScope.drawAnimatedSvgElement(
     element: SvgElement,
     ctx: DrawContext,
     registry: DefsRegistry,
-    progressMap: Map<AnimationKey, State<Float>>
+    progressMap: Map<AnimationKey, State<Float>>,
+    pathCache: Map<SvgElement, CachedPathInfo>
 ) {
     when (element) {
         is SvgAnimated -> {
-            drawAnimatedElement(element, ctx, registry, progressMap)
+            drawAnimatedElement(element, ctx, registry, progressMap, pathCache)
         }
         is SvgPath -> drawSvgPath(element, ctx)
         is SvgCircle -> drawSvgCircle(element, ctx)
@@ -1286,8 +1723,8 @@ private fun DrawScope.drawAnimatedSvgElement(
         is SvgLine -> drawSvgLine(element, ctx)
         is SvgPolyline -> drawSvgPolyline(element, ctx)
         is SvgPolygon -> drawSvgPolygon(element, ctx)
-        is SvgGroup -> element.children.forEach { drawAnimatedSvgElement(it, ctx, registry, progressMap) }
-        is SvgStyled -> drawAnimatedStyledElement(element, ctx, registry, progressMap)
+        is SvgGroup -> element.children.forEach { drawAnimatedSvgElement(it, ctx, registry, progressMap, pathCache) }
+        is SvgStyled -> drawAnimatedStyledElement(element, ctx, registry, progressMap, pathCache)
         is SvgDefs -> {}
         is SvgClipPath -> {}
         is SvgMask -> {}
@@ -1301,7 +1738,8 @@ private fun DrawScope.drawAnimatedStyledElement(
     styled: SvgStyled,
     parentCtx: DrawContext,
     registry: DefsRegistry,
-    progressMap: Map<AnimationKey, State<Float>>
+    progressMap: Map<AnimationKey, State<Float>>,
+    pathCache: Map<SvgElement, CachedPathInfo>
 ) {
     val style = styled.style
     val ctx = applyStyle(parentCtx, style)
@@ -1313,10 +1751,10 @@ private fun DrawScope.drawAnimatedStyledElement(
         val transform = style.transform
         if (transform != null) {
             withTransform(transform) {
-                drawAnimatedSvgElement(styled.element, ctx, registry, progressMap)
+                drawAnimatedSvgElement(styled.element, ctx, registry, progressMap, pathCache)
             }
         } else {
-            drawAnimatedSvgElement(styled.element, ctx, registry, progressMap)
+            drawAnimatedSvgElement(styled.element, ctx, registry, progressMap, pathCache)
         }
     }
 
@@ -1337,7 +1775,8 @@ private fun DrawScope.drawAnimatedElement(
     animated: SvgAnimated,
     ctx: DrawContext,
     registry: DefsRegistry,
-    progressMap: Map<AnimationKey, State<Float>>
+    progressMap: Map<AnimationKey, State<Float>>,
+    pathCache: Map<SvgElement, CachedPathInfo>
 ) {
     val innerElement = animated.element
 
@@ -1420,7 +1859,7 @@ private fun DrawScope.drawAnimatedElement(
         scale(scaleValue, scaleValue, pivot = Offset(12f, 12f)) {
             rotate(rotationAngle, pivot = Offset(12f, 12f)) {
                 if (strokeDrawProgress != null) {
-                    drawElementWithStrokeDraw(innerElement, finalCtx, strokeDrawProgress)
+                    drawElementWithStrokeDraw(innerElement, finalCtx, strokeDrawProgress, pathCache)
                 } else {
                     drawSvgElement(innerElement, finalCtx, registry)
                 }
@@ -1431,117 +1870,66 @@ private fun DrawScope.drawAnimatedElement(
 
 /**
  * Draws an element with stroke-draw animation (progressive stroke reveal).
+ * Uses cached Path and pathLength when available to avoid per-frame allocations.
  */
 private fun DrawScope.drawElementWithStrokeDraw(
     element: SvgElement,
     ctx: DrawContext,
-    progress: Float
+    progress: Float,
+    pathCache: Map<SvgElement, CachedPathInfo>
 ) {
-    val path = when (element) {
-        is SvgPath -> element.toPath()
-        is SvgCircle -> Path().apply {
-            addOval(
-                androidx.compose.ui.geometry.Rect(
-                    element.cx - element.r, element.cy - element.r,
-                    element.cx + element.r, element.cy + element.r
-                )
-            )
-        }
-        is SvgRect -> Path().apply {
-            if (element.rx > 0f || element.ry > 0f) {
-                addRoundRect(
-                    androidx.compose.ui.geometry.RoundRect(
-                        element.x, element.y,
-                        element.x + element.width, element.y + element.height,
-                        CornerRadius(element.rx, element.ry)
-                    )
-                )
-            } else {
-                addRect(
-                    androidx.compose.ui.geometry.Rect(
-                        element.x, element.y,
-                        element.x + element.width, element.y + element.height
-                    )
-                )
-            }
-        }
-        is SvgEllipse -> Path().apply {
-            addOval(
-                androidx.compose.ui.geometry.Rect(
-                    element.cx - element.rx, element.cy - element.ry,
-                    element.cx + element.rx, element.cy + element.ry
-                )
-            )
-        }
-        is SvgLine -> Path().apply {
-            moveTo(element.x1, element.y1)
-            lineTo(element.x2, element.y2)
-        }
-        is SvgPolyline -> Path().apply {
-            if (element.points.isNotEmpty()) {
-                val first = element.points.first()
-                moveTo(first.x, first.y)
-                for (i in 1 until element.points.size) {
-                    val point = element.points[i]
-                    lineTo(point.x, point.y)
-                }
-            }
-        }
-        is SvgPolygon -> Path().apply {
-            if (element.points.isNotEmpty()) {
-                val first = element.points.first()
-                moveTo(first.x, first.y)
-                for (i in 1 until element.points.size) {
-                    val point = element.points[i]
-                    lineTo(point.x, point.y)
-                }
-                close()
-            }
-        }
-        else -> null
+    // Don't draw anything if progress is 0 or less
+    if (progress <= 0f) {
+        return
     }
 
-    if (path != null) {
-        // Don't draw anything if progress is 0 or less
-        if (progress <= 0f) {
-            return
-        }
+    // Try to use cached path info first, fall back to creating new path if not cached
+    val cachedInfo = pathCache[element]
+    val path: Path
+    val pathLength: Float
 
-        // Measure path length
+    if (cachedInfo != null) {
+        // Use cached path and length
+        path = cachedInfo.path
+        pathLength = cachedInfo.pathLength
+    } else {
+        // Fallback: create path (this shouldn't happen if caching is set up correctly)
+        val generatedPath = elementToPath(element) ?: return
+        path = generatedPath
         val pathMeasure = androidx.compose.ui.graphics.PathMeasure()
         pathMeasure.setPath(path, false)
-        val pathLength = pathMeasure.length
+        pathLength = pathMeasure.length
+    }
 
-        if (pathLength > 0f && progress < 1f) {
-            // Draw partial stroke using dash path effect
-            val drawnLength = pathLength * progress
-            val gapLength = pathLength * 2  // Use larger gap to ensure nothing extra is drawn
+    if (pathLength > 0f && progress < 1f) {
+        // Draw partial stroke using dash path effect
+        val drawnLength = pathLength * progress
+        val gapLength = pathLength * 2  // Use larger gap to ensure nothing extra is drawn
 
-            val dashEffect = PathEffect.dashPathEffect(
-                floatArrayOf(drawnLength, gapLength),
-                0f
-            )
+        val dashEffect = PathEffect.dashPathEffect(
+            floatArrayOf(drawnLength, gapLength),
+            0f
+        )
 
-            val animatedStroke = Stroke(
-                width = ctx.stroke.width,
-                cap = ctx.stroke.cap,
-                join = ctx.stroke.join,
-                miter = ctx.stroke.miter,
-                pathEffect = dashEffect
-            )
+        val animatedStroke = Stroke(
+            width = ctx.stroke.width,
+            cap = ctx.stroke.cap,
+            join = ctx.stroke.join,
+            miter = ctx.stroke.miter,
+            pathEffect = dashEffect
+        )
 
-            if (ctx.hasStroke) {
-                drawPath(path = path, color = ctx.strokeColor, style = animatedStroke)
-            }
-        } else {
-            // Full stroke (progress >= 1.0)
-            val effectiveStroke = ctx.getEffectiveStroke()
-            ctx.fillColor?.let { fill ->
-                drawPath(path = path, color = fill, style = Fill)
-            }
-            if (ctx.hasStroke && effectiveStroke.width > 0) {
-                drawPath(path = path, color = ctx.strokeColor, style = effectiveStroke)
-            }
+        if (ctx.hasStroke) {
+            drawPath(path = path, color = ctx.strokeColor, style = animatedStroke)
+        }
+    } else {
+        // Full stroke (progress >= 1.0)
+        val effectiveStroke = ctx.getEffectiveStroke()
+        ctx.fillColor?.let { fill ->
+            drawPath(path = path, color = fill, style = Fill)
+        }
+        if (ctx.hasStroke && effectiveStroke.width > 0) {
+            drawPath(path = path, color = ctx.strokeColor, style = effectiveStroke)
         }
     }
 }

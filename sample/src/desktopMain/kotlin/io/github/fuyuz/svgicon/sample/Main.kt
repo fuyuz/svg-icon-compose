@@ -18,16 +18,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import io.github.fuyuz.svgicon.AnimatedSvgIcon
 import io.github.fuyuz.svgicon.SvgIcon
+import io.github.fuyuz.svgicon.rememberSvgIconAnimationState
 import io.github.fuyuz.svgicon.core.LineCap
 import io.github.fuyuz.svgicon.core.Svg
 import io.github.fuyuz.svgicon.core.SvgAnimate
@@ -477,6 +482,85 @@ fun App() {
                             if (loaderAnimating) "Loading..." else "Click me!",
                             style = MaterialTheme.typography.labelSmall,
                             color = if (loaderAnimating) Color(0xFF3B82F6) else Color.Gray
+                        )
+                    }
+                }
+
+                Text(
+                    "Press and hold (external animation state):",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Reverse animation on release
+                    val reverseAnimationState = rememberSvgIconAnimationState()
+                    val reverseScope = rememberCoroutineScope()
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.pointerInput(Unit) {
+                            detectTapGestures(
+                                onPress = {
+                                    reverseScope.launch {
+                                        reverseAnimationState.animateTo(1f, durationMillis = 300)
+                                    }
+                                    tryAwaitRelease()
+                                    reverseScope.launch {
+                                        reverseAnimationState.animateTo(0f, durationMillis = 300)
+                                    }
+                                }
+                            )
+                        }
+                    ) {
+                        AnimatedSvgIcon(
+                            icon = DslAnimatedCheck,
+                            animationState = reverseAnimationState,
+                            contentDescription = "Press to animate",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF22C55E)
+                        )
+                        Text(
+                            "Reverse on release",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                    }
+
+                    // Snap back on release
+                    val snapAnimationState = rememberSvgIconAnimationState()
+                    val snapScope = rememberCoroutineScope()
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.pointerInput(Unit) {
+                            detectTapGestures(
+                                onPress = {
+                                    snapScope.launch {
+                                        snapAnimationState.animateTo(1f, durationMillis = 300)
+                                    }
+                                    tryAwaitRelease()
+                                    snapScope.launch {
+                                        snapAnimationState.snapTo(0f)
+                                    }
+                                }
+                            )
+                        }
+                    ) {
+                        AnimatedSvgIcon(
+                            icon = DslAnimatedCheck,
+                            animationState = snapAnimationState,
+                            contentDescription = "Press to animate",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF3B82F6)
+                        )
+                        Text(
+                            "Snap on release",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
                         )
                     }
                 }
