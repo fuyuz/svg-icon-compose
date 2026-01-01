@@ -39,6 +39,8 @@ class IconGenerator(
     private val paintOrderClass = ClassName("io.github.fuyuz.svgicon.core", "PaintOrder")
     private val vectorEffectClass = ClassName("io.github.fuyuz.svgicon.core", "VectorEffect")
     private val svgTransformClass = ClassName("io.github.fuyuz.svgicon.core", "SvgTransform")
+    private val millisecondsProperty = MemberName("kotlin.time.Duration.Companion", "milliseconds")
+    private val colorClass = ClassName("androidx.compose.ui.graphics", "Color")
 
     fun generateIcons(svgDir: File, packageName: String, outputDir: File): List<String> {
         val iconNames = mutableListOf<String>()
@@ -296,22 +298,27 @@ class IconGenerator(
     }
 
     private fun generateAnimateCodeBlock(anim: SvgAnimate): CodeBlock {
+        // Note: Internal types use Int for dur/delay, we generate Duration for runtime
         return when (anim) {
             is SvgAnimate.Transform -> CodeBlock.of(
-                "%T.Transform(type = %T.%L, from = %Lf, to = %Lf, dur = %L, delay = %L)",
-                svgAnimateClass, transformTypeClass, anim.type.name, anim.from, anim.to, anim.dur, anim.delay
+                "%T.Transform(type = %T.%L, from = %Lf, to = %Lf, dur = %L.%M, delay = %L.%M)",
+                svgAnimateClass, transformTypeClass, anim.type.name, anim.from, anim.to,
+                anim.dur, millisecondsProperty, anim.delay, millisecondsProperty
             )
             is SvgAnimate.Opacity -> CodeBlock.of(
-                "%T.Opacity(from = %Lf, to = %Lf, dur = %L, delay = %L)",
-                svgAnimateClass, anim.from, anim.to, anim.dur, anim.delay
+                "%T.Opacity(from = %Lf, to = %Lf, dur = %L.%M, delay = %L.%M)",
+                svgAnimateClass, anim.from, anim.to,
+                anim.dur, millisecondsProperty, anim.delay, millisecondsProperty
             )
             is SvgAnimate.StrokeWidth -> CodeBlock.of(
-                "%T.StrokeWidth(from = %Lf, to = %Lf, dur = %L, delay = %L)",
-                svgAnimateClass, anim.from, anim.to, anim.dur, anim.delay
+                "%T.StrokeWidth(from = %Lf, to = %Lf, dur = %L.%M, delay = %L.%M)",
+                svgAnimateClass, anim.from, anim.to,
+                anim.dur, millisecondsProperty, anim.delay, millisecondsProperty
             )
             is SvgAnimate.StrokeDashoffset -> CodeBlock.of(
-                "%T.StrokeDashoffset(from = %Lf, to = %Lf, dur = %L, delay = %L)",
-                svgAnimateClass, anim.from, anim.to, anim.dur, anim.delay
+                "%T.StrokeDashoffset(from = %Lf, to = %Lf, dur = %L.%M, delay = %L.%M)",
+                svgAnimateClass, anim.from, anim.to,
+                anim.dur, millisecondsProperty, anim.delay, millisecondsProperty
             )
             else -> CodeBlock.of("/* Unsupported animation type */")
         }
@@ -386,8 +393,8 @@ class IconGenerator(
         builder.add("%T(", svgStyleClass)
 
         val parts = mutableListOf<CodeBlock>()
-        style.fill?.let { parts.add(CodeBlock.of("fill = %S", it)) }
-        style.stroke?.let { parts.add(CodeBlock.of("stroke = %S", it)) }
+        style.fill?.let { colorStr -> parts.add(generateColorCodeBlock("fill", colorStr)) }
+        style.stroke?.let { colorStr -> parts.add(generateColorCodeBlock("stroke", colorStr)) }
         style.strokeWidth?.let { parts.add(CodeBlock.of("strokeWidth = %Lf", it)) }
         style.opacity?.let { parts.add(CodeBlock.of("opacity = %Lf", it)) }
 
@@ -398,6 +405,24 @@ class IconGenerator(
 
         builder.add(")")
         return builder.build()
+    }
+
+    private fun generateColorCodeBlock(name: String, colorStr: String): CodeBlock {
+        return when {
+            colorStr == "currentColor" -> CodeBlock.of("%L = %T.Unspecified", name, colorClass)
+            colorStr == "none" -> CodeBlock.of("%L = null", name)
+            colorStr.startsWith("#") -> {
+                val hex = colorStr.removePrefix("#")
+                val colorValue = when (hex.length) {
+                    3 -> "FF${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}".uppercase()
+                    6 -> "FF${hex}".uppercase()
+                    8 -> hex.uppercase()
+                    else -> "FF000000"
+                }
+                CodeBlock.of("%L = %T(0x${colorValue}UL)", name, colorClass)
+            }
+            else -> CodeBlock.of("%L = %T.Unspecified", name, colorClass)
+        }
     }
 
     private fun String.toPascalCase(): String {

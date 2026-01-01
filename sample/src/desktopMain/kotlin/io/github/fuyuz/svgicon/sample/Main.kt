@@ -27,9 +27,175 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import io.github.fuyuz.svgicon.AnimatedSvgIcon
 import io.github.fuyuz.svgicon.SvgIcon
+import io.github.fuyuz.svgicon.core.LineCap
+import io.github.fuyuz.svgicon.core.Svg
+import io.github.fuyuz.svgicon.core.SvgAnimate
+import io.github.fuyuz.svgicon.core.SvgAnimated
+import io.github.fuyuz.svgicon.core.SvgCircle
+import io.github.fuyuz.svgicon.core.SvgPath
+import io.github.fuyuz.svgicon.core.SvgRect
+import io.github.fuyuz.svgicon.core.SvgStyle
+import io.github.fuyuz.svgicon.core.SvgStyled
+import io.github.fuyuz.svgicon.core.SvgTransform
 import io.github.fuyuz.svgicon.core.parseSvg
+import io.github.fuyuz.svgicon.core.svg
 import io.github.fuyuz.svgicon.sample.generated.icons.AllIcons
 import io.github.fuyuz.svgicon.sample.generated.icons.Icons
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+
+// ============================================
+// DSL-defined Icons Examples
+// ============================================
+
+/**
+ * Simple check icon using DSL.
+ */
+object DslCheckIcon : SvgIcon {
+    override val svg = Svg(
+        children = listOf(
+            SvgPath("M20 6L9 17l-5-5")
+        )
+    )
+}
+
+/**
+ * Filled circle with border using SvgStyled.
+ */
+object DslFilledCircle : SvgIcon {
+    override val svg = Svg(
+        children = listOf(
+            SvgStyled(
+                element = SvgCircle(12f, 12f, 10f),
+                style = SvgStyle(
+                    fill = Color(0xFF3B82F6).copy(alpha = 0.3f),
+                    stroke = Color(0xFF3B82F6),
+                    strokeWidth = 2f
+                )
+            )
+        )
+    )
+}
+
+/**
+ * Icon with custom stroke width and dashed line.
+ */
+object DslDashedRect : SvgIcon {
+    override val svg = Svg(
+        children = listOf(
+            SvgStyled(
+                element = SvgRect(4f, 4f, 16f, 16f, rx = 2f),
+                style = SvgStyle(
+                    strokeWidth = 2f,
+                    strokeDasharray = listOf(4f, 2f),
+                    strokeLinecap = LineCap.ROUND
+                )
+            )
+        )
+    )
+}
+
+/**
+ * Icon with transform (rotated square).
+ */
+object DslRotatedSquare : SvgIcon {
+    override val svg = Svg(
+        stroke = null,  // no stroke
+        children = listOf(
+            SvgStyled(
+                element = SvgRect(6f, 6f, 12f, 12f),
+                style = SvgStyle(
+                    transform = SvgTransform.Rotate(45f, 12f, 12f),
+                    fill = Color(0xFF22C55E)
+                )
+            )
+        )
+    )
+}
+
+/**
+ * Animated check icon with staggered animation using DSL.
+ */
+object DslAnimatedCheck : SvgIcon {
+    override val svg = Svg(
+        children = listOf(
+            // Circle appears first
+            SvgAnimated(
+                element = SvgCircle(12f, 12f, 10f),
+                animations = listOf(
+                    SvgAnimate.StrokeDraw(dur = 400.milliseconds)
+                )
+            ),
+            // Checkmark appears after circle
+            SvgAnimated(
+                element = SvgPath("M8 12l3 3 5-6"),
+                animations = listOf(
+                    SvgAnimate.StrokeDraw(dur = 300.milliseconds, delay = 400.milliseconds)
+                )
+            )
+        )
+    )
+}
+
+/**
+ * Icon with inline styles using stroke/fill parameters.
+ */
+object DslStyledIcon : SvgIcon {
+    override val svg = Svg(
+        children = svg {
+            // Circle with custom fill and stroke
+            circle(12, 12, 10, fill = Color(0xFF3B82F6).copy(alpha = 0.2f), stroke = Color(0xFF3B82F6))
+            // Path with custom stroke color
+            path("M8 12l3 3 5-6", stroke = Color(0xFF22C55E), strokeWidth = 3f)
+        }
+    )
+}
+
+/**
+ * Icon built with svg {} builder.
+ */
+object DslBuilderIcon : SvgIcon {
+    override val svg = Svg(
+        children = svg {
+            circle(12, 12, 10)
+            path("M8 12l3 3 5-6")
+        }
+    )
+}
+
+/**
+ * Animated icon using svg {} builder with animation blocks.
+ */
+object DslBuilderAnimatedIcon : SvgIcon {
+    override val svg = Svg(
+        children = svg {
+            // Circle with scale animation
+            circle(12, 12, 10) {
+                strokeDraw(dur = 500.milliseconds)
+            }
+            // Path with delayed stroke draw
+            path("M8 12l3 3 5-6") {
+                strokeDraw(dur = 300.milliseconds, delay = 500.milliseconds)
+            }
+        }
+    )
+}
+
+/**
+ * Rotating element animation.
+ */
+object DslRotatingIcon : SvgIcon {
+    override val svg = Svg(
+        children = svg {
+            // Static outer circle
+            circle(12, 12, 10)
+            // Rotating inner element
+            path("M12 6v6l4 2") {
+                rotate(from = 0f, to = 360f, dur = 2.seconds)
+            }
+        }
+    )
+}
 
 fun main() = application {
     Window(
@@ -412,6 +578,154 @@ fun App() {
                             size = 48.dp
                         )
                         Text("matrix()", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                }
+
+                Text(
+                    "DSL-defined icons (Kotlin code):",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Simple DSL check
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            icon = DslCheckIcon,
+                            contentDescription = "DSL Check",
+                            tint = Color(0xFF22C55E),
+                            size = 48.dp
+                        )
+                        Text("SvgPath", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Filled circle with border
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            icon = DslFilledCircle,
+                            contentDescription = "Filled Circle",
+                            tint = Color.White,
+                            size = 48.dp
+                        )
+                        Text("SvgStyled", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Dashed rectangle
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            icon = DslDashedRect,
+                            contentDescription = "Dashed Rect",
+                            tint = Color(0xFFF59E0B),
+                            size = 48.dp
+                        )
+                        Text("Dashed", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Rotated square
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            icon = DslRotatedSquare,
+                            contentDescription = "Rotated Square",
+                            tint = Color.White,
+                            size = 48.dp
+                        )
+                        Text("Transform", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // svg {} builder icon
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            icon = DslBuilderIcon,
+                            contentDescription = "Builder Icon",
+                            tint = Color(0xFF8B5CF6),
+                            size = 48.dp
+                        )
+                        Text("svg {}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Styled icon with stroke/fill params
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            icon = DslStyledIcon,
+                            contentDescription = "Styled Icon",
+                            tint = Color.White,
+                            size = 48.dp
+                        )
+                        Text("stroke/fill", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                }
+
+                Text(
+                    "DSL animated icons:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Animated check (staggered)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            icon = DslAnimatedCheck,
+                            contentDescription = "Animated Check",
+                            tint = Color(0xFF22C55E),
+                            size = 48.dp
+                        )
+                        Text("Staggered", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Builder animated
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            icon = DslBuilderAnimatedIcon,
+                            contentDescription = "Builder Animated",
+                            tint = Color(0xFF3B82F6),
+                            size = 48.dp
+                        )
+                        Text("Builder", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Rotating icon
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            icon = DslRotatingIcon,
+                            contentDescription = "Rotating",
+                            tint = Color(0xFFF59E0B),
+                            size = 48.dp
+                        )
+                        Text("Rotate", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 }
 

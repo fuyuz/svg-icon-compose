@@ -348,7 +348,7 @@ private fun AnimatedSvgIconCanvas(
 
     // Find the maximum duration among all animations
     val maxDuration = remember(animations) {
-        animations.maxOfOrNull { it.animation.dur } ?: 1000
+        animations.maxOfOrNull { it.animation.dur.inWholeMilliseconds.toInt() } ?: 1000
     }
 
     val isInfinite = iterations == Int.MAX_VALUE
@@ -359,7 +359,7 @@ private fun AnimatedSvgIconCanvas(
 
         val animationValues = animations.map { entry ->
             val anim = entry.animation
-            val duration = anim.dur.coerceAtLeast(1)
+            val duration = anim.dur.inWholeMilliseconds.toInt().coerceAtLeast(1)
 
             val repeatMode = when (anim) {
                 is SvgAnimate.Opacity -> RepeatMode.Reverse
@@ -398,7 +398,7 @@ private fun AnimatedSvgIconCanvas(
 
         val animationValues = animations.map { entry ->
             val anim = entry.animation
-            val duration = anim.dur.coerceAtLeast(1)
+            val duration = anim.dur.inWholeMilliseconds.toInt().coerceAtLeast(1)
 
             val progress = remember { Animatable(0f) }
 
@@ -469,9 +469,8 @@ private data class DefsRegistry(
 /**
  * Draws an SVG onto the canvas.
  */
-private fun DrawScope.drawSvg(svg: Svg, color: Color, strokeWidthOverride: Float?) {
-    val viewBoxWidth = svg.viewBox.split(" ").getOrNull(2)?.toFloatOrNull() ?: 24f
-    val scaleFactor = size.width / viewBoxWidth
+private fun DrawScope.drawSvg(svg: Svg, tint: Color, strokeWidthOverride: Float?) {
+    val scaleFactor = size.width / svg.viewBox.width
     val strokeWidth = strokeWidthOverride ?: svg.strokeWidth
 
     val defaultStroke = Stroke(
@@ -480,17 +479,21 @@ private fun DrawScope.drawSvg(svg: Svg, color: Color, strokeWidthOverride: Float
         join = svg.strokeLinejoin.toCompose()
     )
 
-    val fillColor = if (svg.fill == "none") null else parseColor(svg.fill, color)
-    val strokeColor = if (svg.stroke == "none") null else parseColor(svg.stroke, color)
+    // Color handling:
+    // - null = none (no color)
+    // - Color.Unspecified = currentColor (use tint)
+    // - other Color = use that color
+    val fillColor = svg.fill?.let { if (it == Color.Unspecified) tint else it }
+    val strokeColor = svg.stroke?.let { if (it == Color.Unspecified) tint else it }
 
     // Collect defs (clipPaths, masks) from children
     val registry = collectDefs(svg.children)
 
     val context = DrawContext(
-        strokeColor = strokeColor ?: color,
+        strokeColor = strokeColor ?: tint,
         fillColor = fillColor,
         stroke = defaultStroke,
-        hasStroke = strokeColor != null || svg.stroke == "currentColor",
+        hasStroke = strokeColor != null,
         scaleFactor = scaleFactor
     )
 
@@ -615,10 +618,10 @@ private fun buildClipPath(clipPath: SvgClipPath, ctx: DrawContext): Path {
             is SvgPolygon -> {
                 if (element.points.isNotEmpty()) {
                     val first = element.points.first()
-                    path.moveTo(first.first, first.second)
+                    path.moveTo(first.x, first.y)
                     for (i in 1 until element.points.size) {
-                        val (x, y) = element.points[i]
-                        path.lineTo(x, y)
+                        val point = element.points[i]
+                        path.lineTo(point.x, point.y)
                     }
                     path.close()
                 }
@@ -630,21 +633,26 @@ private fun buildClipPath(clipPath: SvgClipPath, ctx: DrawContext): Path {
 }
 
 private fun applyStyle(parent: DrawContext, style: SvgStyle): DrawContext {
-    // Determine if stroke is enabled
-    val hasStroke = when (style.stroke) {
-        null -> parent.hasStroke
-        "none" -> false
-        else -> true
+    // Color handling:
+    // - null = inherit from parent
+    // - Color.Unspecified = currentColor (use parent's strokeColor as tint)
+    // - Color.Transparent = none (no color)
+    // - other Color = use that color
+
+    // Determine stroke color
+    val strokeColor = when (val c = style.stroke) {
+        null -> parent.strokeColor
+        Color.Unspecified -> parent.strokeColor  // currentColor
+        else -> c
     }
+    val hasStroke = style.stroke != Color.Transparent && (style.stroke != null || parent.hasStroke)
 
-    // Parse stroke color
-    val strokeColor = style.stroke?.let { parseColor(it, parent.strokeColor) } ?: parent.strokeColor
-
-    // Parse fill color
-    val fillColor = when (style.fill) {
+    // Determine fill color
+    val fillColor = when (val c = style.fill) {
         null -> parent.fillColor
-        "none" -> null
-        else -> parseColor(style.fill, parent.strokeColor)
+        Color.Unspecified -> parent.strokeColor  // currentColor
+        Color.Transparent -> null
+        else -> c
     }
 
     // Build stroke
@@ -1011,10 +1019,10 @@ private fun DrawScope.drawSvgPolyline(polyline: SvgPolyline, ctx: DrawContext) {
     val path = Path().apply {
         fillType = ctx.fillRule
         val first = polyline.points.first()
-        moveTo(first.first, first.second)
+        moveTo(first.x, first.y)
         for (i in 1 until polyline.points.size) {
-            val (x, y) = polyline.points[i]
-            lineTo(x, y)
+            val point = polyline.points[i]
+            lineTo(point.x, point.y)
         }
     }
     val effectiveStroke = ctx.getEffectiveStroke()
@@ -1045,10 +1053,10 @@ private fun DrawScope.drawSvgPolygon(polygon: SvgPolygon, ctx: DrawContext) {
     val path = Path().apply {
         fillType = ctx.fillRule
         val first = polygon.points.first()
-        moveTo(first.first, first.second)
+        moveTo(first.x, first.y)
         for (i in 1 until polygon.points.size) {
-            val (x, y) = polygon.points[i]
-            lineTo(x, y)
+            val point = polygon.points[i]
+            lineTo(point.x, point.y)
         }
         close()
     }
@@ -1083,12 +1091,11 @@ private fun DrawScope.drawSvgPolygon(polygon: SvgPolygon, ctx: DrawContext) {
  */
 private fun DrawScope.drawAnimatedSvg(
     svg: Svg,
-    color: Color,
+    tint: Color,
     strokeWidthOverride: Float?,
     progressMap: Map<AnimationKey, State<Float>>
 ) {
-    val viewBoxWidth = svg.viewBox.split(" ").getOrNull(2)?.toFloatOrNull() ?: 24f
-    val scaleFactor = size.width / viewBoxWidth
+    val scaleFactor = size.width / svg.viewBox.width
     val strokeWidth = strokeWidthOverride ?: svg.strokeWidth
 
     val defaultStroke = Stroke(
@@ -1097,16 +1104,20 @@ private fun DrawScope.drawAnimatedSvg(
         join = svg.strokeLinejoin.toCompose()
     )
 
-    val fillColor = if (svg.fill == "none") null else parseColor(svg.fill, color)
-    val strokeColor = if (svg.stroke == "none") null else parseColor(svg.stroke, color)
+    // Color handling:
+    // - null = none (no color)
+    // - Color.Unspecified = currentColor (use tint)
+    // - other Color = use that color
+    val fillColor = svg.fill?.let { if (it == Color.Unspecified) tint else it }
+    val strokeColor = svg.stroke?.let { if (it == Color.Unspecified) tint else it }
 
     val registry = collectDefs(svg.children)
 
     val ctx = DrawContext(
-        strokeColor = strokeColor ?: color,
+        strokeColor = strokeColor ?: tint,
         fillColor = fillColor,
         stroke = defaultStroke,
-        hasStroke = strokeColor != null || svg.stroke == "currentColor",
+        hasStroke = strokeColor != null,
         scaleFactor = scaleFactor
     )
 

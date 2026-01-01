@@ -1,5 +1,10 @@
 package io.github.fuyuz.svgicon.core
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+
 /**
  * Represents a parsed SVG document with viewBox and elements.
  *
@@ -9,21 +14,6 @@ package io.github.fuyuz.svgicon.core
 data class ParsedSvg(
     val viewBox: ViewBox?,
     val elements: List<SvgElement>
-)
-
-/**
- * SVG viewBox attribute.
- *
- * @param minX The minimum x coordinate
- * @param minY The minimum y coordinate
- * @param width The width of the viewBox
- * @param height The height of the viewBox
- */
-data class ViewBox(
-    val minX: Float,
-    val minY: Float,
-    val width: Float,
-    val height: Float
 )
 
 /**
@@ -105,9 +95,10 @@ internal object SvgXmlParser {
         // Parse SVG root attributes
         val width = attrs["width"]?.replace("px", "")?.toIntOrNull() ?: 24
         val height = attrs["height"]?.replace("px", "")?.toIntOrNull() ?: 24
-        val viewBox = attrs["viewBox"] ?: "0 0 $width $height"
-        val fill = attrs["fill"] ?: "none"
-        val stroke = attrs["stroke"] ?: "currentColor"
+        val viewBoxStr = attrs["viewBox"] ?: "0 0 $width $height"
+        val viewBox = ViewBox.parse(viewBoxStr)
+        val fill = parseColorAttribute(attrs["fill"])
+        val stroke = parseColorAttribute(attrs["stroke"]) ?: Color.Unspecified
         val strokeWidth = attrs["stroke-width"]?.toFloatOrNull() ?: 2f
         val strokeLinecap = when (attrs["stroke-linecap"]?.lowercase()) {
             "butt" -> LineCap.BUTT
@@ -135,8 +126,6 @@ internal object SvgXmlParser {
         }
 
         return Svg(
-            width = width,
-            height = height,
             viewBox = viewBox,
             fill = fill,
             stroke = stroke,
@@ -324,15 +313,15 @@ internal object SvgXmlParser {
         return attrs
     }
 
-    private fun parsePoints(pointsStr: String): List<Pair<Float, Float>> {
+    private fun parsePoints(pointsStr: String): List<Offset> {
         val numbers = pointsStr.trim()
             .split(separatorPattern)
             .mapNotNull { it.toFloatOrNull() }
 
-        val points = ArrayList<Pair<Float, Float>>(numbers.size / 2)
+        val points = ArrayList<Offset>(numbers.size / 2)
         for (i in numbers.indices step 2) {
             if (i + 1 < numbers.size) {
-                points.add(numbers[i] to numbers[i + 1])
+                points.add(Offset(numbers[i], numbers[i + 1]))
             }
         }
         return points
@@ -571,13 +560,14 @@ internal object SvgXmlParser {
     /**
      * Parse duration string (e.g., "1s", "500ms", "0.5s") to milliseconds.
      */
-    private fun parseDuration(durStr: String): Int {
+    private fun parseDuration(durStr: String): Duration {
         val trimmed = durStr.trim().lowercase()
-        return when {
+        val millis = when {
             trimmed.endsWith("ms") -> trimmed.dropLast(2).toFloatOrNull()?.toInt() ?: 0
             trimmed.endsWith("s") -> ((trimmed.dropLast(1).toFloatOrNull() ?: 0f) * 1000).toInt()
             else -> trimmed.toFloatOrNull()?.toInt() ?: 0
         }
+        return millis.milliseconds
     }
 
     /**
@@ -640,14 +630,14 @@ internal object SvgXmlParser {
     }
 
     private fun parseStyle(attrs: Map<String, String>): SvgStyle? {
-        val fill = attrs["fill"]
+        val fill = parseColorAttribute(attrs["fill"])
         val fillOpacity = attrs["fill-opacity"]?.toFloatOrNull()
         val fillRule = when (attrs["fill-rule"]?.lowercase()) {
             "evenodd" -> FillRule.EVENODD
             "nonzero" -> FillRule.NONZERO
             else -> null
         }
-        val stroke = attrs["stroke"]
+        val stroke = parseColorAttribute(attrs["stroke"])
         val strokeWidth = attrs["stroke-width"]?.toFloatOrNull()
         val strokeOpacity = attrs["stroke-opacity"]?.toFloatOrNull()
         val strokeLinecap = when (attrs["stroke-linecap"]?.lowercase()) {
@@ -753,4 +743,86 @@ internal object SvgXmlParser {
             else -> SvgTransform.Combined(transforms)
         }
     }
+
+    /**
+     * Parses SVG color attribute string to Compose Color.
+     *
+     * - null input -> null (inherit from parent)
+     * - "none" -> null (no color)
+     * - "currentColor" -> Color.Unspecified (use tint)
+     * - "#rgb" / "#rrggbb" / "#rrggbbaa" -> parsed Color
+     * - "rgb(r,g,b)" / "rgba(r,g,b,a)" -> parsed Color
+     * - named colors -> parsed Color
+     */
+    private fun parseColorAttribute(colorStr: String?): Color? {
+        if (colorStr == null) return null
+        val trimmed = colorStr.trim().lowercase()
+
+        return when {
+            trimmed == "none" -> null
+            trimmed == "currentcolor" -> Color.Unspecified
+            trimmed.startsWith("#") -> parseHexColor(trimmed)
+            trimmed.startsWith("rgb") -> parseRgbColor(trimmed)
+            else -> namedColors[trimmed]
+        }
+    }
+
+    private fun parseHexColor(hex: String): Color? {
+        val clean = hex.removePrefix("#")
+        return try {
+            when (clean.length) {
+                3 -> {
+                    val r = clean[0].toString().repeat(2).toInt(16)
+                    val g = clean[1].toString().repeat(2).toInt(16)
+                    val b = clean[2].toString().repeat(2).toInt(16)
+                    Color(r, g, b)
+                }
+                6 -> {
+                    val r = clean.substring(0, 2).toInt(16)
+                    val g = clean.substring(2, 4).toInt(16)
+                    val b = clean.substring(4, 6).toInt(16)
+                    Color(r, g, b)
+                }
+                8 -> {
+                    val r = clean.substring(0, 2).toInt(16)
+                    val g = clean.substring(2, 4).toInt(16)
+                    val b = clean.substring(4, 6).toInt(16)
+                    val a = clean.substring(6, 8).toInt(16)
+                    Color(r, g, b, a)
+                }
+                else -> null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private val rgbPattern = Regex("""rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)""")
+
+    private fun parseRgbColor(rgb: String): Color? {
+        val match = rgbPattern.find(rgb) ?: return null
+        return try {
+            val r = match.groupValues[1].toInt()
+            val g = match.groupValues[2].toInt()
+            val b = match.groupValues[3].toInt()
+            val a = match.groupValues[4].toFloatOrNull() ?: 1f
+            Color(r, g, b, (a * 255).toInt())
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private val namedColors = mapOf(
+        "black" to Color.Black,
+        "white" to Color.White,
+        "red" to Color.Red,
+        "green" to Color.Green,
+        "blue" to Color.Blue,
+        "yellow" to Color.Yellow,
+        "cyan" to Color.Cyan,
+        "magenta" to Color.Magenta,
+        "gray" to Color.Gray,
+        "grey" to Color.Gray,
+        "transparent" to Color.Transparent
+    )
 }

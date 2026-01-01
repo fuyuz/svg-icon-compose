@@ -1,5 +1,7 @@
 package io.github.fuyuz.svgicon.core
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -391,9 +393,9 @@ class SvgParserTest {
         val polyline = svg.children[0]
         assertIs<SvgPolyline>(polyline)
         assertEquals(3, polyline.points.size)
-        assertEquals(0f to 0f, polyline.points[0])
-        assertEquals(10f to 10f, polyline.points[1])
-        assertEquals(20f to 0f, polyline.points[2])
+        assertEquals(Offset(0f, 0f), polyline.points[0])
+        assertEquals(Offset(10f, 10f), polyline.points[1])
+        assertEquals(Offset(20f, 0f), polyline.points[2])
     }
 
     @Test
@@ -417,11 +419,10 @@ class SvgParserTest {
     @Test
     fun parseSvgAttributes() {
         val svg = parseSvg("""<svg width="48" height="48" viewBox="0 0 48 48" fill="black" stroke="white" stroke-width="3" stroke-linecap="butt" stroke-linejoin="miter"></svg>""")
-        assertEquals(48, svg.width)
-        assertEquals(48, svg.height)
-        assertEquals("0 0 48 48", svg.viewBox)
-        assertEquals("black", svg.fill)
-        assertEquals("white", svg.stroke)
+        assertEquals(48f, svg.viewBox.width)
+        assertEquals(48f, svg.viewBox.height)
+        assertEquals(Color.Black, svg.fill)
+        assertEquals(Color.White, svg.stroke)
         assertEquals(3f, svg.strokeWidth)
         assertEquals(LineCap.BUTT, svg.strokeLinecap)
         assertEquals(LineJoin.MITER, svg.strokeLinejoin)
@@ -430,11 +431,10 @@ class SvgParserTest {
     @Test
     fun parseSvgDefaultAttributes() {
         val svg = parseSvg("""<svg></svg>""")
-        assertEquals(24, svg.width)
-        assertEquals(24, svg.height)
-        assertEquals("0 0 24 24", svg.viewBox)
-        assertEquals("none", svg.fill)
-        assertEquals("currentColor", svg.stroke)
+        assertEquals(24f, svg.viewBox.width)
+        assertEquals(24f, svg.viewBox.height)
+        assertNull(svg.fill)  // none = null
+        assertEquals(Color.Unspecified, svg.stroke)  // currentColor = Unspecified
         assertEquals(2f, svg.strokeWidth)
         assertEquals(LineCap.ROUND, svg.strokeLinecap)
         assertEquals(LineJoin.ROUND, svg.strokeLinejoin)
@@ -481,17 +481,15 @@ class SvgParserTest {
     @Test
     fun parseElementWithFill() {
         val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" fill="red"/></svg>""")
-        val styled = svg.children[0]
-        assertIs<SvgStyled>(styled)
-        assertEquals("red", styled.style.fill)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
     }
 
     @Test
     fun parseElementWithStroke() {
         val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" stroke="blue" stroke-width="3"/></svg>""")
-        val styled = svg.children[0]
-        assertIs<SvgStyled>(styled)
-        assertEquals("blue", styled.style.stroke)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Blue, styled.style.stroke)
         assertEquals(3f, styled.style.strokeWidth)
     }
 
@@ -894,9 +892,8 @@ class SvgParserTest {
     @Test
     fun parseGroupWithFill() {
         val svg = parseSvg("""<svg><g fill="red"><circle cx="12" cy="12" r="5"/></g></svg>""")
-        val styled = svg.children[0]
-        assertIs<SvgStyled>(styled)
-        assertEquals("red", styled.style.fill)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
     }
 
     @Test
@@ -960,9 +957,9 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithWidthHeightPx() {
-        val svg = parseSvg("""<svg width="48px" height="48px"></svg>""")
-        assertEquals(48, svg.width)
-        assertEquals(48, svg.height)
+        val svg = parseSvg("""<svg width="48px" height="48px" viewBox="0 0 48 48"></svg>""")
+        assertEquals(48f, svg.viewBox.width)
+        assertEquals(48f, svg.viewBox.height)
     }
 
     @Test
@@ -1042,17 +1039,15 @@ class SvgParserTest {
     @Test
     fun parseHexColorFill() {
         val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" fill="#ff0000"/></svg>""")
-        val styled = svg.children[0]
-        assertIs<SvgStyled>(styled)
-        assertEquals("#ff0000", styled.style.fill)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
     }
 
     @Test
     fun parseRgbColorFill() {
         val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" fill="rgb(255,0,0)"/></svg>""")
-        val styled = svg.children[0]
-        assertIs<SvgStyled>(styled)
-        assertEquals("rgb(255,0,0)", styled.style.fill)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
     }
 
     @Test
