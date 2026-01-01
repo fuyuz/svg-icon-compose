@@ -29,6 +29,9 @@ jobs:
 
       - name: Build
         run: ./gradlew build
+        env:
+          GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=1g
+          KOTLIN_NATIVE_MAX_MEMORY: 4G
 
       - name: Upload test results
         if: failure()
