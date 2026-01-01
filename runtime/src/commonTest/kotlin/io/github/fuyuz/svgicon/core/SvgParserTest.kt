@@ -550,6 +550,239 @@ class SvgParserTest {
         assertEquals(LineJoin.BEVEL, styled.style.strokeLinejoin)
     }
 
+    // ===========================================
+    // Internal Stylesheet Tests
+    // ===========================================
+
+    @Test
+    fun parseStylesheetWithClassSelector() {
+        val svg = parseSvg("""
+            <svg>
+                <style>.red-fill { fill: red; }</style>
+                <circle cx="12" cy="12" r="10" class="red-fill"/>
+            </svg>
+        """)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
+    }
+
+    @Test
+    fun parseStylesheetWithIdSelector() {
+        val svg = parseSvg("""
+            <svg>
+                <style>#my-circle { stroke: blue; stroke-width: 3; }</style>
+                <circle cx="12" cy="12" r="10" id="my-circle"/>
+            </svg>
+        """)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Blue, styled.style.stroke)
+        assertEquals(3f, styled.style.strokeWidth)
+    }
+
+    @Test
+    fun parseStylesheetWithTagSelector() {
+        val svg = parseSvg("""
+            <svg>
+                <style>circle { fill: green; }</style>
+                <circle cx="12" cy="12" r="10"/>
+            </svg>
+        """)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Green, styled.style.fill)
+    }
+
+    @Test
+    fun parseStylesheetWithUniversalSelector() {
+        val svg = parseSvg("""
+            <svg>
+                <style>* { opacity: 0.5; }</style>
+                <circle cx="12" cy="12" r="10"/>
+            </svg>
+        """)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(0.5f, styled.style.opacity)
+    }
+
+    @Test
+    fun parseStylesheetSpecificityIdOverridesClass() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    .my-class { fill: red; }
+                    #my-id { fill: blue; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="my-class" id="my-id"/>
+            </svg>
+        """)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Blue, styled.style.fill)
+    }
+
+    @Test
+    fun parseStylesheetSpecificityClassOverridesTag() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    circle { fill: red; }
+                    .blue-fill { fill: blue; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="blue-fill"/>
+            </svg>
+        """)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Blue, styled.style.fill)
+    }
+
+    @Test
+    fun parseStylesheetSpecificityTagOverridesUniversal() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    * { fill: red; }
+                    circle { fill: blue; }
+                </style>
+                <circle cx="12" cy="12" r="10"/>
+            </svg>
+        """)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Blue, styled.style.fill)
+    }
+
+    @Test
+    fun parseStylesheetInlineStyleOverridesAll() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    #my-id { fill: red; }
+                    .my-class { fill: green; }
+                </style>
+                <circle cx="12" cy="12" r="10" id="my-id" class="my-class" style="fill:blue"/>
+            </svg>
+        """)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Blue, styled.style.fill)
+    }
+
+    @Test
+    fun parseStylesheetMultipleRulesSameElement() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    circle { stroke: red; }
+                    .styled { stroke-width: 3; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="styled"/>
+            </svg>
+        """)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.stroke)
+        assertEquals(3f, styled.style.strokeWidth)
+    }
+
+    @Test
+    fun parseStylesheetMultipleClasses() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    .red { fill: red; }
+                    .thick { stroke-width: 5; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="red thick"/>
+            </svg>
+        """)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
+        assertEquals(5f, styled.style.strokeWidth)
+    }
+
+    @Test
+    fun parseStylesheetMultipleElements() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    .styled { fill: red; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="styled"/>
+                <rect width="10" height="10" class="styled"/>
+            </svg>
+        """)
+        assertEquals(2, svg.children.size)
+        val styledCircle = svg.children[0] as SvgStyled
+        val styledRect = svg.children[1] as SvgStyled
+        assertEquals(Color.Red, styledCircle.style.fill)
+        assertEquals(Color.Red, styledRect.style.fill)
+    }
+
+    @Test
+    fun parseStylesheetWithGroup() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    .group-style { opacity: 0.5; }
+                    circle { fill: red; }
+                </style>
+                <g class="group-style">
+                    <circle cx="12" cy="12" r="10"/>
+                </g>
+            </svg>
+        """)
+        val groupStyled = svg.children[0] as SvgStyled
+        assertEquals(0.5f, groupStyled.style.opacity)
+        val group = groupStyled.element as SvgGroup
+        val circleStyled = group.children[0] as SvgStyled
+        assertEquals(Color.Red, circleStyled.style.fill)
+    }
+
+    @Test
+    fun parseStylesheetNoMatchingSelector() {
+        val svg = parseSvg("""
+            <svg>
+                <style>.non-existent { fill: red; }</style>
+                <circle cx="12" cy="12" r="10"/>
+            </svg>
+        """)
+        // No matching class, so element should be plain SvgCircle
+        assertIs<SvgCircle>(svg.children[0])
+    }
+
+    @Test
+    fun parseStylesheetEmptyStyle() {
+        val svg = parseSvg("""
+            <svg>
+                <style></style>
+                <circle cx="12" cy="12" r="10"/>
+            </svg>
+        """)
+        assertIs<SvgCircle>(svg.children[0])
+    }
+
+    @Test
+    fun parseStylesheetWithMultipleStyleTags() {
+        val svg = parseSvg("""
+            <svg>
+                <style>.red { fill: red; }</style>
+                <style>.blue { stroke: blue; }</style>
+                <circle cx="12" cy="12" r="10" class="red blue"/>
+            </svg>
+        """)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
+        assertEquals(Color.Blue, styled.style.stroke)
+    }
+
+    @Test
+    fun parseStylesheetXmlAttributeMergesWithStylesheet() {
+        val svg = parseSvg("""
+            <svg>
+                <style>circle { fill: red; }</style>
+                <circle cx="12" cy="12" r="10" stroke-width="5"/>
+            </svg>
+        """)
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
+        assertEquals(5f, styled.style.strokeWidth)
+    }
+
     @Test
     fun parseElementWithFill() {
         val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" fill="red"/></svg>""")

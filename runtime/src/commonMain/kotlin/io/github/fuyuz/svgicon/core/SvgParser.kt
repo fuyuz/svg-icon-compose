@@ -67,7 +67,10 @@ internal object SvgXmlParser {
      * Parses SVG string to a complete Svg object with all root attributes.
      */
     fun parseToSvg(svgStr: String): Svg {
-        var remaining = svgStr.trim()
+        // Extract stylesheet first
+        val (stylesheet, cleanedSvg) = extractStylesheet(svgStr)
+
+        var remaining = cleanedSvg.trim()
 
         // Skip XML declaration and DOCTYPE
         while (remaining.startsWith("<?") || remaining.startsWith("<!")) {
@@ -84,7 +87,7 @@ internal object SvgXmlParser {
 
         if (tagName != "svg") {
             // No svg root element, parse as children only
-            val elements = parseElements(remaining)
+            val elements = parseElementsWithStylesheet(remaining, stylesheet)
             return Svg(children = elements)
         }
 
@@ -114,7 +117,7 @@ internal object SvgXmlParser {
             else -> LineJoin.ROUND
         }
 
-        // Parse children
+        // Parse children with stylesheet
         val children = if (selfClosing) {
             emptyList()
         } else {
@@ -122,7 +125,7 @@ internal object SvgXmlParser {
             val closeIdx = remaining.indexOf(closeTag)
             if (closeIdx > 0) {
                 val innerContent = remaining.substring(tagMatch.range.last + 1, closeIdx)
-                parseElements(innerContent)
+                parseElementsWithStylesheet(innerContent, stylesheet)
             } else {
                 emptyList()
             }
@@ -302,6 +305,171 @@ internal object SvgXmlParser {
     fun parseElements(svg: String): List<SvgElement> {
         val result = parseFull(svg)
         return result.elements
+    }
+
+    /**
+     * Parse elements with stylesheet support.
+     * Used internally when stylesheet is extracted.
+     */
+    private fun parseElementsWithStylesheet(svg: String, stylesheet: CssStylesheet): List<SvgElement> {
+        val result = parseFullWithStylesheet(svg, stylesheet)
+        return result.elements
+    }
+
+    /**
+     * Internal parse with stylesheet support.
+     */
+    private fun parseFullWithStylesheet(svg: String, stylesheet: CssStylesheet): ParsedSvg {
+        var viewBox: ViewBox? = null
+        val elements = mutableListOf<SvgElement>()
+        var remaining = svg.trim()
+
+        while (remaining.isNotEmpty()) {
+            // Skip XML declaration and DOCTYPE
+            if (remaining.startsWith("<?") || remaining.startsWith("<!")) {
+                val endIdx = remaining.indexOf('>') + 1
+                if (endIdx > 0) {
+                    remaining = remaining.substring(endIdx).trim()
+                    continue
+                }
+            }
+
+            val tagMatch = tagPattern.find(remaining)
+            if (tagMatch == null) {
+                break
+            }
+
+            val tagName = tagMatch.groupValues[1].lowercase()
+            val attrsStr = tagMatch.groupValues[2]
+            val selfClosing = tagMatch.groupValues[3] == "/>"
+
+            val attrs = parseAttributes(attrsStr)
+
+            when (tagName) {
+                "svg" -> {
+                    // Extract viewBox from svg element
+                    viewBox = parseViewBox(attrs["viewBox"])
+
+                    // Parse children of svg element
+                    if (selfClosing) {
+                        remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                    } else {
+                        val closeTag = "</svg>"
+                        val closeIdx = remaining.indexOf(closeTag)
+                        if (closeIdx > 0) {
+                            val innerContent = remaining.substring(tagMatch.range.last + 1, closeIdx)
+                            elements.addAll(parseElementsWithStylesheet(innerContent, stylesheet))
+                            remaining = remaining.substring(closeIdx + closeTag.length).trim()
+                        } else {
+                            remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                        }
+                    }
+                }
+                "path" -> {
+                    val d = attrs["d"] ?: ""
+                    if (d.isNotEmpty()) {
+                        val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                        val animations = parseAnimations(innerContent)
+                        val element = wrapWithStyleFromStylesheet(SvgPath(d), tagName, attrs, stylesheet)
+                        elements.add(wrapWithAnimations(element, animations))
+                        remaining = newRemaining
+                    } else {
+                        remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                    }
+                }
+                "circle" -> {
+                    val cx = attrs["cx"]?.toFloatOrNull() ?: 0f
+                    val cy = attrs["cy"]?.toFloatOrNull() ?: 0f
+                    val r = attrs["r"]?.toFloatOrNull() ?: 0f
+                    val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                    val animations = parseAnimations(innerContent)
+                    val element = wrapWithStyleFromStylesheet(SvgCircle(cx, cy, r), tagName, attrs, stylesheet)
+                    elements.add(wrapWithAnimations(element, animations))
+                    remaining = newRemaining
+                }
+                "ellipse" -> {
+                    val cx = attrs["cx"]?.toFloatOrNull() ?: 0f
+                    val cy = attrs["cy"]?.toFloatOrNull() ?: 0f
+                    val rx = attrs["rx"]?.toFloatOrNull() ?: 0f
+                    val ry = attrs["ry"]?.toFloatOrNull() ?: 0f
+                    val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                    val animations = parseAnimations(innerContent)
+                    val element = wrapWithStyleFromStylesheet(SvgEllipse(cx, cy, rx, ry), tagName, attrs, stylesheet)
+                    elements.add(wrapWithAnimations(element, animations))
+                    remaining = newRemaining
+                }
+                "rect" -> {
+                    val x = attrs["x"]?.toFloatOrNull() ?: 0f
+                    val y = attrs["y"]?.toFloatOrNull() ?: 0f
+                    val width = attrs["width"]?.toFloatOrNull() ?: 0f
+                    val height = attrs["height"]?.toFloatOrNull() ?: 0f
+                    val rx = attrs["rx"]?.toFloatOrNull() ?: 0f
+                    val ry = attrs["ry"]?.toFloatOrNull() ?: rx
+                    val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                    val animations = parseAnimations(innerContent)
+                    val element = wrapWithStyleFromStylesheet(SvgRect(x, y, width, height, rx, ry), tagName, attrs, stylesheet)
+                    elements.add(wrapWithAnimations(element, animations))
+                    remaining = newRemaining
+                }
+                "line" -> {
+                    val x1 = attrs["x1"]?.toFloatOrNull() ?: 0f
+                    val y1 = attrs["y1"]?.toFloatOrNull() ?: 0f
+                    val x2 = attrs["x2"]?.toFloatOrNull() ?: 0f
+                    val y2 = attrs["y2"]?.toFloatOrNull() ?: 0f
+                    val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                    val animations = parseAnimations(innerContent)
+                    val element = wrapWithStyleFromStylesheet(SvgLine(x1, y1, x2, y2), tagName, attrs, stylesheet)
+                    elements.add(wrapWithAnimations(element, animations))
+                    remaining = newRemaining
+                }
+                "polyline" -> {
+                    val points = parsePoints(attrs["points"] ?: "")
+                    if (points.isNotEmpty()) {
+                        val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                        val animations = parseAnimations(innerContent)
+                        val element = wrapWithStyleFromStylesheet(SvgPolyline(points), tagName, attrs, stylesheet)
+                        elements.add(wrapWithAnimations(element, animations))
+                        remaining = newRemaining
+                    } else {
+                        remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                    }
+                }
+                "polygon" -> {
+                    val points = parsePoints(attrs["points"] ?: "")
+                    if (points.isNotEmpty()) {
+                        val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                        val animations = parseAnimations(innerContent)
+                        val element = wrapWithStyleFromStylesheet(SvgPolygon(points), tagName, attrs, stylesheet)
+                        elements.add(wrapWithAnimations(element, animations))
+                        remaining = newRemaining
+                    } else {
+                        remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                    }
+                }
+                "g" -> {
+                    if (selfClosing) {
+                        remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                    } else {
+                        val closeTag = "</g>"
+                        val closeIdx = findMatchingClose(remaining, tagMatch.range.last + 1, "g")
+                        if (closeIdx > 0) {
+                            val innerContent = remaining.substring(tagMatch.range.last + 1, closeIdx)
+                            val children = parseElementsWithStylesheet(innerContent, stylesheet)
+                            elements.add(wrapWithStyleFromStylesheet(SvgGroup(children), tagName, attrs, stylesheet))
+                            remaining = remaining.substring(closeIdx + closeTag.length).trim()
+                        } else {
+                            remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                        }
+                    }
+                }
+                else -> {
+                    // Skip unknown elements
+                    remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                }
+            }
+        }
+
+        return ParsedSvg(viewBox, elements)
     }
 
     private fun parseViewBox(viewBoxStr: String?): ViewBox? {
@@ -668,6 +836,135 @@ internal object SvgXmlParser {
         } else {
             element
         }
+    }
+
+    /**
+     * Wraps element with style, resolving styles from stylesheet + inline styles.
+     */
+    private fun wrapWithStyleFromStylesheet(
+        element: SvgElement,
+        tagName: String,
+        attrs: Map<String, String>,
+        stylesheet: CssStylesheet
+    ): SvgElement {
+        // Resolve styles from stylesheet + inline
+        val resolvedStyles = resolveStylesForElement(tagName, attrs, stylesheet)
+
+        // Merge resolved styles with original attrs (for non-style attributes)
+        val mergedAttrs = attrs.toMutableMap()
+        mergedAttrs.putAll(resolvedStyles)
+        mergedAttrs.remove("style") // Already processed
+
+        val style = parseStyle(mergedAttrs)
+        return if (style != null) {
+            SvgStyled(element, style)
+        } else {
+            element
+        }
+    }
+
+    // ============================================
+    // CSS Stylesheet Parsing
+    // ============================================
+
+    private val styleTagPattern = Regex("""<style[^>]*>([\s\S]*?)</style>""", RegexOption.IGNORE_CASE)
+    private val cssRulePattern = Regex("""([^{]+)\{([^}]*)\}""")
+
+    /**
+     * Extracts and parses <style> content from SVG string.
+     * Returns the stylesheet and SVG content with <style> removed.
+     */
+    private fun extractStylesheet(svgContent: String): Pair<CssStylesheet, String> {
+        val matches = styleTagPattern.findAll(svgContent).toList()
+        if (matches.isEmpty()) {
+            return CssStylesheet() to svgContent
+        }
+
+        val rules = mutableListOf<CssRule>()
+        for (match in matches) {
+            val cssContent = match.groupValues[1]
+            rules.addAll(parseCssRules(cssContent))
+        }
+
+        val cleanedContent = svgContent.replace(styleTagPattern, "")
+        return CssStylesheet(rules) to cleanedContent
+    }
+
+    /**
+     * Parses CSS content into rules.
+     * Example: ".my-class { fill: red; }" -> CssRule(Class("my-class"), {fill=red})
+     */
+    private fun parseCssRules(cssContent: String): List<CssRule> {
+        val rules = mutableListOf<CssRule>()
+
+        cssRulePattern.findAll(cssContent).forEach { match ->
+            val selectorStr = match.groupValues[1].trim()
+            val declarationsStr = match.groupValues[2]
+
+            val selector = parseCssSelector(selectorStr)
+            if (selector != null) {
+                val declarations = parseCssStyleAttribute(declarationsStr)
+                if (declarations.isNotEmpty()) {
+                    rules.add(CssRule(selector, declarations))
+                }
+            }
+        }
+
+        return rules
+    }
+
+    /**
+     * Parses a CSS selector string into a CssSelector.
+     * Supports: .class, #id, tag, *
+     */
+    private fun parseCssSelector(selectorStr: String): CssSelector? {
+        val trimmed = selectorStr.trim()
+        return when {
+            trimmed.startsWith(".") -> CssSelector.Class(trimmed.drop(1))
+            trimmed.startsWith("#") -> CssSelector.Id(trimmed.drop(1))
+            trimmed == "*" -> CssSelector.Universal
+            trimmed.matches(Regex("[a-zA-Z][a-zA-Z0-9-]*")) -> CssSelector.Tag(trimmed.lowercase())
+            else -> null // Unsupported selector (complex selectors)
+        }
+    }
+
+    /**
+     * Resolves styles for an element based on stylesheet and inline styles.
+     * Priority: inline style > id > class > tag > universal
+     */
+    private fun resolveStylesForElement(
+        tagName: String,
+        attrs: Map<String, String>,
+        stylesheet: CssStylesheet
+    ): Map<String, String> {
+        val elementId = attrs["id"]
+        val elementClasses = attrs["class"]?.split(Regex("\\s+"))?.filter { it.isNotEmpty() } ?: emptyList()
+
+        // Collect matching rules sorted by specificity
+        val matchingRules = stylesheet.rules
+            .filter { rule ->
+                when (rule.selector) {
+                    is CssSelector.Universal -> true
+                    is CssSelector.Tag -> rule.selector.tagName == tagName.lowercase()
+                    is CssSelector.Class -> elementClasses.contains(rule.selector.className)
+                    is CssSelector.Id -> elementId == rule.selector.id
+                }
+            }
+            .sortedBy { it.selector.specificity }
+
+        // Merge styles in order (later = higher priority)
+        val mergedStyles = mutableMapOf<String, String>()
+
+        // Apply stylesheet rules in specificity order
+        for (rule in matchingRules) {
+            mergedStyles.putAll(rule.declarations)
+        }
+
+        // Apply inline style (highest priority)
+        val inlineStyle = parseCssStyleAttribute(attrs["style"])
+        mergedStyles.putAll(inlineStyle)
+
+        return mergedStyles
     }
 
     /**

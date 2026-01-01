@@ -215,6 +215,56 @@ data class Svg(
     val effectiveViewBox: ViewBox get() = viewBox ?: ViewBox(0f, 0f, effectiveWidth, effectiveHeight)
 }
 
+// ============================================
+// CSS Stylesheet Support
+// ============================================
+
+/**
+ * CSS selector for matching elements.
+ * Supports basic selectors: .class, #id, tag, *
+ */
+sealed interface CssSelector {
+    /** Class selector: .my-class */
+    data class Class(val className: String) : CssSelector
+
+    /** ID selector: #my-id */
+    data class Id(val id: String) : CssSelector
+
+    /** Tag selector: path, circle, etc. */
+    data class Tag(val tagName: String) : CssSelector
+
+    /** Universal selector: * */
+    data object Universal : CssSelector
+
+    /**
+     * CSS specificity for this selector.
+     * Higher values take precedence.
+     * Order: Universal(0) < Tag(1) < Class(2) < Id(3)
+     */
+    val specificity: Int
+        get() = when (this) {
+            is Universal -> 0
+            is Tag -> 1
+            is Class -> 2
+            is Id -> 3
+        }
+}
+
+/**
+ * A single CSS rule consisting of a selector and style declarations.
+ */
+data class CssRule(
+    val selector: CssSelector,
+    val declarations: Map<String, String>
+)
+
+/**
+ * Parsed CSS stylesheet containing rules.
+ */
+data class CssStylesheet(
+    val rules: List<CssRule> = emptyList()
+)
+
 /**
  * SVG style attributes for presentation.
  * These correspond to SVG presentation attributes.
