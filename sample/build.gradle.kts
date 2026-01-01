@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import io.github.fuyuz.svgicon.gradle.IconVisibility
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -8,9 +9,9 @@ plugins {
 }
 
 svgIcon {
-    svgDir.set(file("src/commonMain/composeResources/svg"))
-    packageName.set("io.github.fuyuz.svgicon.sample.generated.icons")
-    visibility.set("public")
+    // svgDir defaults to "src/commonMain/composeResources/svg"
+    packageName = "io.github.fuyuz.svgicon.sample.generated.icons"
+    visibility = IconVisibility.PUBLIC
 }
 
 kotlin {

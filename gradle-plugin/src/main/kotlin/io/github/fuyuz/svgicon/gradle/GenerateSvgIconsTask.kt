@@ -26,7 +26,7 @@ abstract class GenerateSvgIconsTask : DefaultTask() {
     abstract val packageName: Property<String>
 
     @get:Input
-    abstract val visibility: Property<String>
+    abstract val visibility: Property<IconVisibility>
 
     init {
         group = "svgicon"
@@ -38,7 +38,7 @@ abstract class GenerateSvgIconsTask : DefaultTask() {
         val svgDirectory = svgDir.get().asFile
         val outputDirectory = outputDir.get().asFile
         val pkg = packageName.get()
-        val vis = visibility.getOrElse("public")
+        val vis = visibility.get()
 
         if (!svgDirectory.exists()) {
             logger.warn("SVG directory does not exist: ${svgDirectory.absolutePath}")
@@ -58,12 +58,7 @@ abstract class GenerateSvgIconsTask : DefaultTask() {
 
         logger.lifecycle("Generating icons from ${svgDirectory.absolutePath}")
 
-        val iconVisibility = when (vis.lowercase()) {
-            "public" -> IconVisibility.PUBLIC
-            else -> IconVisibility.INTERNAL
-        }
-
-        val generator = IconGenerator(visibility = iconVisibility)
+        val generator = IconGenerator(visibility = vis)
         val iconNames = generator.generateIcons(svgDirectory, pkg, outputDirectory)
 
         logger.lifecycle("Generated ${iconNames.size} icons")

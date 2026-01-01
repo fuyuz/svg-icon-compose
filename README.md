@@ -1,7 +1,7 @@
 # SVG Icon Compose
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blue.svg)](https://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.1.21-blue.svg)](https://kotlinlang.org)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.9.3-blue.svg)](https://www.jetbrains.com/lp/compose-multiplatform/)
 
 A Kotlin Multiplatform library for rendering SVG icons in Compose Multiplatform applications with compile-time code generation.
@@ -102,15 +102,13 @@ src/commonMain/composeResources/svg/
 └── menu.svg
 ```
 
-### 2. Configure code generation
+### 2. Configure code generation (optional)
 
-Add to your `build.gradle.kts`:
+The plugin works with sensible defaults. Just apply the plugin and you're done:
 
 ```kotlin
-svgIcon {
-    svgDir.set(file("src/commonMain/composeResources/svg"))
-    packageName.set("com.example.icons")
-    visibility.set("public")  // or "internal"
+plugins {
+    id("io.github.fuyuz.svgicon") version "0.1.0"
 }
 
 kotlin {
@@ -119,6 +117,18 @@ kotlin {
             kotlin.srcDir(layout.buildDirectory.dir("generated/compose/resourceGenerator/kotlin/svgicons"))
         }
     }
+}
+```
+
+For custom configuration:
+
+```kotlin
+import io.github.fuyuz.svgicon.gradle.IconVisibility
+
+svgIcon {
+    svgDir = file("src/commonMain/composeResources/svg")  // default
+    packageName = "com.example.icons"                      // default: "${project.group}.icons"
+    visibility = IconVisibility.PUBLIC                     // default: PUBLIC
 }
 ```
 
@@ -220,7 +230,7 @@ fun DynamicIcon() {
 
 ## Requirements
 
-- Kotlin 2.1.10+
+- Kotlin 2.1.21+
 - Compose Multiplatform 1.9.3+
 - Java 17+
 

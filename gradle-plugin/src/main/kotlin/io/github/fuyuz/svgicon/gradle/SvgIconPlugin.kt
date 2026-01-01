@@ -11,11 +11,14 @@ import org.gradle.api.Project
  * plugins {
  *     id("io.github.fuyuz.svgicon")
  * }
+ * ```
  *
+ * Optional configuration:
+ * ```kotlin
  * svgIcon {
- *     svgDir.set(file("src/commonMain/composeResources/svg"))
- *     packageName.set("com.example.icons")
- *     visibility.set("public")
+ *     svgDir.set(file("src/commonMain/composeResources/svg"))  // default
+ *     packageName.set("${project.group}.icons")                 // default
+ *     visibility.set(IconVisibility.PUBLIC)                     // default
  * }
  * ```
  */
@@ -26,7 +29,9 @@ class SvgIconPlugin : Plugin<Project> {
         val extension = project.extensions.create("svgIcon", SvgIconExtension::class.java)
 
         // Set default values
-        extension.visibility.convention("public")
+        extension.svgDir.convention(project.layout.projectDirectory.dir("src/commonMain/composeResources/svg"))
+        extension.packageName.convention(project.provider { "${project.group}.icons" })
+        extension.visibility.convention(IconVisibility.PUBLIC)
 
         // Default output directory
         val outputDir = project.layout.buildDirectory.dir("generated/compose/resourceGenerator/kotlin/svgicons")
