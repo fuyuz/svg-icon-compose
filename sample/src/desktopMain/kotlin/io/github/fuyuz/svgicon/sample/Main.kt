@@ -982,6 +982,217 @@ fun App() {
                         Text("CSS > XML", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 }
+
+                Text(
+                    "Internal stylesheet (<style> tag):",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Class selector
+                    val classSelector = remember {
+                        parseSvg("""
+                            <svg viewBox="0 0 24 24">
+                                <style>.blue-fill { fill: #3B82F6; } .red-stroke { stroke: #EF4444; stroke-width: 2; }</style>
+                                <circle cx="12" cy="12" r="10" class="blue-fill red-stroke"/>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = classSelector,
+                            contentDescription = "Class Selector",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text(".class", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // ID selector
+                    val idSelector = remember {
+                        parseSvg("""
+                            <svg viewBox="0 0 24 24">
+                                <style>#my-rect { fill: #22C55E; stroke: #166534; stroke-width: 2; }</style>
+                                <rect x="4" y="4" width="16" height="16" rx="2" id="my-rect"/>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = idSelector,
+                            contentDescription = "ID Selector",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("#id", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Tag selector
+                    val tagSelector = remember {
+                        parseSvg("""
+                            <svg viewBox="0 0 24 24">
+                                <style>path { stroke: #F59E0B; stroke-width: 3; fill: none; }</style>
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = tagSelector,
+                            contentDescription = "Tag Selector",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("tag", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Universal selector
+                    val universalSelector = remember {
+                        parseSvg("""
+                            <svg viewBox="0 0 24 24">
+                                <style>* { stroke: #8B5CF6; stroke-width: 2; fill: none; }</style>
+                                <circle cx="12" cy="12" r="8"/>
+                                <path d="M12 4v4M12 16v4M4 12h4M16 12h4"/>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = universalSelector,
+                            contentDescription = "Universal Selector",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("*", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                }
+
+                Text(
+                    "CSS @keyframes animation:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Spin animation
+                    val spinAnimation = remember {
+                        parseSvg("""
+                            <svg viewBox="0 0 24 24">
+                                <style>
+                                    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                                    .spinner { animation: spin 1s linear; stroke: #3B82F6; stroke-width: 2; fill: none; }
+                                </style>
+                                <circle cx="12" cy="12" r="10" class="spinner"/>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = spinAnimation,
+                            contentDescription = "Spin",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("rotate", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Fade animation
+                    val fadeAnimation = remember {
+                        parseSvg("""
+                            <svg viewBox="0 0 24 24">
+                                <style>
+                                    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+                                    .fading { animation: fade 1s ease; fill: #22C55E; }
+                                </style>
+                                <circle cx="12" cy="12" r="10" class="fading"/>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = fadeAnimation,
+                            contentDescription = "Fade",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("opacity", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Scale animation
+                    val scaleAnimation = remember {
+                        parseSvg("""
+                            <svg viewBox="0 0 24 24">
+                                <style>
+                                    @keyframes grow { from { transform: scale(0.5); } to { transform: scale(1); } }
+                                    .growing { animation: grow 1s ease-out; stroke: #F59E0B; stroke-width: 2; fill: none; }
+                                </style>
+                                <rect x="4" y="4" width="16" height="16" rx="2" class="growing"/>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = scaleAnimation,
+                            contentDescription = "Scale",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("scale", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Stroke width animation
+                    val strokeAnimation = remember {
+                        parseSvg("""
+                            <svg viewBox="0 0 24 24">
+                                <style>
+                                    @keyframes pulse { from { stroke-width: 1; } to { stroke-width: 4; } }
+                                    .pulsing { animation: pulse 500ms ease-in-out; stroke: #EF4444; fill: none; }
+                                </style>
+                                <circle cx="12" cy="12" r="10" class="pulsing"/>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = strokeAnimation,
+                            contentDescription = "Stroke Width",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("stroke-width", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                }
             }
         }
     }

@@ -570,6 +570,84 @@ fun AnimatedSvgIcon(
 }
 
 /**
+ * Composable that renders an animated SVG directly from an Svg object.
+ * This overload is useful when working with runtime-parsed SVG content.
+ *
+ * @param svg The Svg object to render
+ * @param contentDescription Accessibility description
+ * @param modifier Modifier to be applied to the icon
+ * @param tint Color to tint the icon (applies to currentColor)
+ * @param strokeWidth Optional stroke width override
+ * @param animate Whether animation is enabled
+ * @param iterations Number of animation iterations
+ * @param onAnimationEnd Callback when animation completes
+ */
+@Composable
+fun AnimatedSvgIcon(
+    svg: Svg,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    tint: Color = LocalContentColor.current,
+    strokeWidth: Float? = null,
+    animate: Boolean = true,
+    iterations: Int = Int.MAX_VALUE,
+    onAnimationEnd: (() -> Unit)? = null
+) {
+    val semanticsModifier = if (contentDescription != null) {
+        Modifier.semantics {
+            this.contentDescription = contentDescription
+            this.role = Role.Image
+        }
+    } else {
+        Modifier
+    }
+
+    val hasAnimations = remember(svg) { hasAnimatedElements(svg.children) }
+
+    Layout(
+        modifier = modifier.then(semanticsModifier),
+        content = {
+            if (hasAnimations && animate) {
+                AnimatedSvgIconCanvas(
+                    svg = svg,
+                    tint = tint,
+                    strokeWidthOverride = strokeWidth,
+                    iterations = iterations,
+                    onAnimationEnd = onAnimationEnd,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    drawSvg(svg, tint, strokeWidth)
+                }
+            }
+        }
+    ) { measurables, constraints ->
+        val defaultWidth = (svg.effectiveWidth * density).toInt()
+        val defaultHeight = (svg.effectiveHeight * density).toInt()
+
+        val width = when {
+            constraints.hasFixedWidth -> constraints.maxWidth
+            constraints.hasBoundedWidth -> constraints.maxWidth
+            else -> defaultWidth
+        }
+        val height = when {
+            constraints.hasFixedHeight -> constraints.maxHeight
+            constraints.hasBoundedHeight -> constraints.maxHeight
+            else -> defaultHeight
+        }
+
+        val placeable = measurables.first().measure(
+            Constraints.fixed(width, height)
+        )
+
+        layout(width, height) {
+            placeable.place(0, 0)
+        }
+    }
+}
+
+/**
  * Applies easing based on calcMode and keySplines.
  */
 private fun applyEasing(progress: Float, calcMode: CalcMode, keySplines: KeySplines?): Float {
