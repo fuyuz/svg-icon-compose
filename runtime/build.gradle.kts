@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.library)
     alias(libs.plugins.maven.publish)
+    alias(libs.plugins.kover)
 }
 
 kotlin {

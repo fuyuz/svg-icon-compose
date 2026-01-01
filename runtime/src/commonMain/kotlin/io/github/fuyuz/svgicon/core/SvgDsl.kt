@@ -2156,6 +2156,7 @@ inline fun svg(block: SvgBuilder.() -> Unit): Svg {
  * @param strokeWidth Default stroke width (default: 2f)
  * @param strokeLinecap Default stroke line cap (default: ROUND)
  * @param strokeLinejoin Default stroke line join (default: ROUND)
+ * @param preserveAspectRatio Aspect ratio handling (default: xMidYMid meet)
  * @param block Builder block for adding SVG elements
  */
 inline fun svg(
@@ -2167,10 +2168,14 @@ inline fun svg(
     strokeWidth: Float = 2f,
     strokeLinecap: LineCap = LineCap.ROUND,
     strokeLinejoin: LineJoin = LineJoin.ROUND,
+    preserveAspectRatio: PreserveAspectRatio = PreserveAspectRatio.Default,
     block: SvgBuilder.() -> Unit
 ): Svg {
     return Svg(
+        width = width.toFloat(),
+        height = height.toFloat(),
         viewBox = viewBox ?: ViewBox(0f, 0f, width.toFloat(), height.toFloat()),
+        preserveAspectRatio = preserveAspectRatio,
         fill = fill,
         stroke = stroke,
         strokeWidth = strokeWidth,

@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-gradle-plugin`
     alias(libs.plugins.maven.publish)
+    alias(libs.plugins.kover)
 }
 
 group = "io.github.fuyuz.svgicon"
