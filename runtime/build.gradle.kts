@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.library)
+    alias(libs.plugins.maven.publish)
 }
 
 kotlin {
@@ -76,5 +77,40 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
+
+    coordinates(group.toString(), "runtime", version.toString())
+
+    pom {
+        name.set("SVG Icon Compose Runtime")
+        description.set("Kotlin Multiplatform library for SVG icons in Jetpack Compose")
+        url.set("https://github.com/fuyuz/svg-icon-compose")
+        inceptionYear.set("2026")
+
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
+            }
+        }
+
+        developers {
+            developer {
+                id.set("fuyuz")
+                name.set("fuyuz")
+                url.set("https://github.com/fuyuz")
+            }
+        }
+
+        scm {
+            url.set("https://github.com/fuyuz/svg-icon-compose")
+            connection.set("scm:git:git://github.com/fuyuz/svg-icon-compose.git")
+            developerConnection.set("scm:git:ssh://git@github.com/fuyuz/svg-icon-compose.git")
+        }
     }
 }

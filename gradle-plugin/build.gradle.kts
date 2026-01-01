@@ -1,6 +1,10 @@
+import com.vanniktech.maven.publish.GradlePlugin
+import com.vanniktech.maven.publish.JavadocJar
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     `java-gradle-plugin`
+    alias(libs.plugins.maven.publish)
 }
 
 group = "io.github.fuyuz.svgicon"
@@ -22,6 +26,43 @@ gradlePlugin {
         create("svgIcon") {
             id = "io.github.fuyuz.svgicon"
             implementationClass = "io.github.fuyuz.svgicon.gradle.SvgIconPlugin"
+        }
+    }
+}
+
+mavenPublishing {
+    publishToMavenCentral()
+    signAllPublications()
+
+    configure(GradlePlugin(javadocJar = JavadocJar.Javadoc()))
+
+    coordinates(group.toString(), "gradle-plugin", version.toString())
+
+    pom {
+        name.set("SVG Icon Compose Gradle Plugin")
+        description.set("Gradle plugin for generating SVG icon accessors in Compose Multiplatform projects")
+        url.set("https://github.com/fuyuz/svg-icon-compose")
+        inceptionYear.set("2026")
+
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
+            }
+        }
+
+        developers {
+            developer {
+                id.set("fuyuz")
+                name.set("fuyuz")
+                url.set("https://github.com/fuyuz")
+            }
+        }
+
+        scm {
+            url.set("https://github.com/fuyuz/svg-icon-compose")
+            connection.set("scm:git:git://github.com/fuyuz/svg-icon-compose.git")
+            developerConnection.set("scm:git:ssh://git@github.com/fuyuz/svg-icon-compose.git")
         }
     }
 }

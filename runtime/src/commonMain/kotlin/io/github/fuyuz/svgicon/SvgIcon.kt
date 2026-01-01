@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
+import kotlin.math.PI
 import kotlin.math.tan
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -800,7 +801,7 @@ private fun DrawScope.withTransform(transform: SvgTransform, block: DrawScope.()
         is SvgTransform.SkewX -> {
             val matrix = Matrix().apply {
                 // skewX(angle) = matrix(1, 0, tan(angle), 1, 0, 0)
-                val tanAngle = tan(Math.toRadians(transform.angle.toDouble())).toFloat()
+                val tanAngle = tan(transform.angle.toDouble() * PI / 180.0).toFloat()
                 this[0, 1] = tanAngle // skewX affects the x-coordinate based on y
             }
             withTransform({ this.transform(matrix) }, block)
@@ -808,7 +809,7 @@ private fun DrawScope.withTransform(transform: SvgTransform, block: DrawScope.()
         is SvgTransform.SkewY -> {
             val matrix = Matrix().apply {
                 // skewY(angle) = matrix(1, tan(angle), 0, 1, 0, 0)
-                val tanAngle = tan(Math.toRadians(transform.angle.toDouble())).toFloat()
+                val tanAngle = tan(transform.angle.toDouble() * PI / 180.0).toFloat()
                 this[1, 0] = tanAngle // skewY affects the y-coordinate based on x
             }
             withTransform({ this.transform(matrix) }, block)
