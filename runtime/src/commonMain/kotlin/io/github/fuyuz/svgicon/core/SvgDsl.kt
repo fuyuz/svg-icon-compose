@@ -915,16 +915,23 @@ class SvgBuilder {
         elements.add(SvgAnimated(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()), animations))
     }
 
+    /**
+     * Polyline with vararg points: polyline(5 to 12, 12 to 5, 19 to 12)
+     */
     fun polyline(
-        points: List<Offset>,
+        vararg points: Pair<Number, Number>,
         stroke: Color? = null,
         fill: Color? = null,
         strokeWidth: Float? = null,
         opacity: Float? = null
     ) {
-        addWithStyle(SvgPolyline(points), stroke, fill, strokeWidth, opacity)
+        val offsets = points.map { Offset(it.first.toFloat(), it.second.toFloat()) }
+        addWithStyle(SvgPolyline(offsets), stroke, fill, strokeWidth, opacity)
     }
 
+    /**
+     * Polyline from points string: polyline("5,12 12,5 19,12")
+     */
     fun polyline(
         points: String,
         stroke: Color? = null,
@@ -935,16 +942,23 @@ class SvgBuilder {
         addWithStyle(SvgPolyline(parsePointsString(points)), stroke, fill, strokeWidth, opacity)
     }
 
+    /**
+     * Polygon with vararg points: polygon(12 to 2, 22 to 22, 2 to 22)
+     */
     fun polygon(
-        points: List<Offset>,
+        vararg points: Pair<Number, Number>,
         stroke: Color? = null,
         fill: Color? = null,
         strokeWidth: Float? = null,
         opacity: Float? = null
     ) {
-        addWithStyle(SvgPolygon(points), stroke, fill, strokeWidth, opacity)
+        val offsets = points.map { Offset(it.first.toFloat(), it.second.toFloat()) }
+        addWithStyle(SvgPolygon(offsets), stroke, fill, strokeWidth, opacity)
     }
 
+    /**
+     * Polygon from points string: polygon("12,2 22,22 2,22")
+     */
     fun polygon(
         points: String,
         stroke: Color? = null,
