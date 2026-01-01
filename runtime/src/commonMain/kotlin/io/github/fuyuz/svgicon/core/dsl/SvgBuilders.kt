@@ -754,57 +754,6 @@ class SvgBuilder {
     }
 
     // ============================================
-    // Symbol and Use
-    // ============================================
-
-    /**
-     * Define a reusable symbol.
-     */
-    fun symbol(
-        id: String,
-        viewBox: ViewBox? = null,
-        preserveAspectRatio: PreserveAspectRatio = PreserveAspectRatio.Default,
-        block: SvgBuilder.() -> Unit
-    ) {
-        val children = SvgBuilder().apply(block).build()
-        elements.add(SvgSymbol(id, viewBox, preserveAspectRatio, children))
-    }
-
-    /**
-     * Use a previously defined symbol or element.
-     */
-    fun use(
-        href: String,
-        x: Number = 0,
-        y: Number = 0,
-        width: Float? = null,
-        height: Float? = null,
-        stroke: Color? = null,
-        fill: Color? = null,
-        strokeWidth: Float? = null,
-        opacity: Float? = null
-    ) {
-        val useElement = SvgUse(href, x.toFloat(), y.toFloat(), width, height)
-        addWithStyle(useElement, stroke, fill, strokeWidth, opacity)
-    }
-
-    /**
-     * Use with animation.
-     */
-    fun use(
-        href: String,
-        x: Number = 0,
-        y: Number = 0,
-        width: Float? = null,
-        height: Float? = null,
-        block: AnimationBuilder.() -> Unit
-    ) {
-        val useElement = SvgUse(href, x.toFloat(), y.toFloat(), width, height)
-        val animations = AnimationBuilder().apply(block).build()
-        elements.add(SvgAnimated(useElement, animations))
-    }
-
-    // ============================================
     // Gradients
     // ============================================
 
@@ -843,26 +792,6 @@ class SvgBuilder {
     ) {
         val stops = GradientBuilder().apply(block).build()
         elements.add(SvgRadialGradient(id, cx, cy, r, fx, fy, stops, gradientUnits, spreadMethod, gradientTransform))
-    }
-
-    // ============================================
-    // Image
-    // ============================================
-
-    /**
-     * Embed an external image.
-     */
-    fun image(
-        href: String,
-        x: Number = 0,
-        y: Number = 0,
-        width: Number,
-        height: Number,
-        preserveAspectRatio: PreserveAspectRatio = PreserveAspectRatio.Default,
-        opacity: Float? = null
-    ) {
-        val imageElement = SvgImage(href, x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), preserveAspectRatio)
-        addWithStyle(imageElement, opacity = opacity)
     }
 
     // ============================================

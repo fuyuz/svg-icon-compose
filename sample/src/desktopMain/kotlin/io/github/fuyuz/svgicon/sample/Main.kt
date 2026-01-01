@@ -102,6 +102,54 @@ private val DslRotatedSquare = Svg(
 )
 
 /**
+ * Text icon example.
+ */
+private val DslTextIcon = Svg(
+    viewBox = ViewBox(0f, 0f, 48f, 24f),
+    stroke = null,
+    fill = Color.Unspecified,
+    children = listOf(
+        SvgText(
+            text = "Hello",
+            x = 24f,
+            y = 16f,
+            fontSize = 14f,
+            fontWeight = "bold",
+            textAnchor = TextAnchor.MIDDLE,
+            dominantBaseline = DominantBaseline.MIDDLE
+        )
+    )
+)
+
+/**
+ * Combined text and graphics.
+ */
+private val DslBadgeIcon = Svg(
+    viewBox = ViewBox(0f, 0f, 48f, 24f),
+    stroke = null,
+    children = listOf(
+        // Background rounded rect
+        SvgStyled(
+            element = SvgRect(2f, 2f, 44f, 20f, rx = 4f),
+            style = SvgStyle(fill = Color(0xFF3B82F6))
+        ),
+        // Text label
+        SvgStyled(
+            element = SvgText(
+                text = "NEW",
+                x = 24f,
+                y = 12f,
+                fontSize = 10f,
+                fontWeight = "bold",
+                textAnchor = TextAnchor.MIDDLE,
+                dominantBaseline = DominantBaseline.MIDDLE
+            ),
+            style = SvgStyle(fill = Color.White)
+        )
+    )
+)
+
+/**
  * Animated check icon with staggered animation using DSL.
  */
 private val DslAnimatedCheck = Svg(
@@ -878,6 +926,34 @@ fun App() {
                             tint = Color.White
                         )
                         Text("stroke/fill", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Text icon
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = DslTextIcon,
+                            contentDescription = "Text Icon",
+                            modifier = Modifier.size(96.dp, 48.dp),
+                            tint = Color(0xFF10B981)
+                        )
+                        Text("SvgText", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Badge icon
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = DslBadgeIcon,
+                            contentDescription = "Badge",
+                            modifier = Modifier.size(96.dp, 48.dp),
+                            tint = Color.White
+                        )
+                        Text("Badge", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 }
 

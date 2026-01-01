@@ -48,6 +48,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import io.github.fuyuz.svgicon.core.*
 import io.github.fuyuz.svgicon.core.dsl.*
 
@@ -251,11 +258,13 @@ private fun SvgIconLayout(
         Modifier
     }
 
+    val textMeasurer = rememberTextMeasurer()
+
     Layout(
         modifier = modifier.then(semanticsModifier),
         content = {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                drawSvg(svg, tint, strokeWidth)
+                drawSvg(svg, tint, strokeWidth, textMeasurer)
             }
         }
     ) { measurables, constraints ->
@@ -419,6 +428,8 @@ fun AnimatedSvgIcon(
         Modifier
     }
 
+    val textMeasurer = rememberTextMeasurer()
+
     // Collect animations to build progress map
     val animations = remember(svg) { collectAllAnimations(svg.children) }
 
@@ -449,7 +460,7 @@ fun AnimatedSvgIcon(
         modifier = modifier.then(semanticsModifier),
         content = {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                drawAnimatedSvg(svg, tint, strokeWidth, progressMap, pathCache)
+                drawAnimatedSvg(svg, tint, strokeWidth, progressMap, pathCache, textMeasurer)
             }
         }
     ) { measurables, constraints ->
@@ -752,6 +763,8 @@ private fun AnimatedSvgIconCanvas(
     onAnimationEnd: (() -> Unit)?,
     modifier: Modifier
 ) {
+    val textMeasurer = rememberTextMeasurer()
+
     // Collect all animations
     val animations = remember(svg) { collectAllAnimations(svg.children) }
 
@@ -833,7 +846,7 @@ private fun AnimatedSvgIconCanvas(
         }
 
         Canvas(modifier = modifier) {
-            drawAnimatedSvg(svg, tint, strokeWidthOverride, progressMap, pathCache)
+            drawAnimatedSvg(svg, tint, strokeWidthOverride, progressMap, pathCache, textMeasurer)
         }
     } else {
         // Use finite animation with iteration count using master timeline approach
@@ -901,7 +914,7 @@ private fun AnimatedSvgIconCanvas(
         }
 
         Canvas(modifier = modifier) {
-            drawAnimatedSvg(svg, tint, strokeWidthOverride, progressMap, pathCache)
+            drawAnimatedSvg(svg, tint, strokeWidthOverride, progressMap, pathCache, textMeasurer)
         }
     }
 }
@@ -930,14 +943,15 @@ private data class DrawContext(
  */
 private data class DefsRegistry(
     val clipPaths: Map<String, SvgClipPath> = emptyMap(),
-    val masks: Map<String, SvgMask> = emptyMap()
+    val masks: Map<String, SvgMask> = emptyMap(),
+    val textMeasurer: TextMeasurer? = null
 )
 
 /**
  * Draws an SVG onto the canvas.
  * Handles viewBox, viewport, and preserveAspectRatio correctly.
  */
-private fun DrawScope.drawSvg(svg: Svg, tint: Color, strokeWidthOverride: Float?) {
+private fun DrawScope.drawSvg(svg: Svg, tint: Color, strokeWidthOverride: Float?, textMeasurer: TextMeasurer? = null) {
     val viewBox = svg.effectiveViewBox
     val strokeWidth = strokeWidthOverride ?: svg.strokeWidth
 
@@ -966,7 +980,7 @@ private fun DrawScope.drawSvg(svg: Svg, tint: Color, strokeWidthOverride: Float?
     val strokeColor = svg.stroke?.let { if (it == Color.Unspecified) tint else it }
 
     // Collect defs (clipPaths, masks) from children
-    val registry = collectDefs(svg.children)
+    val registry = collectDefs(svg.children, textMeasurer)
 
     val context = DrawContext(
         strokeColor = strokeColor ?: tint,
@@ -1054,7 +1068,7 @@ private fun calculateViewBoxTransform(
 /**
  * Collects clip paths and masks from defs elements.
  */
-private fun collectDefs(elements: List<SvgElement>): DefsRegistry {
+private fun collectDefs(elements: List<SvgElement>, textMeasurer: TextMeasurer? = null): DefsRegistry {
     val clipPaths = mutableMapOf<String, SvgClipPath>()
     val masks = mutableMapOf<String, SvgMask>()
 
@@ -1069,7 +1083,7 @@ private fun collectDefs(elements: List<SvgElement>): DefsRegistry {
     }
 
     elements.forEach { collect(it) }
-    return DefsRegistry(clipPaths, masks)
+    return DefsRegistry(clipPaths, masks, textMeasurer)
 }
 
 private fun DrawScope.drawSvgElement(element: SvgElement, ctx: DrawContext, registry: DefsRegistry = DefsRegistry()) {
@@ -1091,13 +1105,9 @@ private fun DrawScope.drawSvgElement(element: SvgElement, ctx: DrawContext, regi
         is SvgDefs -> {} // Defs are processed separately, not drawn
         is SvgClipPath -> {} // ClipPaths are applied via style, not drawn directly
         is SvgMask -> {} // Masks are applied via style, not drawn directly
-        // New elements - not rendered directly or not yet implemented
-        is SvgText -> {} // TODO: Text rendering requires font handling
-        is SvgImage -> {} // TODO: Image embedding not yet implemented
+        is SvgText -> drawSvgText(element, ctx, registry.textMeasurer)
         is SvgLinearGradient -> {} // Gradients are referenced, not drawn directly
         is SvgRadialGradient -> {} // Gradients are referenced, not drawn directly
-        is SvgSymbol -> {} // Symbols are defined, not drawn directly
-        is SvgUse -> {} // TODO: Use element requires resolving references
     }
 }
 
@@ -1640,6 +1650,64 @@ private fun DrawScope.drawSvgPolygon(polygon: SvgPolygon, ctx: DrawContext) {
     }
 }
 
+/**
+ * Draws SVG text element.
+ */
+private fun DrawScope.drawSvgText(text: SvgText, ctx: DrawContext, textMeasurer: TextMeasurer?) {
+    if (textMeasurer == null) return
+
+    val fontSize = text.fontSize ?: 12f
+    val fontWeight = when (text.fontWeight) {
+        "bold", "700" -> FontWeight.Bold
+        "normal", "400" -> FontWeight.Normal
+        "100" -> FontWeight.Thin
+        "200" -> FontWeight.ExtraLight
+        "300" -> FontWeight.Light
+        "500" -> FontWeight.Medium
+        "600" -> FontWeight.SemiBold
+        "800" -> FontWeight.ExtraBold
+        "900" -> FontWeight.Black
+        else -> FontWeight.Normal
+    }
+    val fontFamily = when (text.fontFamily) {
+        "serif" -> FontFamily.Serif
+        "monospace" -> FontFamily.Monospace
+        "cursive" -> FontFamily.Cursive
+        else -> FontFamily.SansSerif
+    }
+
+    val textStyle = TextStyle(
+        color = ctx.fillColor ?: ctx.strokeColor,
+        fontSize = fontSize.sp,
+        fontWeight = fontWeight,
+        fontFamily = fontFamily,
+        letterSpacing = text.letterSpacing?.sp ?: 0.sp
+    )
+
+    val textLayoutResult = textMeasurer.measure(text.text, textStyle)
+
+    // Calculate x position based on text-anchor
+    val x = when (text.textAnchor) {
+        TextAnchor.MIDDLE -> text.x - textLayoutResult.size.width / 2f
+        TextAnchor.END -> text.x - textLayoutResult.size.width
+        else -> text.x
+    }
+
+    // Calculate y position based on dominant-baseline
+    // SVG text y position is at the baseline, not top
+    val y = when (text.dominantBaseline) {
+        DominantBaseline.MIDDLE, DominantBaseline.CENTRAL -> text.y - textLayoutResult.size.height / 2f
+        DominantBaseline.HANGING, DominantBaseline.TEXT_TOP -> text.y
+        DominantBaseline.IDEOGRAPHIC, DominantBaseline.TEXT_BOTTOM -> text.y - textLayoutResult.size.height
+        else -> text.y - textLayoutResult.firstBaseline // AUTO, ALPHABETIC - baseline alignment
+    }
+
+    drawText(
+        textLayoutResult = textLayoutResult,
+        topLeft = Offset(x, y)
+    )
+}
+
 // ============================================
 // Animated SVG Drawing
 // ============================================
@@ -1653,7 +1721,8 @@ private fun DrawScope.drawAnimatedSvg(
     tint: Color,
     strokeWidthOverride: Float?,
     progressMap: Map<AnimationKey, State<Float>>,
-    pathCache: Map<SvgElement, CachedPathInfo>
+    pathCache: Map<SvgElement, CachedPathInfo>,
+    textMeasurer: TextMeasurer? = null
 ) {
     val viewBox = svg.effectiveViewBox
     val strokeWidth = strokeWidthOverride ?: svg.strokeWidth
@@ -1682,7 +1751,7 @@ private fun DrawScope.drawAnimatedSvg(
     val fillColor = svg.fill?.let { if (it == Color.Unspecified) tint else it }
     val strokeColor = svg.stroke?.let { if (it == Color.Unspecified) tint else it }
 
-    val registry = collectDefs(svg.children)
+    val registry = collectDefs(svg.children, textMeasurer)
 
     val ctx = DrawContext(
         strokeColor = strokeColor ?: tint,
@@ -1734,13 +1803,9 @@ private fun DrawScope.drawAnimatedSvgElement(
         is SvgDefs -> {}
         is SvgClipPath -> {}
         is SvgMask -> {}
-        // New elements - not rendered directly or not yet implemented
-        is SvgText -> {}
-        is SvgImage -> {}
+        is SvgText -> drawSvgText(element, ctx, registry.textMeasurer)
         is SvgLinearGradient -> {}
         is SvgRadialGradient -> {}
-        is SvgSymbol -> {}
-        is SvgUse -> {}
     }
 }
 
