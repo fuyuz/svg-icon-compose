@@ -57,151 +57,133 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Simple check icon using DSL.
  */
-object DslCheckIcon : SvgIcon {
-    override val svg = Svg(
-        children = listOf(
-            SvgPath("M20 6L9 17l-5-5")
-        )
+private val DslCheckIcon = Svg(
+    children = listOf(
+        SvgPath("M20 6L9 17l-5-5")
     )
-}
+)
 
 /**
  * Filled circle with border using SvgStyled.
  */
-object DslFilledCircle : SvgIcon {
-    override val svg = Svg(
-        children = listOf(
-            SvgStyled(
-                element = SvgCircle(12f, 12f, 10f),
-                style = SvgStyle(
-                    fill = Color(0xFF3B82F6).copy(alpha = 0.3f),
-                    stroke = Color(0xFF3B82F6),
-                    strokeWidth = 2f
-                )
+private val DslFilledCircle = Svg(
+    children = listOf(
+        SvgStyled(
+            element = SvgCircle(12f, 12f, 10f),
+            style = SvgStyle(
+                fill = Color(0xFF3B82F6).copy(alpha = 0.3f),
+                stroke = Color(0xFF3B82F6),
+                strokeWidth = 2f
             )
         )
     )
-}
+)
 
 /**
  * Icon with custom stroke width and dashed line.
  */
-object DslDashedRect : SvgIcon {
-    override val svg = Svg(
-        children = listOf(
-            SvgStyled(
-                element = SvgRect(4f, 4f, 16f, 16f, rx = 2f),
-                style = SvgStyle(
-                    strokeWidth = 2f,
-                    strokeDasharray = listOf(4f, 2f),
-                    strokeLinecap = LineCap.ROUND
-                )
+private val DslDashedRect = Svg(
+    children = listOf(
+        SvgStyled(
+            element = SvgRect(4f, 4f, 16f, 16f, rx = 2f),
+            style = SvgStyle(
+                strokeWidth = 2f,
+                strokeDasharray = listOf(4f, 2f),
+                strokeLinecap = LineCap.ROUND
             )
         )
     )
-}
+)
 
 /**
  * Icon with transform (rotated square).
  */
-object DslRotatedSquare : SvgIcon {
-    override val svg = Svg(
-        stroke = null,  // no stroke
-        children = listOf(
-            SvgStyled(
-                element = SvgRect(6f, 6f, 12f, 12f),
-                style = SvgStyle(
-                    transform = SvgTransform.Rotate(45f, 12f, 12f),
-                    fill = Color(0xFF22C55E)
-                )
+private val DslRotatedSquare = Svg(
+    stroke = null,  // no stroke
+    children = listOf(
+        SvgStyled(
+            element = SvgRect(6f, 6f, 12f, 12f),
+            style = SvgStyle(
+                transform = SvgTransform.Rotate(45f, 12f, 12f),
+                fill = Color(0xFF22C55E)
             )
         )
     )
-}
+)
 
 /**
  * Animated check icon with staggered animation using DSL.
  */
-object DslAnimatedCheck : SvgIcon {
-    override val svg = Svg(
-        children = listOf(
-            // Circle appears first
-            SvgAnimated(
-                element = SvgCircle(12f, 12f, 10f),
-                animations = listOf(
-                    SvgAnimate.StrokeDraw(dur = 1.seconds)
-                )
-            ),
-            // Checkmark appears after circle
-            SvgAnimated(
-                element = SvgPath("M8 12l3 3 5-6"),
-                animations = listOf(
-                    SvgAnimate.StrokeDraw(dur = 500.milliseconds, delay = 1.seconds)
-                )
+private val DslAnimatedCheck = Svg(
+    children = listOf(
+        // Circle appears first
+        SvgAnimated(
+            element = SvgCircle(12f, 12f, 10f),
+            animations = listOf(
+                SvgAnimate.StrokeDraw(dur = 1.seconds)
+            )
+        ),
+        // Checkmark appears after circle
+        SvgAnimated(
+            element = SvgPath("M8 12l3 3 5-6"),
+            animations = listOf(
+                SvgAnimate.StrokeDraw(dur = 500.milliseconds, delay = 1.seconds)
             )
         )
     )
-}
+)
 
 /**
  * Icon with inline styles using stroke/fill parameters.
  */
-object DslStyledIcon : SvgIcon {
-    override val svg = Svg(
-        children = svg {
-            // Circle with custom fill and stroke
-            circle(12, 12, 10, fill = Color(0xFF3B82F6).copy(alpha = 0.2f), stroke = Color(0xFF3B82F6))
-            // Path with custom stroke color
-            path("M8 12l3 3 5-6", stroke = Color(0xFF22C55E), strokeWidth = 3f)
-        }
-    )
-}
+private val DslStyledIcon = Svg(
+    children = svg {
+        // Circle with custom fill and stroke
+        circle(12, 12, 10, fill = Color(0xFF3B82F6).copy(alpha = 0.2f), stroke = Color(0xFF3B82F6))
+        // Path with custom stroke color
+        path("M8 12l3 3 5-6", stroke = Color(0xFF22C55E), strokeWidth = 3f)
+    }
+)
 
 /**
  * Icon built with svg {} builder.
  */
-object DslBuilderIcon : SvgIcon {
-    override val svg = Svg(
-        children = svg {
-            circle(12, 12, 10)
-            path("M8 12l3 3 5-6")
-        }
-    )
-}
+private val DslBuilderIcon = Svg(
+    children = svg {
+        circle(12, 12, 10)
+        path("M8 12l3 3 5-6")
+    }
+)
 
 /**
  * Animated icon using svg {} builder with animation blocks.
  */
-object DslBuilderAnimatedIcon : SvgIcon {
-    override val svg = Svg(
-        children = svg {
-            // Circle with stroke draw animation
-            circle(12, 12, 10) {
-                strokeDraw(dur = 1.seconds)
-            }
-            // Path with delayed stroke draw
-            path("M8 12l3 3 5-6") {
-                strokeDraw(dur = 500.milliseconds, delay = 1.seconds)
-            }
+private val DslBuilderAnimatedIcon = Svg(
+    children = svg {
+        // Circle with stroke draw animation
+        circle(12, 12, 10) {
+            strokeDraw(dur = 1.seconds)
         }
-    )
-}
+        // Path with delayed stroke draw
+        path("M8 12l3 3 5-6") {
+            strokeDraw(dur = 500.milliseconds, delay = 1.seconds)
+        }
+    }
+)
 
 /**
  * Rotating element animation.
  */
-object DslRotatingIcon : SvgIcon {
-    override val svg = Svg(
-        children = svg {
-            // Static outer circle
-            circle(12, 12, 10)
-            // Rotating inner element
-            path("M12 6v6l4 2") {
-                rotate(from = 0f, to = 360f, dur = 2.seconds)
-            }
+private val DslRotatingIcon = Svg(
+    children = svg {
+        // Static outer circle
+        circle(12, 12, 10)
+        // Rotating inner element
+        path("M12 6v6l4 2") {
+            rotate(from = 0f, to = 360f, dur = 2.seconds)
         }
-    )
-}
+    }
+)
 
 fun main() = application {
     Window(
@@ -239,13 +221,13 @@ fun App() {
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AllIcons.entries.forEach { (name, icon) ->
+                    AllIcons.entries.forEach { (name, svg) ->
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             SvgIcon(
-                                icon = icon,
+                                svg = svg,
                                 contentDescription = name,
                                 modifier = Modifier.size(48.dp),
                                 tint = Color.White
@@ -274,7 +256,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         SvgIcon(
-                            icon = Icons.Check,
+                            svg = Icons.Check,
                             contentDescription = "Check",
                             modifier = Modifier.size(48.dp),
                             tint = Color(0xFF22C55E)
@@ -286,7 +268,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         SvgIcon(
-                            icon = Icons.ArrowRight,
+                            svg = Icons.ArrowRight,
                             contentDescription = "ArrowRight",
                             modifier = Modifier.size(48.dp),
                             tint = Color(0xFF3B82F6)
@@ -298,7 +280,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         SvgIcon(
-                            icon = Icons.Search,
+                            svg = Icons.Search,
                             contentDescription = "Search",
                             modifier = Modifier.size(48.dp),
                             tint = Color(0xFFF59E0B)
@@ -323,7 +305,7 @@ fun App() {
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             SvgIcon(
-                                icon = Icons.Check,
+                                svg = Icons.Check,
                                 contentDescription = "Check",
                                 modifier = Modifier.size(iconSize),
                                 tint = Color(0xFF22C55E)
@@ -356,7 +338,7 @@ fun App() {
                         Color(0xFF8B5CF6)
                     ).forEach { color ->
                         SvgIcon(
-                            icon = Icons.ArrowRight,
+                            svg = Icons.ArrowRight,
                             contentDescription = "Arrow Right",
                             modifier = Modifier.size(32.dp),
                             tint = color
@@ -380,7 +362,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         AnimatedSvgIcon(
-                            icon = Icons.Loader,
+                            svg = Icons.Loader,
                             contentDescription = "Loader",
                             modifier = Modifier.size(48.dp),
                             tint = Color(0xFF3B82F6)
@@ -394,7 +376,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         AnimatedSvgIcon(
-                            icon = Icons.HeartPulse,
+                            svg = Icons.HeartPulse,
                             contentDescription = "Heart Pulse",
                             modifier = Modifier.size(48.dp),
                             tint = Color(0xFFEF4444)
@@ -408,7 +390,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         AnimatedSvgIcon(
-                            icon = Icons.BellRing,
+                            svg = Icons.BellRing,
                             contentDescription = "Bell Ring",
                             modifier = Modifier.size(48.dp),
                             tint = Color(0xFFF59E0B)
@@ -440,7 +422,7 @@ fun App() {
                     ) {
                         key(bellKey) {
                             AnimatedSvgIcon(
-                                icon = Icons.BellRing,
+                                svg = Icons.BellRing,
                                 contentDescription = "Click to ring",
                                 modifier = Modifier.size(48.dp),
                                 tint = if (bellAnimating) Color(0xFFF59E0B) else Color.Gray,
@@ -469,7 +451,7 @@ fun App() {
                     ) {
                         key(loaderKey) {
                             AnimatedSvgIcon(
-                                icon = Icons.Loader,
+                                svg = Icons.Loader,
                                 contentDescription = "Click to load",
                                 modifier = Modifier.size(48.dp),
                                 tint = if (loaderAnimating) Color(0xFF3B82F6) else Color.Gray,
@@ -517,7 +499,7 @@ fun App() {
                         }
                     ) {
                         AnimatedSvgIcon(
-                            icon = DslAnimatedCheck,
+                            svg = DslAnimatedCheck,
                             animationState = reverseAnimationState,
                             contentDescription = "Press to animate",
                             modifier = Modifier.size(48.dp),
@@ -551,7 +533,7 @@ fun App() {
                         }
                     ) {
                         AnimatedSvgIcon(
-                            icon = DslAnimatedCheck,
+                            svg = DslAnimatedCheck,
                             animationState = snapAnimationState,
                             contentDescription = "Press to animate",
                             modifier = Modifier.size(48.dp),
@@ -682,7 +664,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         SvgIcon(
-                            icon = DslCheckIcon,
+                            svg = DslCheckIcon,
                             contentDescription = "DSL Check",
                             modifier = Modifier.size(48.dp),
                             tint = Color(0xFF22C55E)
@@ -696,7 +678,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         SvgIcon(
-                            icon = DslFilledCircle,
+                            svg = DslFilledCircle,
                             contentDescription = "Filled Circle",
                             modifier = Modifier.size(48.dp),
                             tint = Color.White
@@ -710,7 +692,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         SvgIcon(
-                            icon = DslDashedRect,
+                            svg = DslDashedRect,
                             contentDescription = "Dashed Rect",
                             modifier = Modifier.size(48.dp),
                             tint = Color(0xFFF59E0B)
@@ -724,7 +706,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         SvgIcon(
-                            icon = DslRotatedSquare,
+                            svg = DslRotatedSquare,
                             contentDescription = "Rotated Square",
                             modifier = Modifier.size(48.dp),
                             tint = Color.White
@@ -738,7 +720,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         SvgIcon(
-                            icon = DslBuilderIcon,
+                            svg = DslBuilderIcon,
                             contentDescription = "Builder Icon",
                             modifier = Modifier.size(48.dp),
                             tint = Color(0xFF8B5CF6)
@@ -752,7 +734,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         SvgIcon(
-                            icon = DslStyledIcon,
+                            svg = DslStyledIcon,
                             contentDescription = "Styled Icon",
                             modifier = Modifier.size(48.dp),
                             tint = Color.White
@@ -777,7 +759,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         AnimatedSvgIcon(
-                            icon = DslAnimatedCheck,
+                            svg = DslAnimatedCheck,
                             contentDescription = "Animated Check",
                             modifier = Modifier.size(48.dp),
                             tint = Color(0xFF22C55E)
@@ -791,7 +773,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         AnimatedSvgIcon(
-                            icon = DslBuilderAnimatedIcon,
+                            svg = DslBuilderAnimatedIcon,
                             contentDescription = "Builder Animated",
                             modifier = Modifier.size(48.dp),
                             tint = Color(0xFF3B82F6)
@@ -805,7 +787,7 @@ fun App() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         AnimatedSvgIcon(
-                            icon = DslRotatingIcon,
+                            svg = DslRotatingIcon,
                             contentDescription = "Rotating",
                             modifier = Modifier.size(48.dp),
                             tint = Color(0xFFF59E0B)

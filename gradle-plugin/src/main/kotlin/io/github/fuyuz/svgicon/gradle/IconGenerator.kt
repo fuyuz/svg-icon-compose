@@ -7,15 +7,27 @@ import java.io.File
 
 /**
  * Generates Kotlin icon files from SVG files using KotlinPoet.
+ *
+ * Generated structure:
+ * ```kotlin
+ * // Icons.kt
+ * object Icons {
+ *     val Check: Svg get() = _Check
+ *     val Menu: Svg get() = _Menu
+ * }
+ *
+ * private val _Check: Svg = Svg(...)
+ * private val _Menu: Svg = Svg(...)
+ * ```
  */
 class IconGenerator(
     private val visibility: IconVisibility = IconVisibility.INTERNAL
 ) {
-    private val svgIconClass = ClassName("io.github.fuyuz.svgicon", "SvgIcon")
     private val svgClass = ClassName("io.github.fuyuz.svgicon.core", "Svg")
 
     fun generateIcons(svgDir: File, packageName: String, outputDir: File): List<String> {
         val iconNames = mutableListOf<String>()
+        val svgCodeBlocks = mutableMapOf<String, CodeBlock>()
 
         svgDir.listFiles { file -> file.extension == "svg" }?.forEach { svgFile ->
             try {
@@ -23,48 +35,70 @@ class IconGenerator(
                 val svgContent = svgFile.readText()
                 val svgCodeBlock = SvgCodeGenerator.generateSvgCodeBlock(svgContent)
 
-                val fileSpec = generateIconFile(iconName, packageName, svgCodeBlock)
-                fileSpec.writeTo(outputDir)
                 iconNames.add(iconName)
+                svgCodeBlocks[iconName] = svgCodeBlock
             } catch (e: Exception) {
                 System.err.println("Error processing ${svgFile.name}: ${e.message}")
             }
         }
 
         if (iconNames.isNotEmpty()) {
+            generateIconsFile(iconNames, svgCodeBlocks, packageName, outputDir)
             generateAllIconsFile(iconNames, packageName, outputDir)
         }
 
         return iconNames
     }
 
-    private fun generateIconFile(iconName: String, packageName: String, svgCodeBlock: CodeBlock): FileSpec {
-        val svgProperty = PropertySpec.builder("svg", svgClass)
-            .addModifiers(KModifier.OVERRIDE)
-            .initializer(svgCodeBlock)
-            .build()
-
+    /**
+     * Generates a single Icons.kt file containing:
+     * - Icons object with public accessors
+     * - Private val declarations for each icon
+     */
+    private fun generateIconsFile(
+        iconNames: List<String>,
+        svgCodeBlocks: Map<String, CodeBlock>,
+        packageName: String,
+        outputDir: File
+    ) {
         val visibilityModifier = when (visibility) {
             IconVisibility.PUBLIC -> KModifier.PUBLIC
             IconVisibility.INTERNAL -> KModifier.INTERNAL
         }
 
-        val iconObject = TypeSpec.objectBuilder(iconName)
+        val iconsObjectBuilder = TypeSpec.objectBuilder("Icons")
             .addModifiers(visibilityModifier)
-            .addSuperinterface(svgIconClass)
-            .addKdoc("$iconName icon.\nAuto-generated from SVG file.")
-            .addProperty(svgProperty)
-            .build()
+            .addKdoc("Container for all icons.\nUsage: Icons.Check, Icons.Menu, etc.")
 
-        return FileSpec.builder(packageName, iconName)
-            .addType(iconObject)
-            .build()
+        // Add public properties that delegate to private vals
+        iconNames.sorted().forEach { name ->
+            val property = PropertySpec.builder(name, svgClass)
+                .getter(FunSpec.getterBuilder().addStatement("return _$name").build())
+                .build()
+            iconsObjectBuilder.addProperty(property)
+        }
+
+        val fileSpecBuilder = FileSpec.builder(packageName, "Icons")
+            .addType(iconsObjectBuilder.build())
+
+        // Add private val declarations for each icon
+        iconNames.sorted().forEach { name ->
+            val svgCodeBlock = svgCodeBlocks[name] ?: return@forEach
+            val privateProperty = PropertySpec.builder("_$name", svgClass)
+                .addModifiers(KModifier.PRIVATE)
+                .initializer(svgCodeBlock)
+                .addKdoc("$name icon.\nAuto-generated from SVG file.")
+                .build()
+            fileSpecBuilder.addProperty(privateProperty)
+        }
+
+        fileSpecBuilder.build().writeTo(outputDir)
     }
 
     private fun generateAllIconsFile(iconNames: List<String>, packageName: String, outputDir: File) {
         val pairType = ClassName("kotlin", "Pair").parameterizedBy(
             String::class.asClassName(),
-            svgIconClass
+            svgClass
         )
         val listType = ClassName("kotlin.collections", "List").parameterizedBy(pairType)
 
@@ -73,7 +107,7 @@ class IconGenerator(
             .indent()
 
         iconNames.sorted().forEachIndexed { index, name ->
-            entriesBuilder.add("%S to %L", name, name)
+            entriesBuilder.add("%S to Icons.%L", name, name)
             if (index < iconNames.size - 1) entriesBuilder.add(",\n")
         }
 
@@ -96,22 +130,6 @@ class IconGenerator(
 
         FileSpec.builder(packageName, "AllIcons")
             .addType(allIconsObject)
-            .build()
-            .writeTo(outputDir)
-
-        val iconsObjectBuilder = TypeSpec.objectBuilder("Icons")
-            .addModifiers(visibilityModifier)
-            .addKdoc("Container for all icons.\nUsage: Icons.Check, Icons.Menu, etc.")
-
-        iconNames.sorted().forEach { name ->
-            val property = PropertySpec.builder(name, svgIconClass)
-                .initializer("$packageName.$name")
-                .build()
-            iconsObjectBuilder.addProperty(property)
-        }
-
-        FileSpec.builder(packageName, "Icons")
-            .addType(iconsObjectBuilder.build())
             .build()
             .writeTo(outputDir)
     }
