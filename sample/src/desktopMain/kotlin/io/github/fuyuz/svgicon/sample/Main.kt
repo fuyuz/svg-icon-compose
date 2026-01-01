@@ -33,24 +33,8 @@ import androidx.compose.ui.window.application
 import io.github.fuyuz.svgicon.AnimatedSvgIcon
 import io.github.fuyuz.svgicon.SvgIcon
 import io.github.fuyuz.svgicon.rememberSvgIconAnimationState
-import io.github.fuyuz.svgicon.core.AnimationDirection
-import io.github.fuyuz.svgicon.core.LineCap
-import io.github.fuyuz.svgicon.core.MotionRotate
-import io.github.fuyuz.svgicon.core.Svg
-import io.github.fuyuz.svgicon.core.SvgAnimate
-import io.github.fuyuz.svgicon.core.SvgAnimated
-import io.github.fuyuz.svgicon.core.SvgCircle
-import io.github.fuyuz.svgicon.core.SvgLine
-import io.github.fuyuz.svgicon.core.SvgPath
-import io.github.fuyuz.svgicon.core.SvgPolygon
-import io.github.fuyuz.svgicon.core.SvgRect
-import io.github.fuyuz.svgicon.core.SvgStyle
-import io.github.fuyuz.svgicon.core.SvgStyled
-import io.github.fuyuz.svgicon.core.SvgTransform
-import io.github.fuyuz.svgicon.core.ViewBox
-import io.github.fuyuz.svgicon.core.TransformType
-import io.github.fuyuz.svgicon.core.parseSvg
-import io.github.fuyuz.svgicon.core.svg
+import io.github.fuyuz.svgicon.core.*
+import io.github.fuyuz.svgicon.core.dsl.*
 import io.github.fuyuz.svgicon.sample.generated.icons.AllIcons
 import io.github.fuyuz.svgicon.sample.generated.icons.Icons
 import kotlin.time.Duration.Companion.milliseconds
@@ -113,6 +97,54 @@ private val DslRotatedSquare = Svg(
                 transform = SvgTransform.Rotate(45f, 12f, 12f),
                 fill = Color(0xFF22C55E)
             )
+        )
+    )
+)
+
+/**
+ * Text icon example.
+ */
+private val DslTextIcon = Svg(
+    viewBox = ViewBox(0f, 0f, 48f, 24f),
+    stroke = null,
+    fill = Color.Unspecified,
+    children = listOf(
+        SvgText(
+            text = "Hello",
+            x = 24f,
+            y = 16f,
+            fontSize = 14f,
+            fontWeight = "bold",
+            textAnchor = TextAnchor.MIDDLE,
+            dominantBaseline = DominantBaseline.MIDDLE
+        )
+    )
+)
+
+/**
+ * Combined text and graphics.
+ */
+private val DslBadgeIcon = Svg(
+    viewBox = ViewBox(0f, 0f, 48f, 24f),
+    stroke = null,
+    children = listOf(
+        // Background rounded rect
+        SvgStyled(
+            element = SvgRect(2f, 2f, 44f, 20f, rx = 4f),
+            style = SvgStyle(fill = Color(0xFF3B82F6))
+        ),
+        // Text label
+        SvgStyled(
+            element = SvgText(
+                text = "NEW",
+                x = 24f,
+                y = 12f,
+                fontSize = 10f,
+                fontWeight = "bold",
+                textAnchor = TextAnchor.MIDDLE,
+                dominantBaseline = DominantBaseline.MIDDLE
+            ),
+            style = SvgStyle(fill = Color.White)
         )
     )
 )
@@ -894,6 +926,34 @@ fun App() {
                             tint = Color.White
                         )
                         Text("stroke/fill", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Text icon
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = DslTextIcon,
+                            contentDescription = "Text Icon",
+                            modifier = Modifier.size(96.dp, 48.dp),
+                            tint = Color(0xFF10B981)
+                        )
+                        Text("SvgText", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Badge icon
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = DslBadgeIcon,
+                            contentDescription = "Badge",
+                            modifier = Modifier.size(96.dp, 48.dp),
+                            tint = Color.White
+                        )
+                        Text("Badge", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 }
 

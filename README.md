@@ -135,6 +135,50 @@ fun MyScreen() {
 }
 ```
 
+### DSL Builder
+
+Create SVG icons directly in Kotlin with the type-safe DSL:
+
+```kotlin
+import io.github.fuyuz.svgicon.core.*
+import io.github.fuyuz.svgicon.core.dsl.*
+
+// Simple icon
+val checkIcon = svg {
+    path("M20 6L9 17l-5-5")
+}
+
+// Icon with text
+val badgeIcon = svg(viewBox = ViewBox(0f, 0f, 48f, 24f)) {
+    rect(2, 2, 44, 20, rx = 4, fill = Color.Blue)
+    text("NEW", x = 24, y = 12, fontSize = 10f, fontWeight = "bold",
+         textAnchor = TextAnchor.MIDDLE, fill = Color.White)
+}
+
+// Animated icon
+val animatedCheck = svg {
+    animatedCircle(12, 12, 10, dur = 1.seconds)
+    animatedPath("M8 12l3 3 5-6", dur = 500.milliseconds, delay = 500.milliseconds)
+}
+```
+
+### Animated Icons
+
+Use `AnimatedSvgIcon` for icons with SMIL animations:
+
+```kotlin
+@Composable
+fun AnimatedIcon() {
+    AnimatedSvgIcon(
+        svg = animatedCheck,
+        contentDescription = "Animated Check",
+        modifier = Modifier.size(48.dp),
+        iterations = 1,  // or Int.MAX_VALUE for infinite
+        onAnimationEnd = { /* callback */ }
+    )
+}
+```
+
 ### Runtime SVG Parsing
 
 For dynamic SVG content, use `parseSvg` to parse SVG strings at runtime:
@@ -175,6 +219,7 @@ fun DynamicIcon() {
 | `<line>` | ✅ |
 | `<polyline>` | ✅ |
 | `<polygon>` | ✅ |
+| `<text>` | ✅ (fontSize, fontWeight, fontFamily, textAnchor, dominantBaseline) |
 | `<g>` | ✅ (groups) |
 
 ### Attributes

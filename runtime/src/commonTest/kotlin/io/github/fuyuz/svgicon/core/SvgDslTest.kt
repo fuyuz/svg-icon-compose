@@ -1,6 +1,7 @@
 package io.github.fuyuz.svgicon.core
 
 import androidx.compose.ui.geometry.Offset
+import io.github.fuyuz.svgicon.core.dsl.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
