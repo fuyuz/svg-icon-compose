@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-target:
     strategy:
       matrix:
         include:
@@ -63,3 +63,9 @@ jobs:
         with:
           name: test-results-${{ matrix.target }}
           path: '**/build/reports/tests/'
+
+  build:
+    needs: build-target
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All builds passed"
