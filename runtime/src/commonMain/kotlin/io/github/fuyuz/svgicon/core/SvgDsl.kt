@@ -767,6 +767,10 @@ sealed interface SvgAnimate {
     val keySplines: KeySplines?
     /** Number of animation iterations. Negative value (e.g., -1) means infinite. */
     val iterations: Int
+    /** Animation direction (normal, reverse, alternate, alternate-reverse). */
+    val direction: AnimationDirection
+    /** How styles are applied before/after animation. */
+    val fillMode: AnimationFillMode
 
     /** Returns true if this animation repeats infinitely. */
     val isInfinite: Boolean get() = iterations < 0
@@ -790,7 +794,9 @@ sealed interface SvgAnimate {
         val reverse: Boolean = false,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -803,7 +809,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -816,7 +824,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -829,7 +839,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -842,7 +854,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     // ============================================
@@ -859,7 +873,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     // ============================================
@@ -876,7 +892,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     // ============================================
@@ -893,7 +911,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -906,7 +926,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -919,7 +941,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -932,7 +956,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -945,7 +971,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -958,7 +986,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -971,7 +1001,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -984,7 +1016,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -997,7 +1031,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -1010,7 +1046,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -1023,7 +1061,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -1036,7 +1076,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -1049,7 +1091,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -1062,7 +1106,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     /**
@@ -1075,7 +1121,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     // ============================================
@@ -1093,7 +1141,9 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 
     // ============================================
@@ -1111,7 +1161,9 @@ sealed interface SvgAnimate {
         val rotate: MotionRotate = MotionRotate.NONE,
         override val calcMode: CalcMode = CalcMode.LINEAR,
         override val keySplines: KeySplines? = null,
-        override val iterations: Int = INFINITE
+        override val iterations: Int = INFINITE,
+        override val direction: AnimationDirection = AnimationDirection.NORMAL,
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) : SvgAnimate
 }
 
@@ -1378,6 +1430,22 @@ class SvgBuilder {
     }
 
     /**
+     * Ellipse with animation block.
+     */
+    fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number, block: AnimationBuilder.() -> Unit) {
+        val animations = AnimationBuilder().apply(block).build()
+        elements.add(SvgAnimated(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()), animations))
+    }
+
+    /**
+     * Rect with animation block.
+     */
+    fun rect(x: Number, y: Number, width: Number, height: Number, rx: Number = 0, ry: Number = rx, block: AnimationBuilder.() -> Unit) {
+        val animations = AnimationBuilder().apply(block).build()
+        elements.add(SvgAnimated(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()), animations))
+    }
+
+    /**
      * Polyline with vararg points: polyline(5 to 12, 12 to 5, 19 to 12)
      */
     fun polyline(
@@ -1429,6 +1497,40 @@ class SvgBuilder {
         opacity: Float? = null
     ) {
         addWithStyle(SvgPolygon(parsePointsString(points)), stroke, fill, strokeWidth, opacity)
+    }
+
+    /**
+     * Polygon with animation block using vararg points.
+     */
+    fun polygon(vararg points: Pair<Number, Number>, block: AnimationBuilder.() -> Unit) {
+        val offsets = points.map { Offset(it.first.toFloat(), it.second.toFloat()) }
+        val animations = AnimationBuilder().apply(block).build()
+        elements.add(SvgAnimated(SvgPolygon(offsets), animations))
+    }
+
+    /**
+     * Polygon with animation block from points string.
+     */
+    fun polygon(points: String, block: AnimationBuilder.() -> Unit) {
+        val animations = AnimationBuilder().apply(block).build()
+        elements.add(SvgAnimated(SvgPolygon(parsePointsString(points)), animations))
+    }
+
+    /**
+     * Polyline with animation block using vararg points.
+     */
+    fun polyline(vararg points: Pair<Number, Number>, block: AnimationBuilder.() -> Unit) {
+        val offsets = points.map { Offset(it.first.toFloat(), it.second.toFloat()) }
+        val animations = AnimationBuilder().apply(block).build()
+        elements.add(SvgAnimated(SvgPolyline(offsets), animations))
+    }
+
+    /**
+     * Polyline with animation block from points string.
+     */
+    fun polyline(points: String, block: AnimationBuilder.() -> Unit) {
+        val animations = AnimationBuilder().apply(block).build()
+        elements.add(SvgAnimated(SvgPolyline(parsePointsString(points)), animations))
     }
 
     private fun parsePointsString(points: String): List<Offset> {
@@ -1559,9 +1661,12 @@ class AnimationBuilder {
         delay: Duration = Duration.ZERO,
         reverse: Boolean = false,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.StrokeDraw(dur, delay, reverse, calcMode, keySplines))
+        animations.add(SvgAnimate.StrokeDraw(dur, delay, reverse, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun opacity(
@@ -1570,9 +1675,26 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Opacity(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Opacity(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
+    }
+
+    fun translate(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
+    ) {
+        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun translateX(
@@ -1581,9 +1703,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_X, from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_X, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun translateY(
@@ -1592,9 +1717,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_Y, from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_Y, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun scale(
@@ -1603,9 +1731,40 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Transform(TransformType.SCALE, from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Transform(TransformType.SCALE, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
+    }
+
+    fun scaleX(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
+    ) {
+        animations.add(SvgAnimate.Transform(TransformType.SCALE_X, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
+    }
+
+    fun scaleY(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
+    ) {
+        animations.add(SvgAnimate.Transform(TransformType.SCALE_Y, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun rotate(
@@ -1614,9 +1773,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Transform(TransformType.ROTATE, from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Transform(TransformType.ROTATE, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun skewX(
@@ -1625,9 +1787,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Transform(TransformType.SKEW_X, from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Transform(TransformType.SKEW_X, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun skewY(
@@ -1636,9 +1801,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Transform(TransformType.SKEW_Y, from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Transform(TransformType.SKEW_Y, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun motion(
@@ -1647,9 +1815,12 @@ class AnimationBuilder {
         delay: Duration = Duration.ZERO,
         rotate: MotionRotate = MotionRotate.NONE,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Motion(path, dur, delay, rotate, calcMode, keySplines))
+        animations.add(SvgAnimate.Motion(path, dur, delay, rotate, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     // Stroke properties
@@ -1659,9 +1830,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.StrokeWidth(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.StrokeWidth(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun strokeOpacity(
@@ -1670,9 +1844,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.StrokeOpacity(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.StrokeOpacity(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun strokeDasharray(
@@ -1681,9 +1858,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.StrokeDasharray(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.StrokeDasharray(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun strokeDashoffset(
@@ -1692,9 +1872,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.StrokeDashoffset(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.StrokeDashoffset(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     // Fill properties
@@ -1704,9 +1887,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.FillOpacity(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.FillOpacity(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     // Geometric properties
@@ -1716,9 +1902,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Cx(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Cx(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun cy(
@@ -1727,9 +1916,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Cy(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Cy(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun r(
@@ -1738,9 +1930,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.R(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.R(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun rx(
@@ -1749,9 +1944,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Rx(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Rx(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun ry(
@@ -1760,9 +1958,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Ry(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Ry(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun x(
@@ -1771,9 +1972,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.X(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.X(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun y(
@@ -1782,9 +1986,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Y(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Y(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun width(
@@ -1793,9 +2000,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Width(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Width(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun height(
@@ -1804,9 +2014,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Height(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Height(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun x1(
@@ -1815,9 +2028,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.X1(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.X1(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun y1(
@@ -1826,9 +2042,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Y1(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Y1(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun x2(
@@ -1837,9 +2056,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.X2(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.X2(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun y2(
@@ -1848,9 +2070,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Y2(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Y2(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun d(
@@ -1859,9 +2084,12 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.D(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.D(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun points(
@@ -1870,28 +2098,31 @@ class AnimationBuilder {
         dur: Duration = DefaultAnimationDuration,
         delay: Duration = Duration.ZERO,
         calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null
+        keySplines: KeySplines? = null,
+        iterations: Int = SvgAnimate.INFINITE,
+        direction: AnimationDirection = AnimationDirection.NORMAL,
+        fillMode: AnimationFillMode = AnimationFillMode.NONE
     ) {
-        animations.add(SvgAnimate.Points(from, to, dur, delay, calcMode, keySplines))
+        animations.add(SvgAnimate.Points(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
     fun build(): List<SvgAnimate> = animations.toList()
 }
 
 /**
- * DSL entry point for building SVG elements.
- * Returns a list of elements to be used as children of an Svg.
+ * DSL entry point for building a complete Svg object with default attributes.
+ * Returns an Svg object that can be used directly in SvgIcon.
  *
  * Example:
  * ```kotlin
- * val elements = svg {
+ * val icon = svg {
  *     path("M20 6L9 17l-5-5")
  *     circle(12, 12, 10)
  * }
  * ```
  */
-inline fun svg(block: SvgBuilder.() -> Unit): List<SvgElement> {
-    return SvgBuilder().apply(block).build()
+inline fun svg(block: SvgBuilder.() -> Unit): Svg {
+    return Svg(children = SvgBuilder().apply(block).build())
 }
 
 /**

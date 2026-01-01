@@ -27,6 +27,8 @@ object SvgCodeGenerator {
     private val transformTypeClass = ClassName("io.github.fuyuz.svgicon.core", "TransformType")
     private val calcModeClass = ClassName("io.github.fuyuz.svgicon.core", "CalcMode")
     private val keySplinesClass = ClassName("io.github.fuyuz.svgicon.core", "KeySplines")
+    private val animationDirectionClass = ClassName("io.github.fuyuz.svgicon.core", "AnimationDirection")
+    private val animationFillModeClass = ClassName("io.github.fuyuz.svgicon.core", "AnimationFillMode")
     private val pathCommandClass = ClassName("io.github.fuyuz.svgicon.core", "PathCommand")
     private val lineCapClass = ClassName("io.github.fuyuz.svgicon.core", "LineCap")
     private val lineJoinClass = ClassName("io.github.fuyuz.svgicon.core", "LineJoin")
@@ -741,7 +743,9 @@ object SvgCodeGenerator {
         val duration: Long, // milliseconds
         val timingFunction: String,
         val delay: Long, // milliseconds
-        val iterationCount: Int
+        val iterationCount: Int,
+        val direction: String = "NORMAL",  // AnimationDirection enum name
+        val fillMode: String = "NONE"      // AnimationFillMode enum name
     )
 
     private val styleTagPattern = Regex("""<style[^>]*>([\s\S]*?)</style>""", RegexOption.IGNORE_CASE)
@@ -1005,18 +1009,50 @@ object SvgCodeGenerator {
     }
 
     private fun parseCssAnimation(value: String): CssAnimation? {
-        val parts = value.trim().split(Regex("\\s+"))
-        if (parts.isEmpty()) return null
+        var processedValue = value.trim()
 
         var name: String? = null
         var duration: Long = 0
         var timingFunction = "ease"
         var delay: Long = 0
         var iterationCount = 1
+        var direction = "NORMAL"
+        var fillMode = "NONE"
+
+        // Extract cubic-bezier() or steps() functions before splitting on whitespace
+        val cubicBezierRegex = Regex("""cubic-bezier\s*\([^)]+\)""", RegexOption.IGNORE_CASE)
+        val stepsRegex = Regex("""steps\s*\([^)]+\)""", RegexOption.IGNORE_CASE)
+
+        cubicBezierRegex.find(processedValue)?.let { match ->
+            timingFunction = match.value.replace(Regex("\\s+"), "").lowercase()
+            processedValue = processedValue.replace(match.value, "")
+        }
+
+        stepsRegex.find(processedValue)?.let { match ->
+            timingFunction = match.value.replace(Regex("\\s+"), "").lowercase()
+            processedValue = processedValue.replace(match.value, "")
+        }
+
+        val parts = processedValue.split(Regex("\\s+")).filter { it.isNotEmpty() }
+        if (parts.isEmpty()) return null
 
         for (part in parts) {
             val lower = part.lowercase()
             when {
+                // Direction (check before duration since some end with 's')
+                lower == "normal" -> direction = "NORMAL"
+                lower == "reverse" -> direction = "REVERSE"
+                lower == "alternate" -> direction = "ALTERNATE"
+                lower == "alternate-reverse" -> direction = "ALTERNATE_REVERSE"
+                // Fill mode (check before duration since 'forwards'/'backwards' end with 's')
+                lower == "forwards" -> fillMode = "FORWARDS"
+                lower == "backwards" -> fillMode = "BACKWARDS"
+                lower == "both" -> fillMode = "BOTH"
+                // Timing function (check before duration)
+                lower in listOf("linear", "ease", "ease-in", "ease-out", "ease-in-out") -> {
+                    timingFunction = lower
+                }
+                // Duration/delay (e.g., "1s", "500ms")
                 lower.endsWith("ms") -> {
                     val ms = lower.removeSuffix("ms").toFloatOrNull()?.toLong()
                     if (ms != null) {
@@ -1030,29 +1066,40 @@ object SvgCodeGenerator {
                         if (duration == 0L) duration = ms else delay = ms
                     }
                 }
+                // Iteration count
                 lower == "infinite" -> iterationCount = -1  // INFINITE
                 lower.toIntOrNull() != null -> iterationCount = lower.toInt()
-                lower in listOf("linear", "ease", "ease-in", "ease-out", "ease-in-out") -> {
-                    timingFunction = lower
-                }
-                lower.startsWith("cubic-bezier(") -> timingFunction = lower
+                // Animation name
                 name == null && !lower.matches(Regex("^[0-9].*")) -> name = part
             }
         }
 
-        return name?.let { CssAnimation(it, duration, timingFunction, delay, iterationCount) }
+        return name?.let { CssAnimation(it, duration, timingFunction, delay, iterationCount, direction, fillMode) }
     }
 
     private fun cssAnimationToCodeBlocks(animation: CssAnimation, keyframes: CssKeyframes): List<CodeBlock> {
         val result = mutableListOf<CodeBlock>()
 
         // Generate calcMode and keySplines based on timing function
-        val (calcModeStr, keySplinesCode) = when (animation.timingFunction) {
-            "linear" -> "LINEAR" to null
-            "ease" -> "SPLINE" to CodeBlock.of("%T.EASE", keySplinesClass)
-            "ease-in" -> "SPLINE" to CodeBlock.of("%T.EASE_IN", keySplinesClass)
-            "ease-out" -> "SPLINE" to CodeBlock.of("%T.EASE_OUT", keySplinesClass)
-            "ease-in-out" -> "SPLINE" to CodeBlock.of("%T.EASE_IN_OUT", keySplinesClass)
+        val (calcModeStr, keySplinesCode) = when {
+            animation.timingFunction == "linear" -> "LINEAR" to null
+            animation.timingFunction == "ease" -> "SPLINE" to CodeBlock.of("%T.EASE", keySplinesClass)
+            animation.timingFunction == "ease-in" -> "SPLINE" to CodeBlock.of("%T.EASE_IN", keySplinesClass)
+            animation.timingFunction == "ease-out" -> "SPLINE" to CodeBlock.of("%T.EASE_OUT", keySplinesClass)
+            animation.timingFunction == "ease-in-out" -> "SPLINE" to CodeBlock.of("%T.EASE_IN_OUT", keySplinesClass)
+            animation.timingFunction.startsWith("cubic-bezier(") -> {
+                val params = animation.timingFunction
+                    .removePrefix("cubic-bezier(")
+                    .removeSuffix(")")
+                    .split(",")
+                    .mapNotNull { it.trim().toFloatOrNull() }
+                if (params.size == 4) {
+                    "SPLINE" to CodeBlock.of("%T(%Lf, %Lf, %Lf, %Lf)",
+                        keySplinesClass, params[0], params[1], params[2], params[3])
+                } else {
+                    "LINEAR" to null
+                }
+            }
             else -> "LINEAR" to null
         }
 
@@ -1075,20 +1122,23 @@ object SvgCodeGenerator {
                 "opacity" -> {
                     val from = fromValue.toFloatOrNull() ?: 1f
                     val to = toValue.toFloatOrNull() ?: 1f
-                    generateOpacityAnimation(from, to, animation.duration, animation.delay, calcModeStr, keySplinesCode, animation.iterationCount)
+                    generateOpacityAnimation(from, to, animation.duration, animation.delay, calcModeStr, keySplinesCode,
+                        animation.iterationCount, animation.direction, animation.fillMode)
                 }
                 "transform" -> {
                     val fromTransform = parseTransformAnimation(fromValue)
                     val toTransform = parseTransformAnimation(toValue)
                     if (fromTransform != null && toTransform != null && fromTransform.first == toTransform.first) {
                         generateTransformAnimation(fromTransform.first, fromTransform.second, toTransform.second,
-                            animation.duration, animation.delay, calcModeStr, keySplinesCode, animation.iterationCount)
+                            animation.duration, animation.delay, calcModeStr, keySplinesCode,
+                            animation.iterationCount, animation.direction, animation.fillMode)
                     } else null
                 }
                 "stroke-width" -> {
                     val from = fromValue.toFloatOrNull() ?: 2f
                     val to = toValue.toFloatOrNull() ?: 2f
-                    generateStrokeWidthAnimation(from, to, animation.duration, animation.delay, calcModeStr, keySplinesCode, animation.iterationCount)
+                    generateStrokeWidthAnimation(from, to, animation.duration, animation.delay, calcModeStr, keySplinesCode,
+                        animation.iterationCount, animation.direction, animation.fillMode)
                 }
                 else -> null
             }
@@ -1122,33 +1172,39 @@ object SvgCodeGenerator {
         }
     }
 
-    private fun generateOpacityAnimation(from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?, iterations: Int): CodeBlock {
+    private fun generateOpacityAnimation(from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?, iterations: Int, direction: String, fillMode: String): CodeBlock {
         return if (keySplines != null) {
-            CodeBlock.of("%T.Opacity(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L, %L)",
-                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines, iterations)
+            CodeBlock.of("%T.Opacity(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L, %L, %T.%L, %T.%L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines, iterations,
+                animationDirectionClass, direction, animationFillModeClass, fillMode)
         } else {
-            CodeBlock.of("%T.Opacity(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, null, %L)",
-                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, iterations)
+            CodeBlock.of("%T.Opacity(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, null, %L, %T.%L, %T.%L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, iterations,
+                animationDirectionClass, direction, animationFillModeClass, fillMode)
         }
     }
 
-    private fun generateTransformAnimation(type: String, from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?, iterations: Int): CodeBlock {
+    private fun generateTransformAnimation(type: String, from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?, iterations: Int, direction: String, fillMode: String): CodeBlock {
         return if (keySplines != null) {
-            CodeBlock.of("%T.Transform(%T.%L, %Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L, %L)",
-                svgAnimateClass, transformTypeClass, type, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines, iterations)
+            CodeBlock.of("%T.Transform(%T.%L, %Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L, %L, %T.%L, %T.%L)",
+                svgAnimateClass, transformTypeClass, type, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines, iterations,
+                animationDirectionClass, direction, animationFillModeClass, fillMode)
         } else {
-            CodeBlock.of("%T.Transform(%T.%L, %Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, null, %L)",
-                svgAnimateClass, transformTypeClass, type, from, to, durMs, delayMs, calcModeClass, calcMode, iterations)
+            CodeBlock.of("%T.Transform(%T.%L, %Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, null, %L, %T.%L, %T.%L)",
+                svgAnimateClass, transformTypeClass, type, from, to, durMs, delayMs, calcModeClass, calcMode, iterations,
+                animationDirectionClass, direction, animationFillModeClass, fillMode)
         }
     }
 
-    private fun generateStrokeWidthAnimation(from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?, iterations: Int): CodeBlock {
+    private fun generateStrokeWidthAnimation(from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?, iterations: Int, direction: String, fillMode: String): CodeBlock {
         return if (keySplines != null) {
-            CodeBlock.of("%T.StrokeWidth(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L, %L)",
-                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines, iterations)
+            CodeBlock.of("%T.StrokeWidth(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L, %L, %T.%L, %T.%L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines, iterations,
+                animationDirectionClass, direction, animationFillModeClass, fillMode)
         } else {
-            CodeBlock.of("%T.StrokeWidth(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, null, %L)",
-                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, iterations)
+            CodeBlock.of("%T.StrokeWidth(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, null, %L, %T.%L, %T.%L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, iterations,
+                animationDirectionClass, direction, animationFillModeClass, fillMode)
         }
     }
 

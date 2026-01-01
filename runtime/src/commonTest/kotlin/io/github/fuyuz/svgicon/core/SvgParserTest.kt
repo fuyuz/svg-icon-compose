@@ -1043,6 +1043,142 @@ class SvgParserTest {
     }
 
     @Test
+    fun parseAnimationWithDirectionAlternate() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .alternate { animation: fadeIn 1s alternate; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="alternate"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.Opacity>(anim)
+        assertEquals(AnimationDirection.ALTERNATE, anim.direction)
+    }
+
+    @Test
+    fun parseAnimationWithDirectionReverse() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .reversed { animation: fadeIn 1s reverse; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="reversed"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.Opacity>(anim)
+        assertEquals(AnimationDirection.REVERSE, anim.direction)
+    }
+
+    @Test
+    fun parseAnimationWithFillModeForwards() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .forwards { animation: fadeIn 1s forwards; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="forwards"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.Opacity>(anim)
+        assertEquals(AnimationFillMode.FORWARDS, anim.fillMode)
+    }
+
+    @Test
+    fun parseAnimationWithFillModeBoth() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .both { animation: fadeIn 1s both; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="both"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.Opacity>(anim)
+        assertEquals(AnimationFillMode.BOTH, anim.fillMode)
+    }
+
+    @Test
+    fun parseAnimationWithCubicBezier() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .custom { animation: fadeIn 1s cubic-bezier(0.1, 0.2, 0.3, 0.4); }
+                </style>
+                <circle cx="12" cy="12" r="10" class="custom"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.Opacity>(anim)
+        assertEquals(CalcMode.SPLINE, anim.calcMode)
+        assertNotNull(anim.keySplines)
+        assertEquals(0.1f, anim.keySplines?.x1)
+        assertEquals(0.2f, anim.keySplines?.y1)
+        assertEquals(0.3f, anim.keySplines?.x2)
+        assertEquals(0.4f, anim.keySplines?.y2)
+    }
+
+    @Test
+    fun parseAnimationWithCombinedProperties() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .combined { animation: fadeIn 1s ease-in-out 500ms 3 alternate forwards; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="combined"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.Opacity>(anim)
+        assertEquals(1000.milliseconds, anim.dur)
+        assertEquals(500.milliseconds, anim.delay)
+        assertEquals(3, anim.iterations)
+        assertEquals(AnimationDirection.ALTERNATE, anim.direction)
+        assertEquals(AnimationFillMode.FORWARDS, anim.fillMode)
+        assertEquals(CalcMode.SPLINE, anim.calcMode)
+    }
+
+    @Test
     fun parseElementWithFill() {
         val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" fill="red"/></svg>""")
         val styled = svg.children[0] as SvgStyled
