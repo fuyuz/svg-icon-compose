@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -241,8 +242,8 @@ fun App() {
                             SvgIcon(
                                 icon = icon,
                                 contentDescription = name,
-                                tint = Color.White,
-                                size = 48.dp
+                                modifier = Modifier.size(48.dp),
+                                tint = Color.White
                             )
                             Text(
                                 name,
@@ -270,8 +271,8 @@ fun App() {
                         SvgIcon(
                             icon = Icons.Check,
                             contentDescription = "Check",
-                            tint = Color(0xFF22C55E),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF22C55E)
                         )
                         Text("Icons.Check", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -282,8 +283,8 @@ fun App() {
                         SvgIcon(
                             icon = Icons.ArrowRight,
                             contentDescription = "ArrowRight",
-                            tint = Color(0xFF3B82F6),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF3B82F6)
                         )
                         Text("Icons.ArrowRight", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -294,8 +295,8 @@ fun App() {
                         SvgIcon(
                             icon = Icons.Search,
                             contentDescription = "Search",
-                            tint = Color(0xFFF59E0B),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFFF59E0B)
                         )
                         Text("Icons.Search", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -311,7 +312,7 @@ fun App() {
                     horizontalArrangement = Arrangement.spacedBy(24.dp),
                     verticalAlignment = Alignment.Bottom
                 ) {
-                    listOf(16.dp, 24.dp, 32.dp, 48.dp, 64.dp).forEach { size ->
+                    listOf(16.dp, 24.dp, 32.dp, 48.dp, 64.dp).forEach { iconSize ->
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -319,11 +320,11 @@ fun App() {
                             SvgIcon(
                                 icon = Icons.Check,
                                 contentDescription = "Check",
-                                tint = Color(0xFF22C55E),
-                                size = size
+                                modifier = Modifier.size(iconSize),
+                                tint = Color(0xFF22C55E)
                             )
                             Text(
-                                "${size.value.toInt()}dp",
+                                "${iconSize.value.toInt()}dp",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color.Gray
                             )
@@ -352,8 +353,8 @@ fun App() {
                         SvgIcon(
                             icon = Icons.ArrowRight,
                             contentDescription = "Arrow Right",
-                            tint = color,
-                            size = 32.dp
+                            modifier = Modifier.size(32.dp),
+                            tint = color
                         )
                     }
                 }
@@ -376,8 +377,8 @@ fun App() {
                         AnimatedSvgIcon(
                             icon = Icons.Loader,
                             contentDescription = "Loader",
-                            tint = Color(0xFF3B82F6),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF3B82F6)
                         )
                         Text("Loader", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -390,8 +391,8 @@ fun App() {
                         AnimatedSvgIcon(
                             icon = Icons.HeartPulse,
                             contentDescription = "Heart Pulse",
-                            tint = Color(0xFFEF4444),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFFEF4444)
                         )
                         Text("HeartPulse", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -404,8 +405,8 @@ fun App() {
                         AnimatedSvgIcon(
                             icon = Icons.BellRing,
                             contentDescription = "Bell Ring",
-                            tint = Color(0xFFF59E0B),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFFF59E0B)
                         )
                         Text("BellRing", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -436,8 +437,8 @@ fun App() {
                             AnimatedSvgIcon(
                                 icon = Icons.BellRing,
                                 contentDescription = "Click to ring",
+                                modifier = Modifier.size(48.dp),
                                 tint = if (bellAnimating) Color(0xFFF59E0B) else Color.Gray,
-                                size = 48.dp,
                                 animate = bellAnimating,
                                 iterations = 3,
                                 onAnimationEnd = { bellAnimating = false }
@@ -465,8 +466,8 @@ fun App() {
                             AnimatedSvgIcon(
                                 icon = Icons.Loader,
                                 contentDescription = "Click to load",
+                                modifier = Modifier.size(48.dp),
                                 tint = if (loaderAnimating) Color(0xFF3B82F6) else Color.Gray,
-                                size = 48.dp,
                                 animate = loaderAnimating,
                                 iterations = 2,
                                 onAnimationEnd = { loaderAnimating = false }
@@ -505,8 +506,8 @@ fun App() {
                         SvgIcon(
                             svg = originalSvg,
                             contentDescription = "Original",
-                            tint = Color.White,
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.White
                         )
                         Text("Original", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -528,8 +529,8 @@ fun App() {
                         SvgIcon(
                             svg = skewXSvg,
                             contentDescription = "SkewX",
-                            tint = Color(0xFF3B82F6),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF3B82F6)
                         )
                         Text("skewX(15)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -551,8 +552,8 @@ fun App() {
                         SvgIcon(
                             svg = skewYSvg,
                             contentDescription = "SkewY",
-                            tint = Color(0xFF22C55E),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF22C55E)
                         )
                         Text("skewY(15)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -574,8 +575,8 @@ fun App() {
                         SvgIcon(
                             svg = matrixSvg,
                             contentDescription = "Matrix",
-                            tint = Color(0xFFF59E0B),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFFF59E0B)
                         )
                         Text("matrix()", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -599,8 +600,8 @@ fun App() {
                         SvgIcon(
                             icon = DslCheckIcon,
                             contentDescription = "DSL Check",
-                            tint = Color(0xFF22C55E),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF22C55E)
                         )
                         Text("SvgPath", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -613,8 +614,8 @@ fun App() {
                         SvgIcon(
                             icon = DslFilledCircle,
                             contentDescription = "Filled Circle",
-                            tint = Color.White,
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.White
                         )
                         Text("SvgStyled", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -627,8 +628,8 @@ fun App() {
                         SvgIcon(
                             icon = DslDashedRect,
                             contentDescription = "Dashed Rect",
-                            tint = Color(0xFFF59E0B),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFFF59E0B)
                         )
                         Text("Dashed", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -641,8 +642,8 @@ fun App() {
                         SvgIcon(
                             icon = DslRotatedSquare,
                             contentDescription = "Rotated Square",
-                            tint = Color.White,
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.White
                         )
                         Text("Transform", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -655,8 +656,8 @@ fun App() {
                         SvgIcon(
                             icon = DslBuilderIcon,
                             contentDescription = "Builder Icon",
-                            tint = Color(0xFF8B5CF6),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF8B5CF6)
                         )
                         Text("svg {}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -669,8 +670,8 @@ fun App() {
                         SvgIcon(
                             icon = DslStyledIcon,
                             contentDescription = "Styled Icon",
-                            tint = Color.White,
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.White
                         )
                         Text("stroke/fill", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -694,8 +695,8 @@ fun App() {
                         AnimatedSvgIcon(
                             icon = DslAnimatedCheck,
                             contentDescription = "Animated Check",
-                            tint = Color(0xFF22C55E),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF22C55E)
                         )
                         Text("Staggered", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -708,8 +709,8 @@ fun App() {
                         AnimatedSvgIcon(
                             icon = DslBuilderAnimatedIcon,
                             contentDescription = "Builder Animated",
-                            tint = Color(0xFF3B82F6),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF3B82F6)
                         )
                         Text("Builder", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -722,8 +723,8 @@ fun App() {
                         AnimatedSvgIcon(
                             icon = DslRotatingIcon,
                             contentDescription = "Rotating",
-                            tint = Color(0xFFF59E0B),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFFF59E0B)
                         )
                         Text("Rotate", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -754,8 +755,8 @@ fun App() {
                         SvgIcon(
                             svg = starSvg,
                             contentDescription = "Star",
-                            tint = Color(0xFFF59E0B),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFFF59E0B)
                         )
                         Text("Star (string)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -775,8 +776,8 @@ fun App() {
                         SvgIcon(
                             svg = heartSvg,
                             contentDescription = "Heart",
-                            tint = Color(0xFFEF4444),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFFEF4444)
                         )
                         Text("Heart (string)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
@@ -796,8 +797,8 @@ fun App() {
                         SvgIcon(
                             svg = circleSvg,
                             contentDescription = "Circle",
-                            tint = Color(0xFF22C55E),
-                            size = 48.dp
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF22C55E)
                         )
                         Text("Circle (string)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
