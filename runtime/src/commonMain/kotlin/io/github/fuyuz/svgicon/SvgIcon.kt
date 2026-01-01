@@ -570,6 +570,84 @@ fun AnimatedSvgIcon(
 }
 
 /**
+ * Composable that renders an animated SVG directly from an Svg object.
+ * This overload is useful when working with runtime-parsed SVG content.
+ *
+ * @param svg The Svg object to render
+ * @param contentDescription Accessibility description
+ * @param modifier Modifier to be applied to the icon
+ * @param tint Color to tint the icon (applies to currentColor)
+ * @param strokeWidth Optional stroke width override
+ * @param animate Whether animation is enabled
+ * @param iterations Number of animation iterations
+ * @param onAnimationEnd Callback when animation completes
+ */
+@Composable
+fun AnimatedSvgIcon(
+    svg: Svg,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    tint: Color = LocalContentColor.current,
+    strokeWidth: Float? = null,
+    animate: Boolean = true,
+    iterations: Int = Int.MAX_VALUE,
+    onAnimationEnd: (() -> Unit)? = null
+) {
+    val semanticsModifier = if (contentDescription != null) {
+        Modifier.semantics {
+            this.contentDescription = contentDescription
+            this.role = Role.Image
+        }
+    } else {
+        Modifier
+    }
+
+    val hasAnimations = remember(svg) { hasAnimatedElements(svg.children) }
+
+    Layout(
+        modifier = modifier.then(semanticsModifier),
+        content = {
+            if (hasAnimations && animate) {
+                AnimatedSvgIconCanvas(
+                    svg = svg,
+                    tint = tint,
+                    strokeWidthOverride = strokeWidth,
+                    iterations = iterations,
+                    onAnimationEnd = onAnimationEnd,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    drawSvg(svg, tint, strokeWidth)
+                }
+            }
+        }
+    ) { measurables, constraints ->
+        val defaultWidth = (svg.effectiveWidth * density).toInt()
+        val defaultHeight = (svg.effectiveHeight * density).toInt()
+
+        val width = when {
+            constraints.hasFixedWidth -> constraints.maxWidth
+            constraints.hasBoundedWidth -> constraints.maxWidth
+            else -> defaultWidth
+        }
+        val height = when {
+            constraints.hasFixedHeight -> constraints.maxHeight
+            constraints.hasBoundedHeight -> constraints.maxHeight
+            else -> defaultHeight
+        }
+
+        val placeable = measurables.first().measure(
+            Constraints.fixed(width, height)
+        )
+
+        layout(width, height) {
+            placeable.place(0, 0)
+        }
+    }
+}
+
+/**
  * Applies easing based on calcMode and keySplines.
  */
 private fun applyEasing(progress: Float, calcMode: CalcMode, keySplines: KeySplines?): Float {
@@ -811,10 +889,13 @@ private fun AnimatedSvgIconCanvas(
 
     val isInfinite = iterations == Int.MAX_VALUE
 
-    // Calculate total cycle duration (max of delay + duration across all animations)
+    // Calculate total cycle duration (max of delay + duration * iterations across all animations)
+    // For infinite per-animation iterations, we use 1 iteration for the cycle calculation
     val totalCycleDuration = remember(animations) {
         animations.maxOfOrNull { entry ->
-            entry.animation.delay.inWholeMilliseconds + entry.animation.dur.inWholeMilliseconds
+            val anim = entry.animation
+            val effectiveIterations = if (anim.isInfinite) 1 else anim.iterations.coerceAtLeast(1)
+            anim.delay.inWholeMilliseconds + (anim.dur.inWholeMilliseconds * effectiveIterations)
         }?.toInt()?.coerceAtLeast(1) ?: 1000
     }
 
@@ -843,13 +924,28 @@ private fun AnimatedSvgIconCanvas(
                             val delayMs = anim.delay.inWholeMilliseconds.toFloat()
                             val durationMs = anim.dur.inWholeMilliseconds.toFloat()
                             val currentTimeMs = masterProgress * totalCycleDuration
+                            val effectiveIterations = if (anim.isInfinite) 1 else anim.iterations.coerceAtLeast(1)
+                            val totalAnimationMs = durationMs * effectiveIterations
 
                             val rawProgress = when {
                                 currentTimeMs < delayMs -> 0f  // Still in delay period
-                                currentTimeMs >= delayMs + durationMs -> 1f  // Animation complete
+                                currentTimeMs >= delayMs + totalAnimationMs -> 1f  // All iterations complete
                                 else -> {
-                                    // During animation
-                                    ((currentTimeMs - delayMs) / durationMs).coerceIn(0f, 1f)
+                                    // During animation - calculate progress within current iteration
+                                    val timeInAnimation = currentTimeMs - delayMs
+                                    if (anim.isInfinite) {
+                                        // Infinite: cycle forever
+                                        (timeInAnimation / durationMs) % 1f
+                                    } else {
+                                        // Finite: cycle within iterations, end at 1.0
+                                        val iterationProgress = (timeInAnimation / durationMs) % 1f
+                                        val currentIteration = (timeInAnimation / durationMs).toInt()
+                                        if (currentIteration >= effectiveIterations - 1 && iterationProgress >= 1f - 0.001f) {
+                                            1f
+                                        } else {
+                                            iterationProgress
+                                        }
+                                    }
                                 }
                             }
                             // Apply easing based on calcMode and keySplines
@@ -892,13 +988,28 @@ private fun AnimatedSvgIconCanvas(
                             val delayMs = anim.delay.inWholeMilliseconds.toFloat()
                             val durationMs = anim.dur.inWholeMilliseconds.toFloat()
                             val currentTimeMs = masterProgress.value * totalCycleDuration
+                            val effectiveIterations = if (anim.isInfinite) 1 else anim.iterations.coerceAtLeast(1)
+                            val totalAnimationMs = durationMs * effectiveIterations
 
                             val rawProgress = when {
                                 currentTimeMs < delayMs -> 0f  // Still in delay period
-                                currentTimeMs >= delayMs + durationMs -> 1f  // Animation complete
+                                currentTimeMs >= delayMs + totalAnimationMs -> 1f  // All iterations complete
                                 else -> {
-                                    // During animation
-                                    ((currentTimeMs - delayMs) / durationMs).coerceIn(0f, 1f)
+                                    // During animation - calculate progress within current iteration
+                                    val timeInAnimation = currentTimeMs - delayMs
+                                    if (anim.isInfinite) {
+                                        // Infinite: cycle forever
+                                        (timeInAnimation / durationMs) % 1f
+                                    } else {
+                                        // Finite: cycle within iterations, end at 1.0
+                                        val iterationProgress = (timeInAnimation / durationMs) % 1f
+                                        val currentIteration = (timeInAnimation / durationMs).toInt()
+                                        if (currentIteration >= effectiveIterations - 1 && iterationProgress >= 1f - 0.001f) {
+                                            1f
+                                        } else {
+                                            iterationProgress
+                                        }
+                                    }
                                 }
                             }
                             // Apply easing based on calcMode and keySplines

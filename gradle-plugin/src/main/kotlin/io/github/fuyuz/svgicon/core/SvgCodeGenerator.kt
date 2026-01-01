@@ -52,7 +52,10 @@ object SvgCodeGenerator {
      * Parse SVG content and generate a CodeBlock for the Svg object.
      */
     fun generateSvgCodeBlock(svgContent: String): CodeBlock {
-        var remaining = svgContent.trim()
+        // Extract stylesheet first
+        val (stylesheet, cleanedSvg) = extractStylesheet(svgContent)
+
+        var remaining = cleanedSvg.trim()
 
         // Skip XML declaration and DOCTYPE
         while (remaining.startsWith("<?") || remaining.startsWith("<!")) {
@@ -68,7 +71,7 @@ object SvgCodeGenerator {
         val tagName = tagMatch.groupValues[1].lowercase()
 
         if (tagName != "svg") {
-            val children = parseElements(remaining)
+            val children = parseElementsWithStylesheet(remaining, stylesheet)
             return generateSvgWithChildren(null, children)
         }
 
@@ -83,7 +86,7 @@ object SvgCodeGenerator {
             val closeIdx = remaining.indexOf(closeTag)
             if (closeIdx > 0) {
                 val innerContent = remaining.substring(tagMatch.range.last + 1, closeIdx)
-                parseElements(innerContent)
+                parseElementsWithStylesheet(innerContent, stylesheet)
             } else {
                 emptyList()
             }
@@ -383,6 +386,197 @@ object SvgCodeGenerator {
         return elements
     }
 
+    private fun parseElementsWithStylesheet(content: String, stylesheet: CssStylesheet): List<CodeBlock> {
+        val elements = mutableListOf<CodeBlock>()
+        var remaining = content.trim()
+
+        while (remaining.isNotEmpty()) {
+            // Skip XML declaration and DOCTYPE
+            if (remaining.startsWith("<?") || remaining.startsWith("<!")) {
+                val endIdx = remaining.indexOf('>') + 1
+                if (endIdx > 0) {
+                    remaining = remaining.substring(endIdx).trim()
+                    continue
+                }
+            }
+
+            val tagMatch = tagPattern.find(remaining) ?: break
+            val tagName = tagMatch.groupValues[1].lowercase()
+            val attrsStr = tagMatch.groupValues[2]
+            val selfClosing = tagMatch.groupValues[3] == "/>"
+            val attrs = parseAttributes(attrsStr)
+
+            when (tagName) {
+                "svg" -> {
+                    // Nested svg - skip for now
+                    remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                }
+                "style" -> {
+                    // Skip style tags (already processed)
+                    remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                }
+                "path" -> {
+                    val d = attrs["d"] ?: ""
+                    if (d.isNotEmpty()) {
+                        val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                        val animations = parseAnimations(innerContent, attrs)
+                        val pathCode = generatePathCodeBlock(d)
+                        val styledCode = wrapWithStyleFromStylesheet(pathCode, tagName, attrs, stylesheet)
+                        elements.add(wrapWithAnimations(styledCode, animations))
+                        remaining = newRemaining
+                    } else {
+                        remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                    }
+                }
+                "circle" -> {
+                    val cx = attrs["cx"]?.toFloatOrNull() ?: 0f
+                    val cy = attrs["cy"]?.toFloatOrNull() ?: 0f
+                    val r = attrs["r"]?.toFloatOrNull() ?: 0f
+                    val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                    val animations = parseAnimations(innerContent, attrs)
+                    val circleCode = CodeBlock.of("%T(%Lf, %Lf, %Lf)", svgCircleClass, cx, cy, r)
+                    val styledCode = wrapWithStyleFromStylesheet(circleCode, tagName, attrs, stylesheet)
+                    elements.add(wrapWithAnimations(styledCode, animations))
+                    remaining = newRemaining
+                }
+                "ellipse" -> {
+                    val cx = attrs["cx"]?.toFloatOrNull() ?: 0f
+                    val cy = attrs["cy"]?.toFloatOrNull() ?: 0f
+                    val rx = attrs["rx"]?.toFloatOrNull() ?: 0f
+                    val ry = attrs["ry"]?.toFloatOrNull() ?: 0f
+                    val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                    val animations = parseAnimations(innerContent, attrs)
+                    val ellipseCode = CodeBlock.of("%T(%Lf, %Lf, %Lf, %Lf)", svgEllipseClass, cx, cy, rx, ry)
+                    val styledCode = wrapWithStyleFromStylesheet(ellipseCode, tagName, attrs, stylesheet)
+                    elements.add(wrapWithAnimations(styledCode, animations))
+                    remaining = newRemaining
+                }
+                "rect" -> {
+                    val x = attrs["x"]?.toFloatOrNull() ?: 0f
+                    val y = attrs["y"]?.toFloatOrNull() ?: 0f
+                    val width = attrs["width"]?.toFloatOrNull() ?: 0f
+                    val height = attrs["height"]?.toFloatOrNull() ?: 0f
+                    val rx = attrs["rx"]?.toFloatOrNull() ?: 0f
+                    val ry = attrs["ry"]?.toFloatOrNull() ?: rx
+                    val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                    val animations = parseAnimations(innerContent, attrs)
+                    val rectCode = generateRectCodeBlock(x, y, width, height, rx, ry)
+                    val styledCode = wrapWithStyleFromStylesheet(rectCode, tagName, attrs, stylesheet)
+                    elements.add(wrapWithAnimations(styledCode, animations))
+                    remaining = newRemaining
+                }
+                "line" -> {
+                    val x1 = attrs["x1"]?.toFloatOrNull() ?: 0f
+                    val y1 = attrs["y1"]?.toFloatOrNull() ?: 0f
+                    val x2 = attrs["x2"]?.toFloatOrNull() ?: 0f
+                    val y2 = attrs["y2"]?.toFloatOrNull() ?: 0f
+                    val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                    val animations = parseAnimations(innerContent, attrs)
+                    val lineCode = CodeBlock.of("%T(%Lf, %Lf, %Lf, %Lf)", svgLineClass, x1, y1, x2, y2)
+                    val styledCode = wrapWithStyleFromStylesheet(lineCode, tagName, attrs, stylesheet)
+                    elements.add(wrapWithAnimations(styledCode, animations))
+                    remaining = newRemaining
+                }
+                "polyline" -> {
+                    val points = parsePoints(attrs["points"] ?: "")
+                    if (points.isNotEmpty()) {
+                        val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                        val animations = parseAnimations(innerContent, attrs)
+                        val polylineCode = generatePolylineCodeBlock(points)
+                        val styledCode = wrapWithStyleFromStylesheet(polylineCode, tagName, attrs, stylesheet)
+                        elements.add(wrapWithAnimations(styledCode, animations))
+                        remaining = newRemaining
+                    } else {
+                        remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                    }
+                }
+                "polygon" -> {
+                    val points = parsePoints(attrs["points"] ?: "")
+                    if (points.isNotEmpty()) {
+                        val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                        val animations = parseAnimations(innerContent, attrs)
+                        val polygonCode = generatePolygonCodeBlock(points)
+                        val styledCode = wrapWithStyleFromStylesheet(polygonCode, tagName, attrs, stylesheet)
+                        elements.add(wrapWithAnimations(styledCode, animations))
+                        remaining = newRemaining
+                    } else {
+                        remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                    }
+                }
+                "g" -> {
+                    if (selfClosing) {
+                        remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                    } else {
+                        val closeIdx = findMatchingClose(remaining, tagMatch.range.last + 1, "g")
+                        if (closeIdx > 0) {
+                            val innerContent = remaining.substring(tagMatch.range.last + 1, closeIdx)
+                            val children = parseElementsWithStylesheet(innerContent, stylesheet)
+                            val groupCode = generateGroupCodeBlock(children)
+                            elements.add(wrapWithStyleFromStylesheet(groupCode, tagName, attrs, stylesheet))
+                            remaining = remaining.substring(closeIdx + "</g>".length).trim()
+                        } else {
+                            remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                        }
+                    }
+                }
+                "defs" -> {
+                    if (selfClosing) {
+                        remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                    } else {
+                        val closeIdx = findMatchingClose(remaining, tagMatch.range.last + 1, "defs")
+                        if (closeIdx > 0) {
+                            val innerContent = remaining.substring(tagMatch.range.last + 1, closeIdx)
+                            val children = parseElementsWithStylesheet(innerContent, stylesheet)
+                            elements.add(generateDefsCodeBlock(children))
+                            remaining = remaining.substring(closeIdx + "</defs>".length).trim()
+                        } else {
+                            remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                        }
+                    }
+                }
+                "clippath" -> {
+                    val id = attrs["id"] ?: ""
+                    if (selfClosing) {
+                        remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                    } else {
+                        val closeIdx = findMatchingClose(remaining, tagMatch.range.last + 1, "clipPath")
+                        if (closeIdx > 0) {
+                            val innerContent = remaining.substring(tagMatch.range.last + 1, closeIdx)
+                            val children = parseElementsWithStylesheet(innerContent, stylesheet)
+                            val unitsStr = attrs["clipPathUnits"]?.lowercase()
+                            val units = if (unitsStr == "objectboundingbox") "OBJECT_BOUNDING_BOX" else "USER_SPACE_ON_USE"
+                            elements.add(generateClipPathCodeBlock(id, children, units))
+                            remaining = remaining.substring(closeIdx + "</clipPath>".length).trim()
+                        } else {
+                            remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                        }
+                    }
+                }
+                "mask" -> {
+                    val id = attrs["id"] ?: ""
+                    if (selfClosing) {
+                        remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                    } else {
+                        val closeIdx = findMatchingClose(remaining, tagMatch.range.last + 1, "mask")
+                        if (closeIdx > 0) {
+                            val innerContent = remaining.substring(tagMatch.range.last + 1, closeIdx)
+                            val children = parseElementsWithStylesheet(innerContent, stylesheet)
+                            elements.add(generateMaskCodeBlock(id, children))
+                            remaining = remaining.substring(closeIdx + "</mask>".length).trim()
+                        } else {
+                            remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                        }
+                    }
+                }
+                else -> {
+                    remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                }
+            }
+        }
+
+        return elements
+    }
+
     // ============================================
     // Element Code Generation
     // ============================================
@@ -500,6 +694,180 @@ object SvgCodeGenerator {
     }
 
     // ============================================
+    // CSS Stylesheet Parsing
+    // ============================================
+
+    /**
+     * Simple CSS selector representation for code generation.
+     */
+    private sealed interface CssSelector {
+        data class Class(val className: String) : CssSelector
+        data class Id(val id: String) : CssSelector
+        data class Tag(val tagName: String) : CssSelector
+        data object Universal : CssSelector
+
+        val specificity: Int
+            get() = when (this) {
+                is Universal -> 0
+                is Tag -> 1
+                is Class -> 2
+                is Id -> 3
+            }
+    }
+
+    private data class CssRule(
+        val selector: CssSelector,
+        val declarations: Map<String, String>
+    )
+
+    private data class CssStylesheet(
+        val rules: List<CssRule> = emptyList(),
+        val keyframes: List<CssKeyframes> = emptyList()
+    )
+
+    // CSS Animation data structures
+    private data class CssKeyframe(
+        val offset: Float,
+        val properties: Map<String, String>
+    )
+
+    private data class CssKeyframes(
+        val name: String,
+        val keyframes: List<CssKeyframe>
+    )
+
+    private data class CssAnimation(
+        val name: String,
+        val duration: Long, // milliseconds
+        val timingFunction: String,
+        val delay: Long, // milliseconds
+        val iterationCount: Int
+    )
+
+    private val styleTagPattern = Regex("""<style[^>]*>([\s\S]*?)</style>""", RegexOption.IGNORE_CASE)
+    private val cssRulePattern = Regex("""([^{@]+)\{([^}]*)\}""")
+    private val keyframesPattern = Regex("""@keyframes\s+(\w[\w-]*)\s*\{((?:[^{}]|\{[^{}]*\})*)\}""", RegexOption.IGNORE_CASE)
+    private val keyframePattern = Regex("""([\d.]+%|from|to)\s*\{([^}]*)\}""")
+
+    private fun extractStylesheet(svgContent: String): Pair<CssStylesheet, String> {
+        val matches = styleTagPattern.findAll(svgContent).toList()
+        if (matches.isEmpty()) {
+            return CssStylesheet() to svgContent
+        }
+
+        val rules = mutableListOf<CssRule>()
+        val keyframes = mutableListOf<CssKeyframes>()
+
+        for (match in matches) {
+            val cssContent = match.groupValues[1]
+            // Parse @keyframes first
+            keyframes.addAll(parseCssKeyframes(cssContent))
+            // Parse regular CSS rules (excluding @keyframes content)
+            val cssWithoutKeyframes = cssContent.replace(keyframesPattern, "")
+            rules.addAll(parseCssRules(cssWithoutKeyframes))
+        }
+
+        val cleanedContent = svgContent.replace(styleTagPattern, "")
+        return CssStylesheet(rules, keyframes) to cleanedContent
+    }
+
+    private fun parseCssKeyframes(cssContent: String): List<CssKeyframes> {
+        val result = mutableListOf<CssKeyframes>()
+
+        keyframesPattern.findAll(cssContent).forEach { match ->
+            val name = match.groupValues[1]
+            val keyframesContent = match.groupValues[2]
+            val keyframes = parseKeyframeList(keyframesContent)
+            if (keyframes.isNotEmpty()) {
+                result.add(CssKeyframes(name, keyframes))
+            }
+        }
+
+        return result
+    }
+
+    private fun parseKeyframeList(content: String): List<CssKeyframe> {
+        val keyframes = mutableListOf<CssKeyframe>()
+
+        keyframePattern.findAll(content).forEach { match ->
+            val offsetStr = match.groupValues[1].trim().lowercase()
+            val properties = parseCssStyleAttribute(match.groupValues[2])
+
+            val offset = when (offsetStr) {
+                "from" -> 0f
+                "to" -> 1f
+                else -> offsetStr.removeSuffix("%").toFloatOrNull()?.div(100f)
+            }
+
+            if (offset != null && properties.isNotEmpty()) {
+                keyframes.add(CssKeyframe(offset, properties))
+            }
+        }
+
+        return keyframes.sortedBy { it.offset }
+    }
+
+    private fun parseCssRules(cssContent: String): List<CssRule> {
+        val rules = mutableListOf<CssRule>()
+
+        cssRulePattern.findAll(cssContent).forEach { match ->
+            val selectorStr = match.groupValues[1].trim()
+            val declarationsStr = match.groupValues[2]
+
+            val selector = parseCssSelector(selectorStr)
+            if (selector != null) {
+                val declarations = parseCssStyleAttribute(declarationsStr)
+                if (declarations.isNotEmpty()) {
+                    rules.add(CssRule(selector, declarations))
+                }
+            }
+        }
+
+        return rules
+    }
+
+    private fun parseCssSelector(selectorStr: String): CssSelector? {
+        val trimmed = selectorStr.trim()
+        return when {
+            trimmed.startsWith(".") -> CssSelector.Class(trimmed.drop(1))
+            trimmed.startsWith("#") -> CssSelector.Id(trimmed.drop(1))
+            trimmed == "*" -> CssSelector.Universal
+            trimmed.matches(Regex("[a-zA-Z][a-zA-Z0-9-]*")) -> CssSelector.Tag(trimmed.lowercase())
+            else -> null
+        }
+    }
+
+    private fun resolveStylesForElement(
+        tagName: String,
+        attrs: Map<String, String>,
+        stylesheet: CssStylesheet
+    ): Map<String, String> {
+        val elementId = attrs["id"]
+        val elementClasses = attrs["class"]?.split(Regex("\\s+"))?.filter { it.isNotEmpty() } ?: emptyList()
+
+        val matchingRules = stylesheet.rules
+            .filter { rule ->
+                when (rule.selector) {
+                    is CssSelector.Universal -> true
+                    is CssSelector.Tag -> rule.selector.tagName == tagName.lowercase()
+                    is CssSelector.Class -> elementClasses.contains(rule.selector.className)
+                    is CssSelector.Id -> elementId == rule.selector.id
+                }
+            }
+            .sortedBy { it.selector.specificity }
+
+        val mergedStyles = mutableMapOf<String, String>()
+        for (rule in matchingRules) {
+            mergedStyles.putAll(rule.declarations)
+        }
+
+        val inlineStyle = parseCssStyleAttribute(attrs["style"])
+        mergedStyles.putAll(inlineStyle)
+
+        return mergedStyles
+    }
+
+    // ============================================
     // Style Wrapping
     // ============================================
 
@@ -540,6 +908,254 @@ object SvgCodeGenerator {
             attrs
         }
 
+        val styleParts = mutableListOf<CodeBlock>()
+
+        mergedAttrs["fill"]?.let { styleParts.add(generateColorCodeBlock("fill", it)) }
+        mergedAttrs["stroke"]?.let { styleParts.add(generateColorCodeBlock("stroke", it)) }
+        mergedAttrs["stroke-width"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeWidth = %Lf", it)) }
+        mergedAttrs["opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("opacity = %Lf", it)) }
+        mergedAttrs["fill-opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("fillOpacity = %Lf", it)) }
+        mergedAttrs["stroke-opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeOpacity = %Lf", it)) }
+
+        mergedAttrs["stroke-linecap"]?.lowercase()?.let { cap ->
+            val capName = when (cap) {
+                "butt" -> "BUTT"
+                "square" -> "SQUARE"
+                "round" -> "ROUND"
+                else -> null
+            }
+            capName?.let { styleParts.add(CodeBlock.of("strokeLinecap = %T.%L", lineCapClass, it)) }
+        }
+
+        mergedAttrs["stroke-linejoin"]?.lowercase()?.let { join ->
+            val joinName = when (join) {
+                "miter" -> "MITER"
+                "bevel" -> "BEVEL"
+                "round" -> "ROUND"
+                else -> null
+            }
+            joinName?.let { styleParts.add(CodeBlock.of("strokeLinejoin = %T.%L", lineJoinClass, it)) }
+        }
+
+        mergedAttrs["fill-rule"]?.lowercase()?.let { rule ->
+            val ruleName = when (rule) {
+                "evenodd" -> "EVENODD"
+                "nonzero" -> "NONZERO"
+                else -> null
+            }
+            ruleName?.let { styleParts.add(CodeBlock.of("fillRule = %T.%L", fillRuleClass, it)) }
+        }
+
+        if (styleParts.isEmpty()) {
+            return element
+        }
+
+        val builder = CodeBlock.builder()
+        builder.add("%T(\n", svgStyledClass)
+        builder.indent()
+        builder.add(element)
+        builder.add(",\n%T(", svgStyleClass)
+        styleParts.forEachIndexed { index, part ->
+            builder.add(part)
+            if (index < styleParts.size - 1) builder.add(", ")
+        }
+        builder.add(")")
+        builder.unindent()
+        builder.add("\n)")
+        return builder.build()
+    }
+
+    /**
+     * Wraps element with style, resolving styles from stylesheet + inline styles.
+     */
+    private fun wrapWithStyleFromStylesheet(
+        element: CodeBlock,
+        tagName: String,
+        attrs: Map<String, String>,
+        stylesheet: CssStylesheet
+    ): CodeBlock {
+        val resolvedStyles = resolveStylesForElement(tagName, attrs, stylesheet)
+        val mergedAttrs = attrs.toMutableMap()
+        mergedAttrs.putAll(resolvedStyles)
+        mergedAttrs.remove("style")
+
+        // Check for CSS animation property
+        val animationValue = mergedAttrs["animation"]
+        val animations = mutableListOf<CodeBlock>()
+
+        if (animationValue != null) {
+            val cssAnimation = parseCssAnimation(animationValue)
+            if (cssAnimation != null) {
+                val keyframes = stylesheet.keyframes.find { it.name == cssAnimation.name }
+                if (keyframes != null) {
+                    animations.addAll(cssAnimationToCodeBlocks(cssAnimation, keyframes))
+                }
+            }
+            mergedAttrs.remove("animation")
+        }
+
+        var result = wrapWithStyleFromMergedAttrs(element, mergedAttrs)
+
+        // Wrap with animations if any
+        if (animations.isNotEmpty()) {
+            result = wrapWithAnimations(result, animations)
+        }
+
+        return result
+    }
+
+    private fun parseCssAnimation(value: String): CssAnimation? {
+        val parts = value.trim().split(Regex("\\s+"))
+        if (parts.isEmpty()) return null
+
+        var name: String? = null
+        var duration: Long = 0
+        var timingFunction = "ease"
+        var delay: Long = 0
+        var iterationCount = 1
+
+        for (part in parts) {
+            val lower = part.lowercase()
+            when {
+                lower.endsWith("ms") -> {
+                    val ms = lower.removeSuffix("ms").toFloatOrNull()?.toLong()
+                    if (ms != null) {
+                        if (duration == 0L) duration = ms else delay = ms
+                    }
+                }
+                lower.endsWith("s") && !lower.endsWith("ms") -> {
+                    val sec = lower.removeSuffix("s").toFloatOrNull()
+                    if (sec != null) {
+                        val ms = (sec * 1000).toLong()
+                        if (duration == 0L) duration = ms else delay = ms
+                    }
+                }
+                lower == "infinite" -> iterationCount = -1  // INFINITE
+                lower.toIntOrNull() != null -> iterationCount = lower.toInt()
+                lower in listOf("linear", "ease", "ease-in", "ease-out", "ease-in-out") -> {
+                    timingFunction = lower
+                }
+                lower.startsWith("cubic-bezier(") -> timingFunction = lower
+                name == null && !lower.matches(Regex("^[0-9].*")) -> name = part
+            }
+        }
+
+        return name?.let { CssAnimation(it, duration, timingFunction, delay, iterationCount) }
+    }
+
+    private fun cssAnimationToCodeBlocks(animation: CssAnimation, keyframes: CssKeyframes): List<CodeBlock> {
+        val result = mutableListOf<CodeBlock>()
+
+        // Generate calcMode and keySplines based on timing function
+        val (calcModeStr, keySplinesCode) = when (animation.timingFunction) {
+            "linear" -> "LINEAR" to null
+            "ease" -> "SPLINE" to CodeBlock.of("%T.EASE", keySplinesClass)
+            "ease-in" -> "SPLINE" to CodeBlock.of("%T.EASE_IN", keySplinesClass)
+            "ease-out" -> "SPLINE" to CodeBlock.of("%T.EASE_OUT", keySplinesClass)
+            "ease-in-out" -> "SPLINE" to CodeBlock.of("%T.EASE_IN_OUT", keySplinesClass)
+            else -> "LINEAR" to null
+        }
+
+        // Group keyframe properties
+        val propertyKeyframes = mutableMapOf<String, MutableList<Pair<Float, String>>>()
+        for (kf in keyframes.keyframes) {
+            for ((prop, value) in kf.properties) {
+                propertyKeyframes.getOrPut(prop) { mutableListOf() }.add(kf.offset to value)
+            }
+        }
+
+        // Generate animation CodeBlocks for each property
+        for ((prop, frames) in propertyKeyframes) {
+            if (frames.size < 2) continue
+
+            val fromValue = frames.first().second
+            val toValue = frames.last().second
+
+            val animCode = when (prop.lowercase()) {
+                "opacity" -> {
+                    val from = fromValue.toFloatOrNull() ?: 1f
+                    val to = toValue.toFloatOrNull() ?: 1f
+                    generateOpacityAnimation(from, to, animation.duration, animation.delay, calcModeStr, keySplinesCode, animation.iterationCount)
+                }
+                "transform" -> {
+                    val fromTransform = parseTransformAnimation(fromValue)
+                    val toTransform = parseTransformAnimation(toValue)
+                    if (fromTransform != null && toTransform != null && fromTransform.first == toTransform.first) {
+                        generateTransformAnimation(fromTransform.first, fromTransform.second, toTransform.second,
+                            animation.duration, animation.delay, calcModeStr, keySplinesCode, animation.iterationCount)
+                    } else null
+                }
+                "stroke-width" -> {
+                    val from = fromValue.toFloatOrNull() ?: 2f
+                    val to = toValue.toFloatOrNull() ?: 2f
+                    generateStrokeWidthAnimation(from, to, animation.duration, animation.delay, calcModeStr, keySplinesCode, animation.iterationCount)
+                }
+                else -> null
+            }
+
+            if (animCode != null) result.add(animCode)
+        }
+
+        return result
+    }
+
+    private fun parseTransformAnimation(value: String): Pair<String, Float>? {
+        val trimmed = value.trim().lowercase()
+        return when {
+            trimmed.startsWith("rotate(") -> {
+                val angle = trimmed.removePrefix("rotate(").removeSuffix(")").removeSuffix("deg").trim().toFloatOrNull()
+                angle?.let { "ROTATE" to it }
+            }
+            trimmed.startsWith("scale(") -> {
+                val scale = trimmed.removePrefix("scale(").removeSuffix(")").trim().toFloatOrNull()
+                scale?.let { "SCALE" to it }
+            }
+            trimmed.startsWith("translatex(") -> {
+                val v = trimmed.removePrefix("translatex(").removeSuffix(")").removeSuffix("px").trim().toFloatOrNull()
+                v?.let { "TRANSLATE_X" to it }
+            }
+            trimmed.startsWith("translatey(") -> {
+                val v = trimmed.removePrefix("translatey(").removeSuffix(")").removeSuffix("px").trim().toFloatOrNull()
+                v?.let { "TRANSLATE_Y" to it }
+            }
+            else -> null
+        }
+    }
+
+    private fun generateOpacityAnimation(from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?, iterations: Int): CodeBlock {
+        return if (keySplines != null) {
+            CodeBlock.of("%T.Opacity(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L, %L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines, iterations)
+        } else {
+            CodeBlock.of("%T.Opacity(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, null, %L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, iterations)
+        }
+    }
+
+    private fun generateTransformAnimation(type: String, from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?, iterations: Int): CodeBlock {
+        return if (keySplines != null) {
+            CodeBlock.of("%T.Transform(%T.%L, %Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L, %L)",
+                svgAnimateClass, transformTypeClass, type, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines, iterations)
+        } else {
+            CodeBlock.of("%T.Transform(%T.%L, %Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, null, %L)",
+                svgAnimateClass, transformTypeClass, type, from, to, durMs, delayMs, calcModeClass, calcMode, iterations)
+        }
+    }
+
+    private fun generateStrokeWidthAnimation(from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?, iterations: Int): CodeBlock {
+        return if (keySplines != null) {
+            CodeBlock.of("%T.StrokeWidth(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L, %L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines, iterations)
+        } else {
+            CodeBlock.of("%T.StrokeWidth(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, null, %L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, iterations)
+        }
+    }
+
+    /**
+     * Wraps element with style from pre-merged attributes.
+     */
+    private fun wrapWithStyleFromMergedAttrs(element: CodeBlock, mergedAttrs: Map<String, String>): CodeBlock {
         val styleParts = mutableListOf<CodeBlock>()
 
         mergedAttrs["fill"]?.let { styleParts.add(generateColorCodeBlock("fill", it)) }

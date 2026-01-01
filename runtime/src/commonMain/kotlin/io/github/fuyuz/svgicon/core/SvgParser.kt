@@ -67,7 +67,10 @@ internal object SvgXmlParser {
      * Parses SVG string to a complete Svg object with all root attributes.
      */
     fun parseToSvg(svgStr: String): Svg {
-        var remaining = svgStr.trim()
+        // Extract stylesheet first
+        val (stylesheet, cleanedSvg) = extractStylesheet(svgStr)
+
+        var remaining = cleanedSvg.trim()
 
         // Skip XML declaration and DOCTYPE
         while (remaining.startsWith("<?") || remaining.startsWith("<!")) {
@@ -84,7 +87,7 @@ internal object SvgXmlParser {
 
         if (tagName != "svg") {
             // No svg root element, parse as children only
-            val elements = parseElements(remaining)
+            val elements = parseElementsWithStylesheet(remaining, stylesheet)
             return Svg(children = elements)
         }
 
@@ -114,7 +117,7 @@ internal object SvgXmlParser {
             else -> LineJoin.ROUND
         }
 
-        // Parse children
+        // Parse children with stylesheet
         val children = if (selfClosing) {
             emptyList()
         } else {
@@ -122,7 +125,7 @@ internal object SvgXmlParser {
             val closeIdx = remaining.indexOf(closeTag)
             if (closeIdx > 0) {
                 val innerContent = remaining.substring(tagMatch.range.last + 1, closeIdx)
-                parseElements(innerContent)
+                parseElementsWithStylesheet(innerContent, stylesheet)
             } else {
                 emptyList()
             }
@@ -302,6 +305,171 @@ internal object SvgXmlParser {
     fun parseElements(svg: String): List<SvgElement> {
         val result = parseFull(svg)
         return result.elements
+    }
+
+    /**
+     * Parse elements with stylesheet support.
+     * Used internally when stylesheet is extracted.
+     */
+    private fun parseElementsWithStylesheet(svg: String, stylesheet: CssStylesheet): List<SvgElement> {
+        val result = parseFullWithStylesheet(svg, stylesheet)
+        return result.elements
+    }
+
+    /**
+     * Internal parse with stylesheet support.
+     */
+    private fun parseFullWithStylesheet(svg: String, stylesheet: CssStylesheet): ParsedSvg {
+        var viewBox: ViewBox? = null
+        val elements = mutableListOf<SvgElement>()
+        var remaining = svg.trim()
+
+        while (remaining.isNotEmpty()) {
+            // Skip XML declaration and DOCTYPE
+            if (remaining.startsWith("<?") || remaining.startsWith("<!")) {
+                val endIdx = remaining.indexOf('>') + 1
+                if (endIdx > 0) {
+                    remaining = remaining.substring(endIdx).trim()
+                    continue
+                }
+            }
+
+            val tagMatch = tagPattern.find(remaining)
+            if (tagMatch == null) {
+                break
+            }
+
+            val tagName = tagMatch.groupValues[1].lowercase()
+            val attrsStr = tagMatch.groupValues[2]
+            val selfClosing = tagMatch.groupValues[3] == "/>"
+
+            val attrs = parseAttributes(attrsStr)
+
+            when (tagName) {
+                "svg" -> {
+                    // Extract viewBox from svg element
+                    viewBox = parseViewBox(attrs["viewBox"])
+
+                    // Parse children of svg element
+                    if (selfClosing) {
+                        remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                    } else {
+                        val closeTag = "</svg>"
+                        val closeIdx = remaining.indexOf(closeTag)
+                        if (closeIdx > 0) {
+                            val innerContent = remaining.substring(tagMatch.range.last + 1, closeIdx)
+                            elements.addAll(parseElementsWithStylesheet(innerContent, stylesheet))
+                            remaining = remaining.substring(closeIdx + closeTag.length).trim()
+                        } else {
+                            remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                        }
+                    }
+                }
+                "path" -> {
+                    val d = attrs["d"] ?: ""
+                    if (d.isNotEmpty()) {
+                        val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                        val animations = parseAnimations(innerContent)
+                        val element = wrapWithStyleFromStylesheet(SvgPath(d), tagName, attrs, stylesheet)
+                        elements.add(wrapWithAnimations(element, animations))
+                        remaining = newRemaining
+                    } else {
+                        remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                    }
+                }
+                "circle" -> {
+                    val cx = attrs["cx"]?.toFloatOrNull() ?: 0f
+                    val cy = attrs["cy"]?.toFloatOrNull() ?: 0f
+                    val r = attrs["r"]?.toFloatOrNull() ?: 0f
+                    val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                    val animations = parseAnimations(innerContent)
+                    val element = wrapWithStyleFromStylesheet(SvgCircle(cx, cy, r), tagName, attrs, stylesheet)
+                    elements.add(wrapWithAnimations(element, animations))
+                    remaining = newRemaining
+                }
+                "ellipse" -> {
+                    val cx = attrs["cx"]?.toFloatOrNull() ?: 0f
+                    val cy = attrs["cy"]?.toFloatOrNull() ?: 0f
+                    val rx = attrs["rx"]?.toFloatOrNull() ?: 0f
+                    val ry = attrs["ry"]?.toFloatOrNull() ?: 0f
+                    val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                    val animations = parseAnimations(innerContent)
+                    val element = wrapWithStyleFromStylesheet(SvgEllipse(cx, cy, rx, ry), tagName, attrs, stylesheet)
+                    elements.add(wrapWithAnimations(element, animations))
+                    remaining = newRemaining
+                }
+                "rect" -> {
+                    val x = attrs["x"]?.toFloatOrNull() ?: 0f
+                    val y = attrs["y"]?.toFloatOrNull() ?: 0f
+                    val width = attrs["width"]?.toFloatOrNull() ?: 0f
+                    val height = attrs["height"]?.toFloatOrNull() ?: 0f
+                    val rx = attrs["rx"]?.toFloatOrNull() ?: 0f
+                    val ry = attrs["ry"]?.toFloatOrNull() ?: rx
+                    val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                    val animations = parseAnimations(innerContent)
+                    val element = wrapWithStyleFromStylesheet(SvgRect(x, y, width, height, rx, ry), tagName, attrs, stylesheet)
+                    elements.add(wrapWithAnimations(element, animations))
+                    remaining = newRemaining
+                }
+                "line" -> {
+                    val x1 = attrs["x1"]?.toFloatOrNull() ?: 0f
+                    val y1 = attrs["y1"]?.toFloatOrNull() ?: 0f
+                    val x2 = attrs["x2"]?.toFloatOrNull() ?: 0f
+                    val y2 = attrs["y2"]?.toFloatOrNull() ?: 0f
+                    val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                    val animations = parseAnimations(innerContent)
+                    val element = wrapWithStyleFromStylesheet(SvgLine(x1, y1, x2, y2), tagName, attrs, stylesheet)
+                    elements.add(wrapWithAnimations(element, animations))
+                    remaining = newRemaining
+                }
+                "polyline" -> {
+                    val points = parsePoints(attrs["points"] ?: "")
+                    if (points.isNotEmpty()) {
+                        val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                        val animations = parseAnimations(innerContent)
+                        val element = wrapWithStyleFromStylesheet(SvgPolyline(points), tagName, attrs, stylesheet)
+                        elements.add(wrapWithAnimations(element, animations))
+                        remaining = newRemaining
+                    } else {
+                        remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                    }
+                }
+                "polygon" -> {
+                    val points = parsePoints(attrs["points"] ?: "")
+                    if (points.isNotEmpty()) {
+                        val (innerContent, newRemaining) = extractElementContent(remaining, tagMatch, selfClosing, tagName)
+                        val animations = parseAnimations(innerContent)
+                        val element = wrapWithStyleFromStylesheet(SvgPolygon(points), tagName, attrs, stylesheet)
+                        elements.add(wrapWithAnimations(element, animations))
+                        remaining = newRemaining
+                    } else {
+                        remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                    }
+                }
+                "g" -> {
+                    if (selfClosing) {
+                        remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                    } else {
+                        val closeTag = "</g>"
+                        val closeIdx = findMatchingClose(remaining, tagMatch.range.last + 1, "g")
+                        if (closeIdx > 0) {
+                            val innerContent = remaining.substring(tagMatch.range.last + 1, closeIdx)
+                            val children = parseElementsWithStylesheet(innerContent, stylesheet)
+                            elements.add(wrapWithStyleFromStylesheet(SvgGroup(children), tagName, attrs, stylesheet))
+                            remaining = remaining.substring(closeIdx + closeTag.length).trim()
+                        } else {
+                            remaining = remaining.substring(tagMatch.range.last + 1).trim()
+                        }
+                    }
+                }
+                else -> {
+                    // Skip unknown elements
+                    remaining = advancePastElement(remaining, tagMatch, selfClosing, tagName)
+                }
+            }
+        }
+
+        return ParsedSvg(viewBox, elements)
     }
 
     private fun parseViewBox(viewBoxStr: String?): ViewBox? {
@@ -668,6 +836,423 @@ internal object SvgXmlParser {
         } else {
             element
         }
+    }
+
+    /**
+     * Wraps element with style, resolving styles from stylesheet + inline styles.
+     */
+    private fun wrapWithStyleFromStylesheet(
+        element: SvgElement,
+        tagName: String,
+        attrs: Map<String, String>,
+        stylesheet: CssStylesheet
+    ): SvgElement {
+        // Resolve styles from stylesheet + inline
+        val resolvedStyles = resolveStylesForElement(tagName, attrs, stylesheet)
+
+        // Merge resolved styles with original attrs (for non-style attributes)
+        val mergedAttrs = attrs.toMutableMap()
+        mergedAttrs.putAll(resolvedStyles)
+        mergedAttrs.remove("style") // Already processed
+
+        // Check for CSS animation property
+        val animationValue = mergedAttrs["animation"]
+        val animations = mutableListOf<SvgAnimate>()
+
+        if (animationValue != null) {
+            val cssAnimation = parseCssAnimation(animationValue)
+            if (cssAnimation != null) {
+                // Find corresponding @keyframes
+                val keyframes = stylesheet.keyframes.find { it.name == cssAnimation.name }
+                if (keyframes != null) {
+                    animations.addAll(cssAnimationToSvgAnimate(cssAnimation, keyframes))
+                }
+            }
+            mergedAttrs.remove("animation") // Remove animation from style attrs
+        }
+
+        val style = parseStyle(mergedAttrs)
+        var result: SvgElement = element
+
+        // Apply style if any
+        if (style != null) {
+            result = SvgStyled(result, style)
+        }
+
+        // Apply animations if any
+        if (animations.isNotEmpty()) {
+            result = SvgAnimated(result, animations)
+        }
+
+        return result
+    }
+
+    // ============================================
+    // CSS Stylesheet Parsing
+    // ============================================
+
+    private val styleTagPattern = Regex("""<style[^>]*>([\s\S]*?)</style>""", RegexOption.IGNORE_CASE)
+    private val cssRulePattern = Regex("""([^{@]+)\{([^}]*)\}""")
+    private val keyframesPattern = Regex("""@keyframes\s+(\w[\w-]*)\s*\{((?:[^{}]|\{[^{}]*\})*)\}""", RegexOption.IGNORE_CASE)
+    private val keyframePattern = Regex("""([\d.]+%|from|to)\s*\{([^}]*)\}""")
+
+    /**
+     * Extracts and parses <style> content from SVG string.
+     * Returns the stylesheet and SVG content with <style> removed.
+     */
+    private fun extractStylesheet(svgContent: String): Pair<CssStylesheet, String> {
+        val matches = styleTagPattern.findAll(svgContent).toList()
+        if (matches.isEmpty()) {
+            return CssStylesheet() to svgContent
+        }
+
+        val rules = mutableListOf<CssRule>()
+        val keyframes = mutableListOf<CssKeyframes>()
+
+        for (match in matches) {
+            val cssContent = match.groupValues[1]
+            // Parse @keyframes first (need to remove them before parsing regular rules)
+            keyframes.addAll(parseCssKeyframes(cssContent))
+            // Parse regular CSS rules (excluding @keyframes content)
+            val cssWithoutKeyframes = cssContent.replace(keyframesPattern, "")
+            rules.addAll(parseCssRules(cssWithoutKeyframes))
+        }
+
+        val cleanedContent = svgContent.replace(styleTagPattern, "")
+        return CssStylesheet(rules, keyframes) to cleanedContent
+    }
+
+    /**
+     * Parses @keyframes declarations from CSS content.
+     */
+    private fun parseCssKeyframes(cssContent: String): List<CssKeyframes> {
+        val result = mutableListOf<CssKeyframes>()
+
+        keyframesPattern.findAll(cssContent).forEach { match ->
+            val name = match.groupValues[1]
+            val keyframesContent = match.groupValues[2]
+            val keyframes = parseKeyframeList(keyframesContent)
+            if (keyframes.isNotEmpty()) {
+                result.add(CssKeyframes(name, keyframes))
+            }
+        }
+
+        return result
+    }
+
+    /**
+     * Parses keyframe list inside @keyframes.
+     */
+    private fun parseKeyframeList(content: String): List<CssKeyframe> {
+        val keyframes = mutableListOf<CssKeyframe>()
+
+        keyframePattern.findAll(content).forEach { match ->
+            val offsetStr = match.groupValues[1].trim().lowercase()
+            val properties = parseCssStyleAttribute(match.groupValues[2])
+
+            val offset = when (offsetStr) {
+                "from" -> 0f
+                "to" -> 1f
+                else -> offsetStr.removeSuffix("%").toFloatOrNull()?.div(100f)
+            }
+
+            if (offset != null && properties.isNotEmpty()) {
+                keyframes.add(CssKeyframe(offset, properties))
+            }
+        }
+
+        return keyframes.sortedBy { it.offset }
+    }
+
+    /**
+     * Parses CSS content into rules.
+     * Example: ".my-class { fill: red; }" -> CssRule(Class("my-class"), {fill=red})
+     */
+    private fun parseCssRules(cssContent: String): List<CssRule> {
+        val rules = mutableListOf<CssRule>()
+
+        cssRulePattern.findAll(cssContent).forEach { match ->
+            val selectorStr = match.groupValues[1].trim()
+            val declarationsStr = match.groupValues[2]
+
+            val selector = parseCssSelector(selectorStr)
+            if (selector != null) {
+                val declarations = parseCssStyleAttribute(declarationsStr)
+                if (declarations.isNotEmpty()) {
+                    rules.add(CssRule(selector, declarations))
+                }
+            }
+        }
+
+        return rules
+    }
+
+    /**
+     * Parses a CSS selector string into a CssSelector.
+     * Supports: .class, #id, tag, *
+     */
+    private fun parseCssSelector(selectorStr: String): CssSelector? {
+        val trimmed = selectorStr.trim()
+        return when {
+            trimmed.startsWith(".") -> CssSelector.Class(trimmed.drop(1))
+            trimmed.startsWith("#") -> CssSelector.Id(trimmed.drop(1))
+            trimmed == "*" -> CssSelector.Universal
+            trimmed.matches(Regex("[a-zA-Z][a-zA-Z0-9-]*")) -> CssSelector.Tag(trimmed.lowercase())
+            else -> null // Unsupported selector (complex selectors)
+        }
+    }
+
+    // ============================================
+    // CSS Animation Parsing
+    // ============================================
+
+    /**
+     * Parses CSS animation shorthand property.
+     * Format: name duration timing-function delay iteration-count direction fill-mode
+     * Example: "spin 1s linear infinite"
+     */
+    private fun parseCssAnimation(value: String): CssAnimation? {
+        val parts = value.trim().split(Regex("\\s+"))
+        if (parts.isEmpty()) return null
+
+        var name: String? = null
+        var duration: Duration = Duration.ZERO
+        var timingFunction: CssTimingFunction = CssTimingFunction.Ease
+        var delay: Duration = Duration.ZERO
+        var iterationCount = 1
+        var direction = AnimationDirection.NORMAL
+        var fillMode = AnimationFillMode.NONE
+
+        for (part in parts) {
+            val lower = part.lowercase()
+            when {
+                // Duration/delay (e.g., "1s", "500ms")
+                lower.endsWith("ms") -> {
+                    val ms = lower.removeSuffix("ms").toFloatOrNull()
+                    if (ms != null) {
+                        if (duration == Duration.ZERO) {
+                            duration = ms.toLong().milliseconds
+                        } else {
+                            delay = ms.toLong().milliseconds
+                        }
+                    }
+                }
+                lower.endsWith("s") && !lower.endsWith("ms") -> {
+                    val sec = lower.removeSuffix("s").toFloatOrNull()
+                    if (sec != null) {
+                        if (duration == Duration.ZERO) {
+                            duration = (sec * 1000).toLong().milliseconds
+                        } else {
+                            delay = (sec * 1000).toLong().milliseconds
+                        }
+                    }
+                }
+                // Iteration count (negative value for infinite)
+                lower == "infinite" -> iterationCount = SvgAnimate.INFINITE
+                lower.toIntOrNull() != null -> iterationCount = lower.toInt()
+                // Direction
+                lower == "normal" -> direction = AnimationDirection.NORMAL
+                lower == "reverse" -> direction = AnimationDirection.REVERSE
+                lower == "alternate" -> direction = AnimationDirection.ALTERNATE
+                lower == "alternate-reverse" -> direction = AnimationDirection.ALTERNATE_REVERSE
+                // Fill mode
+                lower == "none" -> fillMode = AnimationFillMode.NONE
+                lower == "forwards" -> fillMode = AnimationFillMode.FORWARDS
+                lower == "backwards" -> fillMode = AnimationFillMode.BACKWARDS
+                lower == "both" -> fillMode = AnimationFillMode.BOTH
+                // Timing function
+                lower == "linear" -> timingFunction = CssTimingFunction.Linear
+                lower == "ease" -> timingFunction = CssTimingFunction.Ease
+                lower == "ease-in" -> timingFunction = CssTimingFunction.EaseIn
+                lower == "ease-out" -> timingFunction = CssTimingFunction.EaseOut
+                lower == "ease-in-out" -> timingFunction = CssTimingFunction.EaseInOut
+                lower.startsWith("cubic-bezier(") || lower.startsWith("steps(") -> {
+                    timingFunction = CssTimingFunction.parse(lower)
+                }
+                // Animation name (identifier)
+                name == null && !lower.matches(Regex("^[0-9].*")) -> name = part
+            }
+        }
+
+        return name?.let {
+            CssAnimation(
+                name = it,
+                duration = duration,
+                timingFunction = timingFunction,
+                delay = delay,
+                iterationCount = iterationCount,
+                direction = direction,
+                fillMode = fillMode
+            )
+        }
+    }
+
+    /**
+     * Converts CSS animation + @keyframes to SvgAnimate list.
+     */
+    private fun cssAnimationToSvgAnimate(
+        animation: CssAnimation,
+        keyframes: CssKeyframes
+    ): List<SvgAnimate> {
+        val result = mutableListOf<SvgAnimate>()
+        val calcMode = animation.timingFunction.toCalcMode()
+        val keySplines = animation.timingFunction.toKeySplines()
+        val dur = animation.duration
+        val delay = animation.delay
+        val iterations = animation.iterationCount
+
+        // Group keyframe properties
+        val propertyKeyframes = mutableMapOf<String, MutableList<Pair<Float, String>>>()
+        for (kf in keyframes.keyframes) {
+            for ((prop, value) in kf.properties) {
+                propertyKeyframes.getOrPut(prop) { mutableListOf() }.add(kf.offset to value)
+            }
+        }
+
+        // Convert each animated property to SvgAnimate
+        for ((prop, frames) in propertyKeyframes) {
+            if (frames.size < 2) continue
+
+            val fromValue = frames.first().second
+            val toValue = frames.last().second
+
+            when (prop.lowercase()) {
+                "opacity" -> {
+                    val from = fromValue.toFloatOrNull() ?: 1f
+                    val to = toValue.toFloatOrNull() ?: 1f
+                    result.add(SvgAnimate.Opacity(from, to, dur, delay, calcMode, keySplines, iterations))
+                }
+                "stroke-width" -> {
+                    val from = fromValue.toFloatOrNull() ?: 2f
+                    val to = toValue.toFloatOrNull() ?: 2f
+                    result.add(SvgAnimate.StrokeWidth(from, to, dur, delay, calcMode, keySplines, iterations))
+                }
+                "stroke-opacity" -> {
+                    val from = fromValue.toFloatOrNull() ?: 1f
+                    val to = toValue.toFloatOrNull() ?: 1f
+                    result.add(SvgAnimate.StrokeOpacity(from, to, dur, delay, calcMode, keySplines, iterations))
+                }
+                "fill-opacity" -> {
+                    val from = fromValue.toFloatOrNull() ?: 1f
+                    val to = toValue.toFloatOrNull() ?: 1f
+                    result.add(SvgAnimate.FillOpacity(from, to, dur, delay, calcMode, keySplines, iterations))
+                }
+                "transform" -> {
+                    val fromTransform = parseTransformAnimation(fromValue)
+                    val toTransform = parseTransformAnimation(toValue)
+                    if (fromTransform != null && toTransform != null &&
+                        fromTransform.first == toTransform.first) {
+                        result.add(SvgAnimate.Transform(
+                            fromTransform.first, fromTransform.second, toTransform.second,
+                            dur, delay, calcMode, keySplines, iterations
+                        ))
+                    }
+                }
+                "stroke-dashoffset" -> {
+                    val from = fromValue.toFloatOrNull() ?: 0f
+                    val to = toValue.toFloatOrNull() ?: 0f
+                    result.add(SvgAnimate.StrokeDashoffset(from, to, dur, delay, calcMode, keySplines, iterations))
+                }
+            }
+        }
+
+        return result
+    }
+
+    /**
+     * Parses transform value for animation (single transform function).
+     */
+    private fun parseTransformAnimation(value: String): Pair<TransformType, Float>? {
+        val trimmed = value.trim().lowercase()
+        return when {
+            trimmed.startsWith("rotate(") -> {
+                val angle = trimmed.removePrefix("rotate(")
+                    .removeSuffix(")")
+                    .removeSuffix("deg")
+                    .trim()
+                    .toFloatOrNull()
+                angle?.let { TransformType.ROTATE to it }
+            }
+            trimmed.startsWith("scale(") -> {
+                val scale = trimmed.removePrefix("scale(")
+                    .removeSuffix(")")
+                    .trim()
+                    .toFloatOrNull()
+                scale?.let { TransformType.SCALE to it }
+            }
+            trimmed.startsWith("translatex(") -> {
+                val value = trimmed.removePrefix("translatex(")
+                    .removeSuffix(")")
+                    .removeSuffix("px")
+                    .trim()
+                    .toFloatOrNull()
+                value?.let { TransformType.TRANSLATE_X to it }
+            }
+            trimmed.startsWith("translatey(") -> {
+                val value = trimmed.removePrefix("translatey(")
+                    .removeSuffix(")")
+                    .removeSuffix("px")
+                    .trim()
+                    .toFloatOrNull()
+                value?.let { TransformType.TRANSLATE_Y to it }
+            }
+            trimmed.startsWith("skewx(") -> {
+                val angle = trimmed.removePrefix("skewx(")
+                    .removeSuffix(")")
+                    .removeSuffix("deg")
+                    .trim()
+                    .toFloatOrNull()
+                angle?.let { TransformType.SKEW_X to it }
+            }
+            trimmed.startsWith("skewy(") -> {
+                val angle = trimmed.removePrefix("skewy(")
+                    .removeSuffix(")")
+                    .removeSuffix("deg")
+                    .trim()
+                    .toFloatOrNull()
+                angle?.let { TransformType.SKEW_Y to it }
+            }
+            else -> null
+        }
+    }
+
+    /**
+     * Resolves styles for an element based on stylesheet and inline styles.
+     * Priority: inline style > id > class > tag > universal
+     */
+    private fun resolveStylesForElement(
+        tagName: String,
+        attrs: Map<String, String>,
+        stylesheet: CssStylesheet
+    ): Map<String, String> {
+        val elementId = attrs["id"]
+        val elementClasses = attrs["class"]?.split(Regex("\\s+"))?.filter { it.isNotEmpty() } ?: emptyList()
+
+        // Collect matching rules sorted by specificity
+        val matchingRules = stylesheet.rules
+            .filter { rule ->
+                when (rule.selector) {
+                    is CssSelector.Universal -> true
+                    is CssSelector.Tag -> rule.selector.tagName == tagName.lowercase()
+                    is CssSelector.Class -> elementClasses.contains(rule.selector.className)
+                    is CssSelector.Id -> elementId == rule.selector.id
+                }
+            }
+            .sortedBy { it.selector.specificity }
+
+        // Merge styles in order (later = higher priority)
+        val mergedStyles = mutableMapOf<String, String>()
+
+        // Apply stylesheet rules in specificity order
+        for (rule in matchingRules) {
+            mergedStyles.putAll(rule.declarations)
+        }
+
+        // Apply inline style (highest priority)
+        val inlineStyle = parseCssStyleAttribute(attrs["style"])
+        mergedStyles.putAll(inlineStyle)
+
+        return mergedStyles
     }
 
     /**
