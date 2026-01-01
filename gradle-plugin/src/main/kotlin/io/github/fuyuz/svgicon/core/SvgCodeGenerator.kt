@@ -1030,7 +1030,7 @@ object SvgCodeGenerator {
                         if (duration == 0L) duration = ms else delay = ms
                     }
                 }
-                lower == "infinite" -> iterationCount = Int.MAX_VALUE
+                lower == "infinite" -> iterationCount = -1  // INFINITE
                 lower.toIntOrNull() != null -> iterationCount = lower.toInt()
                 lower in listOf("linear", "ease", "ease-in", "ease-out", "ease-in-out") -> {
                     timingFunction = lower
@@ -1075,20 +1075,20 @@ object SvgCodeGenerator {
                 "opacity" -> {
                     val from = fromValue.toFloatOrNull() ?: 1f
                     val to = toValue.toFloatOrNull() ?: 1f
-                    generateOpacityAnimation(from, to, animation.duration, animation.delay, calcModeStr, keySplinesCode)
+                    generateOpacityAnimation(from, to, animation.duration, animation.delay, calcModeStr, keySplinesCode, animation.iterationCount)
                 }
                 "transform" -> {
                     val fromTransform = parseTransformAnimation(fromValue)
                     val toTransform = parseTransformAnimation(toValue)
                     if (fromTransform != null && toTransform != null && fromTransform.first == toTransform.first) {
                         generateTransformAnimation(fromTransform.first, fromTransform.second, toTransform.second,
-                            animation.duration, animation.delay, calcModeStr, keySplinesCode)
+                            animation.duration, animation.delay, calcModeStr, keySplinesCode, animation.iterationCount)
                     } else null
                 }
                 "stroke-width" -> {
                     val from = fromValue.toFloatOrNull() ?: 2f
                     val to = toValue.toFloatOrNull() ?: 2f
-                    generateStrokeWidthAnimation(from, to, animation.duration, animation.delay, calcModeStr, keySplinesCode)
+                    generateStrokeWidthAnimation(from, to, animation.duration, animation.delay, calcModeStr, keySplinesCode, animation.iterationCount)
                 }
                 else -> null
             }
@@ -1122,33 +1122,33 @@ object SvgCodeGenerator {
         }
     }
 
-    private fun generateOpacityAnimation(from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?): CodeBlock {
+    private fun generateOpacityAnimation(from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?, iterations: Int): CodeBlock {
         return if (keySplines != null) {
-            CodeBlock.of("%T.Opacity(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L)",
-                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines)
+            CodeBlock.of("%T.Opacity(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L, %L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines, iterations)
         } else {
-            CodeBlock.of("%T.Opacity(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L)",
-                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode)
+            CodeBlock.of("%T.Opacity(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, null, %L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, iterations)
         }
     }
 
-    private fun generateTransformAnimation(type: String, from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?): CodeBlock {
+    private fun generateTransformAnimation(type: String, from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?, iterations: Int): CodeBlock {
         return if (keySplines != null) {
-            CodeBlock.of("%T.Transform(%T.%L, %Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L)",
-                svgAnimateClass, transformTypeClass, type, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines)
+            CodeBlock.of("%T.Transform(%T.%L, %Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L, %L)",
+                svgAnimateClass, transformTypeClass, type, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines, iterations)
         } else {
-            CodeBlock.of("%T.Transform(%T.%L, %Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L)",
-                svgAnimateClass, transformTypeClass, type, from, to, durMs, delayMs, calcModeClass, calcMode)
+            CodeBlock.of("%T.Transform(%T.%L, %Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, null, %L)",
+                svgAnimateClass, transformTypeClass, type, from, to, durMs, delayMs, calcModeClass, calcMode, iterations)
         }
     }
 
-    private fun generateStrokeWidthAnimation(from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?): CodeBlock {
+    private fun generateStrokeWidthAnimation(from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?, iterations: Int): CodeBlock {
         return if (keySplines != null) {
-            CodeBlock.of("%T.StrokeWidth(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L)",
-                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines)
+            CodeBlock.of("%T.StrokeWidth(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L, %L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines, iterations)
         } else {
-            CodeBlock.of("%T.StrokeWidth(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L)",
-                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode)
+            CodeBlock.of("%T.StrokeWidth(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, null, %L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, iterations)
         }
     }
 

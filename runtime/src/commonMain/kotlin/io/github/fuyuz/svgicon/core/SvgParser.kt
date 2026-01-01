@@ -1047,8 +1047,8 @@ internal object SvgXmlParser {
                         }
                     }
                 }
-                // Iteration count
-                lower == "infinite" -> iterationCount = Int.MAX_VALUE
+                // Iteration count (negative value for infinite)
+                lower == "infinite" -> iterationCount = SvgAnimate.INFINITE
                 lower.toIntOrNull() != null -> iterationCount = lower.toInt()
                 // Direction
                 lower == "normal" -> direction = AnimationDirection.NORMAL
@@ -1099,6 +1099,7 @@ internal object SvgXmlParser {
         val keySplines = animation.timingFunction.toKeySplines()
         val dur = animation.duration
         val delay = animation.delay
+        val iterations = animation.iterationCount
 
         // Group keyframe properties
         val propertyKeyframes = mutableMapOf<String, MutableList<Pair<Float, String>>>()
@@ -1119,22 +1120,22 @@ internal object SvgXmlParser {
                 "opacity" -> {
                     val from = fromValue.toFloatOrNull() ?: 1f
                     val to = toValue.toFloatOrNull() ?: 1f
-                    result.add(SvgAnimate.Opacity(from, to, dur, delay, calcMode, keySplines))
+                    result.add(SvgAnimate.Opacity(from, to, dur, delay, calcMode, keySplines, iterations))
                 }
                 "stroke-width" -> {
                     val from = fromValue.toFloatOrNull() ?: 2f
                     val to = toValue.toFloatOrNull() ?: 2f
-                    result.add(SvgAnimate.StrokeWidth(from, to, dur, delay, calcMode, keySplines))
+                    result.add(SvgAnimate.StrokeWidth(from, to, dur, delay, calcMode, keySplines, iterations))
                 }
                 "stroke-opacity" -> {
                     val from = fromValue.toFloatOrNull() ?: 1f
                     val to = toValue.toFloatOrNull() ?: 1f
-                    result.add(SvgAnimate.StrokeOpacity(from, to, dur, delay, calcMode, keySplines))
+                    result.add(SvgAnimate.StrokeOpacity(from, to, dur, delay, calcMode, keySplines, iterations))
                 }
                 "fill-opacity" -> {
                     val from = fromValue.toFloatOrNull() ?: 1f
                     val to = toValue.toFloatOrNull() ?: 1f
-                    result.add(SvgAnimate.FillOpacity(from, to, dur, delay, calcMode, keySplines))
+                    result.add(SvgAnimate.FillOpacity(from, to, dur, delay, calcMode, keySplines, iterations))
                 }
                 "transform" -> {
                     val fromTransform = parseTransformAnimation(fromValue)
@@ -1143,14 +1144,14 @@ internal object SvgXmlParser {
                         fromTransform.first == toTransform.first) {
                         result.add(SvgAnimate.Transform(
                             fromTransform.first, fromTransform.second, toTransform.second,
-                            dur, delay, calcMode, keySplines
+                            dur, delay, calcMode, keySplines, iterations
                         ))
                     }
                 }
                 "stroke-dashoffset" -> {
                     val from = fromValue.toFloatOrNull() ?: 0f
                     val to = toValue.toFloatOrNull() ?: 0f
-                    result.add(SvgAnimate.StrokeDashoffset(from, to, dur, delay, calcMode, keySplines))
+                    result.add(SvgAnimate.StrokeDashoffset(from, to, dur, delay, calcMode, keySplines, iterations))
                 }
             }
         }

@@ -977,6 +977,72 @@ class SvgParserTest {
     }
 
     @Test
+    fun parseAnimationWithInfiniteIterations() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes spin {
+                        from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
+                    }
+                    .infinite { animation: spin 1s linear infinite; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="infinite"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.Transform>(anim)
+        assertEquals(SvgAnimate.INFINITE, anim.iterations)
+        assertTrue(anim.isInfinite)
+    }
+
+    @Test
+    fun parseAnimationWithFiniteIterations() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .finite { animation: fadeIn 1s ease 3; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="finite"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.Opacity>(anim)
+        assertEquals(3, anim.iterations)
+        assertTrue(!anim.isInfinite)
+    }
+
+    @Test
+    fun parseAnimationDefaultsToSingleIteration() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .default { animation: fadeIn 1s; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="default"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.Opacity>(anim)
+        assertEquals(1, anim.iterations)
+        assertTrue(!anim.isInfinite)
+    }
+
+    @Test
     fun parseElementWithFill() {
         val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" fill="red"/></svg>""")
         val styled = svg.children[0] as SvgStyled

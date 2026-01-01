@@ -765,6 +765,16 @@ sealed interface SvgAnimate {
     val delay: Duration
     val calcMode: CalcMode
     val keySplines: KeySplines?
+    /** Number of animation iterations. Negative value (e.g., -1) means infinite. */
+    val iterations: Int
+
+    /** Returns true if this animation repeats infinitely. */
+    val isInfinite: Boolean get() = iterations < 0
+
+    companion object {
+        /** Constant representing infinite iterations. */
+        const val INFINITE = -1
+    }
 
     // ============================================
     // Stroke Properties
@@ -779,7 +789,8 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         val reverse: Boolean = false,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -791,7 +802,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -803,7 +815,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -815,7 +828,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -827,7 +841,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     // ============================================
@@ -843,7 +858,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     // ============================================
@@ -859,7 +875,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     // ============================================
@@ -875,7 +892,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -887,7 +905,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -899,7 +918,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -911,7 +931,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -923,7 +944,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -935,7 +957,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -947,7 +970,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -959,7 +983,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -971,7 +996,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -983,7 +1009,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -995,7 +1022,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -1007,7 +1035,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -1019,7 +1048,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -1031,7 +1061,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     /**
@@ -1043,7 +1074,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     // ============================================
@@ -1060,7 +1092,8 @@ sealed interface SvgAnimate {
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 
     // ============================================
@@ -1077,7 +1110,8 @@ sealed interface SvgAnimate {
         override val delay: Duration = Duration.ZERO,
         val rotate: MotionRotate = MotionRotate.NONE,
         override val calcMode: CalcMode = CalcMode.LINEAR,
-        override val keySplines: KeySplines? = null
+        override val keySplines: KeySplines? = null,
+        override val iterations: Int = INFINITE
     ) : SvgAnimate
 }
 

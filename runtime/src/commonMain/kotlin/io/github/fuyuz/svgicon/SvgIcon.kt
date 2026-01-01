@@ -889,10 +889,13 @@ private fun AnimatedSvgIconCanvas(
 
     val isInfinite = iterations == Int.MAX_VALUE
 
-    // Calculate total cycle duration (max of delay + duration across all animations)
+    // Calculate total cycle duration (max of delay + duration * iterations across all animations)
+    // For infinite per-animation iterations, we use 1 iteration for the cycle calculation
     val totalCycleDuration = remember(animations) {
         animations.maxOfOrNull { entry ->
-            entry.animation.delay.inWholeMilliseconds + entry.animation.dur.inWholeMilliseconds
+            val anim = entry.animation
+            val effectiveIterations = if (anim.isInfinite) 1 else anim.iterations.coerceAtLeast(1)
+            anim.delay.inWholeMilliseconds + (anim.dur.inWholeMilliseconds * effectiveIterations)
         }?.toInt()?.coerceAtLeast(1) ?: 1000
     }
 
@@ -921,13 +924,28 @@ private fun AnimatedSvgIconCanvas(
                             val delayMs = anim.delay.inWholeMilliseconds.toFloat()
                             val durationMs = anim.dur.inWholeMilliseconds.toFloat()
                             val currentTimeMs = masterProgress * totalCycleDuration
+                            val effectiveIterations = if (anim.isInfinite) 1 else anim.iterations.coerceAtLeast(1)
+                            val totalAnimationMs = durationMs * effectiveIterations
 
                             val rawProgress = when {
                                 currentTimeMs < delayMs -> 0f  // Still in delay period
-                                currentTimeMs >= delayMs + durationMs -> 1f  // Animation complete
+                                currentTimeMs >= delayMs + totalAnimationMs -> 1f  // All iterations complete
                                 else -> {
-                                    // During animation
-                                    ((currentTimeMs - delayMs) / durationMs).coerceIn(0f, 1f)
+                                    // During animation - calculate progress within current iteration
+                                    val timeInAnimation = currentTimeMs - delayMs
+                                    if (anim.isInfinite) {
+                                        // Infinite: cycle forever
+                                        (timeInAnimation / durationMs) % 1f
+                                    } else {
+                                        // Finite: cycle within iterations, end at 1.0
+                                        val iterationProgress = (timeInAnimation / durationMs) % 1f
+                                        val currentIteration = (timeInAnimation / durationMs).toInt()
+                                        if (currentIteration >= effectiveIterations - 1 && iterationProgress >= 1f - 0.001f) {
+                                            1f
+                                        } else {
+                                            iterationProgress
+                                        }
+                                    }
                                 }
                             }
                             // Apply easing based on calcMode and keySplines
@@ -970,13 +988,28 @@ private fun AnimatedSvgIconCanvas(
                             val delayMs = anim.delay.inWholeMilliseconds.toFloat()
                             val durationMs = anim.dur.inWholeMilliseconds.toFloat()
                             val currentTimeMs = masterProgress.value * totalCycleDuration
+                            val effectiveIterations = if (anim.isInfinite) 1 else anim.iterations.coerceAtLeast(1)
+                            val totalAnimationMs = durationMs * effectiveIterations
 
                             val rawProgress = when {
                                 currentTimeMs < delayMs -> 0f  // Still in delay period
-                                currentTimeMs >= delayMs + durationMs -> 1f  // Animation complete
+                                currentTimeMs >= delayMs + totalAnimationMs -> 1f  // All iterations complete
                                 else -> {
-                                    // During animation
-                                    ((currentTimeMs - delayMs) / durationMs).coerceIn(0f, 1f)
+                                    // During animation - calculate progress within current iteration
+                                    val timeInAnimation = currentTimeMs - delayMs
+                                    if (anim.isInfinite) {
+                                        // Infinite: cycle forever
+                                        (timeInAnimation / durationMs) % 1f
+                                    } else {
+                                        // Finite: cycle within iterations, end at 1.0
+                                        val iterationProgress = (timeInAnimation / durationMs) % 1f
+                                        val currentIteration = (timeInAnimation / durationMs).toInt()
+                                        if (currentIteration >= effectiveIterations - 1 && iterationProgress >= 1f - 0.001f) {
+                                            1f
+                                        } else {
+                                            iterationProgress
+                                        }
+                                    }
                                 }
                             }
                             // Apply easing based on calcMode and keySplines
