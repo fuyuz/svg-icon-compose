@@ -25,7 +25,7 @@ enum class IconVisibility {
  * Custom configuration:
  * ```kotlin
  * svgIcon {
- *     svgDir.set(file("src/commonMain/composeResources/svg"))
+ *     svgDir.set(file("src/commonMain/svgicons"))
  *     packageName.set("com.example.icons")
  *     visibility.set(IconVisibility.INTERNAL)
  * }
@@ -34,7 +34,7 @@ enum class IconVisibility {
 abstract class SvgIconExtension {
     /**
      * Directory containing SVG files to process.
-     * Defaults to "src/commonMain/composeResources/svg".
+     * Defaults to "src/commonMain/svgicons".
      */
     abstract val svgDir: DirectoryProperty
 

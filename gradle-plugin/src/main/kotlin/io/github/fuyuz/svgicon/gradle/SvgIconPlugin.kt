@@ -16,9 +16,9 @@ import org.gradle.api.Project
  * Optional configuration:
  * ```kotlin
  * svgIcon {
- *     svgDir.set(file("src/commonMain/composeResources/svg"))  // default
- *     packageName.set("${project.group}.icons")                 // default
- *     visibility.set(IconVisibility.PUBLIC)                     // default
+ *     svgDir.set(file("src/commonMain/svgicons"))  // default
+ *     packageName.set("${project.group}.icons")     // default
+ *     visibility.set(IconVisibility.PUBLIC)         // default
  * }
  * ```
  */
@@ -29,7 +29,7 @@ class SvgIconPlugin : Plugin<Project> {
         val extension = project.extensions.create("svgIcon", SvgIconExtension::class.java)
 
         // Set default values
-        extension.svgDir.convention(project.layout.projectDirectory.dir("src/commonMain/composeResources/svg"))
+        extension.svgDir.convention(project.layout.projectDirectory.dir("src/commonMain/svgicons"))
         extension.packageName.convention(project.provider { "${project.group}.icons" })
         extension.visibility.convention(IconVisibility.PUBLIC)
 
