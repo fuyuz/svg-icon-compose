@@ -496,12 +496,56 @@ enum class MaskUnits {
 val DefaultAnimationDuration = 500.milliseconds
 
 /**
+ * SVG calcMode attribute for animation timing.
+ * Controls how intermediate values are calculated between keyframes.
+ */
+enum class CalcMode {
+    /** Linear interpolation between values (default) */
+    LINEAR,
+    /** Jump directly between values with no interpolation */
+    DISCRETE,
+    /** Constant velocity interpolation */
+    PACED,
+    /** Cubic bezier interpolation using keySplines */
+    SPLINE
+}
+
+/**
+ * Cubic bezier control points for spline easing.
+ * Used when calcMode is SPLINE.
+ *
+ * @param x1 X coordinate of first control point (0.0-1.0)
+ * @param y1 Y coordinate of first control point
+ * @param x2 X coordinate of second control point (0.0-1.0)
+ * @param y2 Y coordinate of second control point
+ */
+data class KeySplines(
+    val x1: Float,
+    val y1: Float,
+    val x2: Float,
+    val y2: Float
+) {
+    companion object {
+        /** CSS ease: cubic-bezier(0.25, 0.1, 0.25, 1) */
+        val EASE = KeySplines(0.25f, 0.1f, 0.25f, 1f)
+        /** CSS ease-in: cubic-bezier(0.42, 0, 1, 1) */
+        val EASE_IN = KeySplines(0.42f, 0f, 1f, 1f)
+        /** CSS ease-out: cubic-bezier(0, 0, 0.58, 1) */
+        val EASE_OUT = KeySplines(0f, 0f, 0.58f, 1f)
+        /** CSS ease-in-out: cubic-bezier(0.42, 0, 0.58, 1) */
+        val EASE_IN_OUT = KeySplines(0.42f, 0f, 0.58f, 1f)
+    }
+}
+
+/**
  * SVG animate element.
  * Corresponds to SVG <animate>, <animateTransform>, <animateMotion> elements.
  */
 sealed interface SvgAnimate {
     val dur: Duration
     val delay: Duration
+    val calcMode: CalcMode
+    val keySplines: KeySplines?
 
     // ============================================
     // Stroke Properties
@@ -514,7 +558,9 @@ sealed interface SvgAnimate {
     data class StrokeDraw(
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
-        val reverse: Boolean = false
+        val reverse: Boolean = false,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -524,7 +570,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -534,7 +582,9 @@ sealed interface SvgAnimate {
         val from: Float = 0f,
         val to: Float = 1f,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -544,7 +594,9 @@ sealed interface SvgAnimate {
         val from: List<Float>,
         val to: List<Float>,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -554,7 +606,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     // ============================================
@@ -568,7 +622,9 @@ sealed interface SvgAnimate {
         val from: Float = 0f,
         val to: Float = 1f,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     // ============================================
@@ -582,7 +638,9 @@ sealed interface SvgAnimate {
         val from: Float = 0f,
         val to: Float = 1f,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     // ============================================
@@ -596,7 +654,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -606,7 +666,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -616,7 +678,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -626,7 +690,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -636,7 +702,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -646,7 +714,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -656,7 +726,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -666,7 +738,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -676,7 +750,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -686,7 +762,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -696,7 +774,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -706,7 +786,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -716,7 +798,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -726,7 +810,9 @@ sealed interface SvgAnimate {
         val from: String,
         val to: String,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     /**
@@ -736,7 +822,9 @@ sealed interface SvgAnimate {
         val from: List<Offset>,
         val to: List<Offset>,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     // ============================================
@@ -751,7 +839,9 @@ sealed interface SvgAnimate {
         val from: Float,
         val to: Float,
         override val dur: Duration = DefaultAnimationDuration,
-        override val delay: Duration = Duration.ZERO
+        override val delay: Duration = Duration.ZERO,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 
     // ============================================
@@ -766,7 +856,9 @@ sealed interface SvgAnimate {
         val path: String,
         override val dur: Duration = DefaultAnimationDuration,
         override val delay: Duration = Duration.ZERO,
-        val rotate: MotionRotate = MotionRotate.NONE
+        val rotate: MotionRotate = MotionRotate.NONE,
+        override val calcMode: CalcMode = CalcMode.LINEAR,
+        override val keySplines: KeySplines? = null
     ) : SvgAnimate
 }
 
@@ -1209,123 +1301,325 @@ class SvgBuilder {
 class AnimationBuilder {
     private val animations = mutableListOf<SvgAnimate>()
 
-    fun strokeDraw(dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO, reverse: Boolean = false) {
-        animations.add(SvgAnimate.StrokeDraw(dur, delay, reverse))
+    fun strokeDraw(
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        reverse: Boolean = false,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.StrokeDraw(dur, delay, reverse, calcMode, keySplines))
     }
 
-    fun opacity(from: Float = 0f, to: Float = 1f, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Opacity(from, to, dur, delay))
+    fun opacity(
+        from: Float = 0f,
+        to: Float = 1f,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Opacity(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun translateX(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_X, from, to, dur, delay))
+    fun translateX(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_X, from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun translateY(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_Y, from, to, dur, delay))
+    fun translateY(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_Y, from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun scale(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Transform(TransformType.SCALE, from, to, dur, delay))
+    fun scale(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Transform(TransformType.SCALE, from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun rotate(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Transform(TransformType.ROTATE, from, to, dur, delay))
+    fun rotate(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Transform(TransformType.ROTATE, from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun skewX(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Transform(TransformType.SKEW_X, from, to, dur, delay))
+    fun skewX(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Transform(TransformType.SKEW_X, from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun skewY(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Transform(TransformType.SKEW_Y, from, to, dur, delay))
+    fun skewY(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Transform(TransformType.SKEW_Y, from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun motion(path: String, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO, rotate: MotionRotate = MotionRotate.NONE) {
-        animations.add(SvgAnimate.Motion(path, dur, delay, rotate))
+    fun motion(
+        path: String,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        rotate: MotionRotate = MotionRotate.NONE,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Motion(path, dur, delay, rotate, calcMode, keySplines))
     }
 
     // Stroke properties
-    fun strokeWidth(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.StrokeWidth(from, to, dur, delay))
+    fun strokeWidth(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.StrokeWidth(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun strokeOpacity(from: Float = 0f, to: Float = 1f, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.StrokeOpacity(from, to, dur, delay))
+    fun strokeOpacity(
+        from: Float = 0f,
+        to: Float = 1f,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.StrokeOpacity(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun strokeDasharray(from: List<Float>, to: List<Float>, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.StrokeDasharray(from, to, dur, delay))
+    fun strokeDasharray(
+        from: List<Float>,
+        to: List<Float>,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.StrokeDasharray(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun strokeDashoffset(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.StrokeDashoffset(from, to, dur, delay))
+    fun strokeDashoffset(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.StrokeDashoffset(from, to, dur, delay, calcMode, keySplines))
     }
 
     // Fill properties
-    fun fillOpacity(from: Float = 0f, to: Float = 1f, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.FillOpacity(from, to, dur, delay))
+    fun fillOpacity(
+        from: Float = 0f,
+        to: Float = 1f,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.FillOpacity(from, to, dur, delay, calcMode, keySplines))
     }
 
     // Geometric properties
-    fun cx(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Cx(from, to, dur, delay))
+    fun cx(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Cx(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun cy(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Cy(from, to, dur, delay))
+    fun cy(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Cy(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun r(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.R(from, to, dur, delay))
+    fun r(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.R(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun rx(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Rx(from, to, dur, delay))
+    fun rx(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Rx(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun ry(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Ry(from, to, dur, delay))
+    fun ry(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Ry(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun x(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.X(from, to, dur, delay))
+    fun x(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.X(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun y(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Y(from, to, dur, delay))
+    fun y(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Y(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun width(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Width(from, to, dur, delay))
+    fun width(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Width(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun height(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Height(from, to, dur, delay))
+    fun height(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Height(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun x1(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.X1(from, to, dur, delay))
+    fun x1(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.X1(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun y1(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Y1(from, to, dur, delay))
+    fun y1(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Y1(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun x2(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.X2(from, to, dur, delay))
+    fun x2(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.X2(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun y2(from: Float, to: Float, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Y2(from, to, dur, delay))
+    fun y2(
+        from: Float,
+        to: Float,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Y2(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun d(from: String, to: String, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.D(from, to, dur, delay))
+    fun d(
+        from: String,
+        to: String,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.D(from, to, dur, delay, calcMode, keySplines))
     }
 
-    fun points(from: List<Offset>, to: List<Offset>, dur: Duration = DefaultAnimationDuration, delay: Duration = Duration.ZERO) {
-        animations.add(SvgAnimate.Points(from, to, dur, delay))
+    fun points(
+        from: List<Offset>,
+        to: List<Offset>,
+        dur: Duration = DefaultAnimationDuration,
+        delay: Duration = Duration.ZERO,
+        calcMode: CalcMode = CalcMode.LINEAR,
+        keySplines: KeySplines? = null
+    ) {
+        animations.add(SvgAnimate.Points(from, to, dur, delay, calcMode, keySplines))
     }
 
     fun build(): List<SvgAnimate> = animations.toList()

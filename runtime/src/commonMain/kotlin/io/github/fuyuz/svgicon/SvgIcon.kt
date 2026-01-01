@@ -14,10 +14,12 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -73,8 +75,11 @@ import io.github.fuyuz.svgicon.core.SvgStyle
 import io.github.fuyuz.svgicon.core.SvgStyled
 import io.github.fuyuz.svgicon.core.SvgTransform
 import io.github.fuyuz.svgicon.core.TransformType
+import io.github.fuyuz.svgicon.core.CalcMode
+import io.github.fuyuz.svgicon.core.KeySplines
 import io.github.fuyuz.svgicon.core.VectorEffect
 import io.github.fuyuz.svgicon.core.toPath
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * Interface representing an SVG icon.
@@ -84,6 +89,145 @@ interface SvgIcon {
      * SVG data for this icon.
      */
     val svg: Svg
+}
+
+// ============================================
+// External Animation State Control API
+// ============================================
+
+/**
+ * Read-only animation state for SvgIcon.
+ * Use [SvgIconAnimatable] for mutable state.
+ */
+@Stable
+interface SvgIconAnimationState {
+    /** Current animation progress (0.0 to 1.0) */
+    val progress: Float
+
+    /** Whether the animation is currently playing */
+    val isPlaying: Boolean
+
+    /** Whether the animation is at the end (progress >= 1.0) */
+    val isAtEnd: Boolean get() = progress >= 1f
+
+    /** Whether the animation is at the start (progress <= 0.0) */
+    val isAtStart: Boolean get() = progress <= 0f
+}
+
+/**
+ * Mutable animation state for SvgIcon with control methods.
+ * Allows external control of animation playback similar to Lottie's API.
+ *
+ * Example usage:
+ * ```kotlin
+ * val animationState = rememberSvgIconAnimationState()
+ *
+ * Box(
+ *     modifier = Modifier.pointerInput(Unit) {
+ *         detectTapGestures(
+ *             onPress = {
+ *                 animationState.animateTo(1f)  // Play forward
+ *                 tryAwaitRelease()
+ *                 animationState.animateTo(0f)  // Play reverse
+ *             }
+ *         )
+ *     }
+ * ) {
+ *     AnimatedSvgIcon(
+ *         icon = Icons.Check,
+ *         animationState = animationState,
+ *         contentDescription = "Check"
+ *     )
+ * }
+ * ```
+ */
+@Stable
+interface SvgIconAnimatable : SvgIconAnimationState {
+    /**
+     * Instantly jump to the specified progress value.
+     * @param progress Target progress (0.0 to 1.0)
+     */
+    suspend fun snapTo(progress: Float)
+
+    /**
+     * Animate to the specified progress value.
+     * @param progress Target progress (0.0 to 1.0)
+     * @param durationMillis Animation duration in milliseconds. If null, uses a default duration.
+     */
+    suspend fun animateTo(progress: Float, durationMillis: Int? = null)
+
+    /**
+     * Stop the current animation.
+     */
+    suspend fun stop()
+}
+
+/**
+ * Internal implementation of [SvgIconAnimatable].
+ */
+@Stable
+private class SvgIconAnimatableImpl(
+    private val coroutineScope: CoroutineScope
+) : SvgIconAnimatable {
+    private val animatable = Animatable(0f)
+
+    override val progress: Float get() = animatable.value
+    override val isPlaying: Boolean get() = animatable.isRunning
+
+    override suspend fun snapTo(progress: Float) {
+        animatable.snapTo(progress.coerceIn(0f, 1f))
+    }
+
+    override suspend fun animateTo(progress: Float, durationMillis: Int?) {
+        val targetProgress = progress.coerceIn(0f, 1f)
+        val duration = durationMillis ?: calculateDefaultDuration(animatable.value, targetProgress)
+        animatable.animateTo(
+            targetValue = targetProgress,
+            animationSpec = tween(
+                durationMillis = duration,
+                easing = LinearEasing
+            )
+        )
+    }
+
+    override suspend fun stop() {
+        animatable.stop()
+    }
+
+    private fun calculateDefaultDuration(from: Float, to: Float): Int {
+        // Default: 300ms for full animation, proportional for partial
+        val distance = kotlin.math.abs(to - from)
+        return (300 * distance).toInt().coerceAtLeast(50)
+    }
+}
+
+/**
+ * Creates and remembers a [SvgIconAnimatable] for controlling SVG icon animations.
+ *
+ * Example:
+ * ```kotlin
+ * val animationState = rememberSvgIconAnimationState()
+ *
+ * // Control animation externally
+ * LaunchedEffect(isHovered) {
+ *     if (isHovered) {
+ *         animationState.animateTo(1f)
+ *     } else {
+ *         animationState.animateTo(0f)
+ *     }
+ * }
+ *
+ * AnimatedSvgIcon(
+ *     icon = Icons.Check,
+ *     animationState = animationState,
+ *     contentDescription = "Check"
+ * )
+ * ```
+ */
+@Composable
+fun rememberSvgIconAnimationState(): SvgIconAnimatable {
+    val coroutineScope = rememberCoroutineScope()
+    return remember { SvgIconAnimatableImpl(coroutineScope) }
 }
 
 /**
@@ -308,6 +452,179 @@ fun AnimatedSvgIcon(
 }
 
 /**
+ * Composable that renders an animated SVG icon with external animation state control.
+ * This overload allows you to control the animation progress from outside the composable,
+ * enabling interactive animations like onPress, onHover, and scroll-linked effects.
+ *
+ * Example:
+ * ```kotlin
+ * val animationState = rememberSvgIconAnimationState()
+ *
+ * Box(
+ *     modifier = Modifier.pointerInput(Unit) {
+ *         detectTapGestures(
+ *             onPress = {
+ *                 animationState.animateTo(1f)  // Play forward while pressed
+ *                 tryAwaitRelease()
+ *                 animationState.animateTo(0f)  // Play reverse on release
+ *             }
+ *         )
+ *     }
+ * ) {
+ *     AnimatedSvgIcon(
+ *         icon = Icons.Check,
+ *         animationState = animationState,
+ *         contentDescription = "Check"
+ *     )
+ * }
+ * ```
+ *
+ * @param icon The SvgIcon to render (must contain SvgAnimated elements for animation)
+ * @param animationState External animation state for controlling the animation
+ * @param contentDescription Text used by accessibility services to describe what this icon represents.
+ * @param modifier Modifier to be applied to the icon. Use Modifier.size() to control the icon size.
+ * @param tint Color to tint the icon. Defaults to LocalContentColor.
+ * @param strokeWidth Override the stroke width. If null, uses the SVG's default strokeWidth.
+ */
+@Composable
+fun AnimatedSvgIcon(
+    icon: SvgIcon,
+    animationState: SvgIconAnimatable,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    tint: Color = LocalContentColor.current,
+    strokeWidth: Float? = null
+) {
+    val svg = remember(icon) { icon.svg }
+    val semanticsModifier = if (contentDescription != null) {
+        Modifier.semantics {
+            this.contentDescription = contentDescription
+            this.role = Role.Image
+        }
+    } else {
+        Modifier
+    }
+
+    // Collect animations to build progress map
+    val animations = remember(svg) { collectAllAnimations(svg.children) }
+
+    // Build progress map based on external state
+    val progressMap = remember(animations) {
+        animations.associate { entry ->
+            entry.key to object : State<Float> {
+                override val value: Float
+                    get() {
+                        // All animations follow the master progress with individual timing
+                        val anim = entry.animation
+                        val delayRatio = anim.delay.inWholeMilliseconds.toFloat() /
+                            (anim.delay.inWholeMilliseconds + anim.dur.inWholeMilliseconds).coerceAtLeast(1L)
+                        val durationRatio = anim.dur.inWholeMilliseconds.toFloat() /
+                            (anim.delay.inWholeMilliseconds + anim.dur.inWholeMilliseconds).coerceAtLeast(1L)
+
+                        val masterProgress = animationState.progress
+                        return when {
+                            masterProgress < delayRatio -> 0f
+                            masterProgress >= delayRatio + durationRatio -> 1f
+                            else -> {
+                                val localProgress = ((masterProgress - delayRatio) / durationRatio).coerceIn(0f, 1f)
+                                applyEasing(localProgress, anim.calcMode, anim.keySplines)
+                            }
+                        }
+                    }
+            }
+        }
+    }
+
+    Layout(
+        modifier = modifier.then(semanticsModifier),
+        content = {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawAnimatedSvg(svg, tint, strokeWidth, progressMap)
+            }
+        }
+    ) { measurables, constraints ->
+        val defaultWidth = (svg.effectiveWidth * density).toInt()
+        val defaultHeight = (svg.effectiveHeight * density).toInt()
+
+        val width = when {
+            constraints.hasFixedWidth -> constraints.maxWidth
+            constraints.hasBoundedWidth -> constraints.maxWidth
+            else -> defaultWidth
+        }
+        val height = when {
+            constraints.hasFixedHeight -> constraints.maxHeight
+            constraints.hasBoundedHeight -> constraints.maxHeight
+            else -> defaultHeight
+        }
+
+        val placeable = measurables.first().measure(
+            Constraints.fixed(width, height)
+        )
+
+        layout(width, height) {
+            placeable.place(0, 0)
+        }
+    }
+}
+
+/**
+ * Applies easing based on calcMode and keySplines.
+ */
+private fun applyEasing(progress: Float, calcMode: CalcMode, keySplines: KeySplines?): Float {
+    return when (calcMode) {
+        CalcMode.LINEAR -> progress
+        CalcMode.DISCRETE -> if (progress >= 1f) 1f else 0f
+        CalcMode.PACED -> progress // Same as linear for single segment
+        CalcMode.SPLINE -> {
+            if (keySplines != null) {
+                cubicBezierEasing(progress, keySplines.x1, keySplines.y1, keySplines.x2, keySplines.y2)
+            } else {
+                progress
+            }
+        }
+    }
+}
+
+/**
+ * Cubic bezier easing implementation.
+ * Matches CSS cubic-bezier() behavior.
+ */
+private fun cubicBezierEasing(t: Float, x1: Float, y1: Float, x2: Float, y2: Float): Float {
+    // Newton-Raphson iteration to find t for given x
+    var guess = t
+    for (i in 0 until 8) {
+        val x = bezierX(guess, x1, x2) - t
+        if (kotlin.math.abs(x) < 0.001f) break
+        val dx = bezierDx(guess, x1, x2)
+        if (kotlin.math.abs(dx) < 0.0001f) break
+        guess -= x / dx
+    }
+    return bezierY(guess, y1, y2).coerceIn(0f, 1f)
+}
+
+private fun bezierX(t: Float, x1: Float, x2: Float): Float {
+    val t2 = t * t
+    val t3 = t2 * t
+    val mt = 1 - t
+    val mt2 = mt * mt
+    return 3 * mt2 * t * x1 + 3 * mt * t2 * x2 + t3
+}
+
+private fun bezierY(t: Float, y1: Float, y2: Float): Float {
+    val t2 = t * t
+    val t3 = t2 * t
+    val mt = 1 - t
+    val mt2 = mt * mt
+    return 3 * mt2 * t * y1 + 3 * mt * t2 * y2 + t3
+}
+
+private fun bezierDx(t: Float, x1: Float, x2: Float): Float {
+    val t2 = t * t
+    val mt = 1 - t
+    return 3 * mt * mt * x1 + 6 * mt * t * (x2 - x1) + 3 * t2 * (1 - x2)
+}
+
+/**
  * Checks if any element in the tree has animations.
  */
 private fun hasAnimatedElements(elements: List<SvgElement>): Boolean {
@@ -404,7 +721,7 @@ private fun AnimatedSvgIconCanvas(
             label = "master_timeline"
         )
 
-        // Calculate individual animation progress based on master timeline
+        // Calculate individual animation progress based on master timeline with easing
         val progressMap = remember(animations) {
             animations.associate { entry ->
                 entry.key to object : State<Float> {
@@ -415,7 +732,7 @@ private fun AnimatedSvgIconCanvas(
                             val durationMs = anim.dur.inWholeMilliseconds.toFloat()
                             val currentTimeMs = masterProgress * totalCycleDuration
 
-                            return when {
+                            val rawProgress = when {
                                 currentTimeMs < delayMs -> 0f  // Still in delay period
                                 currentTimeMs >= delayMs + durationMs -> 1f  // Animation complete
                                 else -> {
@@ -423,6 +740,8 @@ private fun AnimatedSvgIconCanvas(
                                     ((currentTimeMs - delayMs) / durationMs).coerceIn(0f, 1f)
                                 }
                             }
+                            // Apply easing based on calcMode and keySplines
+                            return applyEasing(rawProgress, anim.calcMode, anim.keySplines)
                         }
                 }
             }
@@ -469,7 +788,11 @@ private fun AnimatedSvgIconCanvas(
 
         val progressMap = remember(animations, animationValues) {
             animations.mapIndexed { idx, entry ->
-                entry.key to animationValues[idx].asState()
+                val rawState = animationValues[idx].asState()
+                entry.key to object : State<Float> {
+                    override val value: Float
+                        get() = applyEasing(rawState.value, entry.animation.calcMode, entry.animation.keySplines)
+                }
             }.toMap()
         }
 
