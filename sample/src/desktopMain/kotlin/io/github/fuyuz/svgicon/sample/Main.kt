@@ -188,6 +188,63 @@ private val DslStyledIcon = svg {
 }
 
 /**
+ * Icon using withStyle scope to apply shared styles.
+ */
+private val DslWithStyleIcon = svg {
+    withStyle(stroke = SvgColors.Primary, strokeWidth = 2f, strokeLinecap = LineCap.ROUND) {
+        circle(12, 12, 8)
+        path("M12 4v4")
+        path("M12 16v4")
+        path("M4 12h4")
+        path("M16 12h4")
+    }
+}
+
+/**
+ * Icon using transform DSL with operator chaining.
+ */
+private val DslTransformIcon = svg {
+    rect(x = 4, y = 4, width = 8, height = 8, style = svgStyle {
+        fill = SvgColors.Success
+        transform = rotate(45, 8 to 8) + scale(1.2)
+    })
+    circle(16, 16, 4, svgStyle {
+        fill = SvgColors.Primary.withAlpha(0.5f)
+    })
+}
+
+/**
+ * Icon using Color extensions.
+ */
+private val DslColorExtensionsIcon = svg {
+    // Using hex color extension
+    circle(8, 8, 5, svgStyle { fill = "#3B82F6".toSvgColor() })
+    // Using withAlpha extension
+    circle(16, 16, 5, svgStyle { fill = SvgColors.Error.withAlpha(0.6f) })
+    // Using predefined SvgColors
+    path("M4 16L12 8L20 16", svgStyle {
+        stroke = SvgColors.Warning
+        strokeWidth = 2f
+    })
+}
+
+/**
+ * Icon using ViewBox convenience.
+ */
+private val DslViewBoxIcon = svg(viewBox = "0 0 100 100".toViewBox()) {
+    circle(50, 50, 40, svgStyle {
+        stroke = SvgColors.Primary
+        strokeWidth = 4f
+    })
+    path("M30 50L45 65L70 35", svgStyle {
+        stroke = SvgColors.Success
+        strokeWidth = 6f
+        strokeLinecap = LineCap.ROUND
+        strokeLinejoin = LineJoin.ROUND
+    })
+}
+
+/**
  * Icon built with svg {} builder.
  */
 private val DslBuilderIcon = svg {
@@ -931,7 +988,7 @@ fun App() {
                             modifier = Modifier.size(48.dp),
                             tint = Color.White
                         )
-                        Text("stroke/fill", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        Text("svgStyle{}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
 
                     // Text icon
@@ -960,6 +1017,73 @@ fun App() {
                             tint = Color.White
                         )
                         Text("Badge", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                }
+
+                Text(
+                    "Refined DSL (withStyle, Color extensions, Transform DSL):",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // withStyle scope
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = DslWithStyleIcon,
+                            contentDescription = "withStyle",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("withStyle{}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Transform DSL
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = DslTransformIcon,
+                            contentDescription = "Transform DSL",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("rotate+scale", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Color extensions
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = DslColorExtensionsIcon,
+                            contentDescription = "Color Extensions",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("SvgColors", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // ViewBox convenience
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = DslViewBoxIcon,
+                            contentDescription = "ViewBox",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("toViewBox()", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 }
 
