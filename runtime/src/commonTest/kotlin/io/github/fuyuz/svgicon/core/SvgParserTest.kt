@@ -2,6 +2,7 @@ package io.github.fuyuz.svgicon.core
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import io.github.fuyuz.svgicon.core.dsl.*
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.test.assertEquals

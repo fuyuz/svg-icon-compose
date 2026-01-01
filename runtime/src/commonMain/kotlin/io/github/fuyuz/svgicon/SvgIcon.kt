@@ -48,42 +48,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import io.github.fuyuz.svgicon.core.AspectRatioAlign
-import io.github.fuyuz.svgicon.core.ClipPathUnits
-import io.github.fuyuz.svgicon.core.FillRule
-import io.github.fuyuz.svgicon.core.LineCap
-import io.github.fuyuz.svgicon.core.LineJoin
-import io.github.fuyuz.svgicon.core.MeetOrSlice
-import io.github.fuyuz.svgicon.core.PaintOrder
-import io.github.fuyuz.svgicon.core.PreserveAspectRatio
-import io.github.fuyuz.svgicon.core.Svg
-import io.github.fuyuz.svgicon.core.SvgAnimate
-import io.github.fuyuz.svgicon.core.SvgAnimated
-import io.github.fuyuz.svgicon.core.SvgCircle
-import io.github.fuyuz.svgicon.core.SvgClipPath
-import io.github.fuyuz.svgicon.core.SvgDefs
-import io.github.fuyuz.svgicon.core.SvgElement
-import io.github.fuyuz.svgicon.core.SvgEllipse
-import io.github.fuyuz.svgicon.core.SvgGroup
-import io.github.fuyuz.svgicon.core.SvgLine
-import io.github.fuyuz.svgicon.core.SvgMask
-import io.github.fuyuz.svgicon.core.SvgPath
-import io.github.fuyuz.svgicon.core.SvgPolygon
-import io.github.fuyuz.svgicon.core.SvgPolyline
-import io.github.fuyuz.svgicon.core.SvgRect
-import io.github.fuyuz.svgicon.core.SvgStyle
-import io.github.fuyuz.svgicon.core.SvgStyled
-import io.github.fuyuz.svgicon.core.SvgTransform
-import io.github.fuyuz.svgicon.core.TransformType
-import io.github.fuyuz.svgicon.core.CalcMode
-import io.github.fuyuz.svgicon.core.KeySplines
-import io.github.fuyuz.svgicon.core.MotionRotate
-import io.github.fuyuz.svgicon.core.PathCommand
-import io.github.fuyuz.svgicon.core.VectorEffect
-import io.github.fuyuz.svgicon.core.AnimationDirection
-import io.github.fuyuz.svgicon.core.AnimationFillMode
-import io.github.fuyuz.svgicon.core.parsePathCommands
-import io.github.fuyuz.svgicon.core.toPath
+import io.github.fuyuz.svgicon.core.*
+import io.github.fuyuz.svgicon.core.dsl.*
 
 
 // ============================================
@@ -1115,12 +1081,23 @@ private fun DrawScope.drawSvgElement(element: SvgElement, ctx: DrawContext, regi
         is SvgLine -> drawSvgLine(element, ctx)
         is SvgPolyline -> drawSvgPolyline(element, ctx)
         is SvgPolygon -> drawSvgPolygon(element, ctx)
-        is SvgGroup -> element.children.forEach { drawSvgElement(it, ctx, registry) }
+        is SvgGroup -> {
+            // Apply group style if present
+            val groupCtx = element.style?.let { applyStyle(ctx, it) } ?: ctx
+            element.children.forEach { drawSvgElement(it, groupCtx, registry) }
+        }
         is SvgAnimated -> drawSvgElement(element.element, ctx, registry)
         is SvgStyled -> drawStyledElement(element, ctx, registry)
         is SvgDefs -> {} // Defs are processed separately, not drawn
         is SvgClipPath -> {} // ClipPaths are applied via style, not drawn directly
         is SvgMask -> {} // Masks are applied via style, not drawn directly
+        // New elements - not rendered directly or not yet implemented
+        is SvgText -> {} // TODO: Text rendering requires font handling
+        is SvgImage -> {} // TODO: Image embedding not yet implemented
+        is SvgLinearGradient -> {} // Gradients are referenced, not drawn directly
+        is SvgRadialGradient -> {} // Gradients are referenced, not drawn directly
+        is SvgSymbol -> {} // Symbols are defined, not drawn directly
+        is SvgUse -> {} // TODO: Use element requires resolving references
     }
 }
 
@@ -1749,11 +1726,21 @@ private fun DrawScope.drawAnimatedSvgElement(
         is SvgLine -> drawSvgLine(element, ctx)
         is SvgPolyline -> drawSvgPolyline(element, ctx)
         is SvgPolygon -> drawSvgPolygon(element, ctx)
-        is SvgGroup -> element.children.forEach { drawAnimatedSvgElement(it, ctx, registry, progressMap, pathCache) }
+        is SvgGroup -> {
+            val groupCtx = element.style?.let { applyStyle(ctx, it) } ?: ctx
+            element.children.forEach { drawAnimatedSvgElement(it, groupCtx, registry, progressMap, pathCache) }
+        }
         is SvgStyled -> drawAnimatedStyledElement(element, ctx, registry, progressMap, pathCache)
         is SvgDefs -> {}
         is SvgClipPath -> {}
         is SvgMask -> {}
+        // New elements - not rendered directly or not yet implemented
+        is SvgText -> {}
+        is SvgImage -> {}
+        is SvgLinearGradient -> {}
+        is SvgRadialGradient -> {}
+        is SvgSymbol -> {}
+        is SvgUse -> {}
     }
 }
 
