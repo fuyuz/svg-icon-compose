@@ -419,8 +419,9 @@ class SvgParserTest {
     @Test
     fun parseSvgAttributes() {
         val svg = parseSvg("""<svg width="48" height="48" viewBox="0 0 48 48" fill="black" stroke="white" stroke-width="3" stroke-linecap="butt" stroke-linejoin="miter"></svg>""")
-        assertEquals(48f, svg.viewBox.width)
-        assertEquals(48f, svg.viewBox.height)
+        assertNotNull(svg.viewBox)
+        assertEquals(48f, svg.viewBox!!.width)
+        assertEquals(48f, svg.viewBox!!.height)
         assertEquals(Color.Black, svg.fill)
         assertEquals(Color.White, svg.stroke)
         assertEquals(3f, svg.strokeWidth)
@@ -431,8 +432,9 @@ class SvgParserTest {
     @Test
     fun parseSvgDefaultAttributes() {
         val svg = parseSvg("""<svg></svg>""")
-        assertEquals(24f, svg.viewBox.width)
-        assertEquals(24f, svg.viewBox.height)
+        assertNull(svg.viewBox)  // viewBox is optional
+        assertEquals(24f, svg.effectiveViewBox.width)  // effectiveViewBox provides default
+        assertEquals(24f, svg.effectiveViewBox.height)
         assertNull(svg.fill)  // none = null
         assertEquals(Color.Unspecified, svg.stroke)  // currentColor = Unspecified
         assertEquals(2f, svg.strokeWidth)
@@ -958,8 +960,9 @@ class SvgParserTest {
     @Test
     fun parseSvgWithWidthHeightPx() {
         val svg = parseSvg("""<svg width="48px" height="48px" viewBox="0 0 48 48"></svg>""")
-        assertEquals(48f, svg.viewBox.width)
-        assertEquals(48f, svg.viewBox.height)
+        assertNotNull(svg.viewBox)
+        assertEquals(48f, svg.viewBox!!.width)
+        assertEquals(48f, svg.viewBox!!.height)
     }
 
     @Test

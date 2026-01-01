@@ -46,11 +46,14 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import io.github.fuyuz.svgicon.core.AspectRatioAlign
 import io.github.fuyuz.svgicon.core.ClipPathUnits
 import io.github.fuyuz.svgicon.core.FillRule
 import io.github.fuyuz.svgicon.core.LineCap
 import io.github.fuyuz.svgicon.core.LineJoin
+import io.github.fuyuz.svgicon.core.MeetOrSlice
 import io.github.fuyuz.svgicon.core.PaintOrder
+import io.github.fuyuz.svgicon.core.PreserveAspectRatio
 import io.github.fuyuz.svgicon.core.Svg
 import io.github.fuyuz.svgicon.core.SvgAnimate
 import io.github.fuyuz.svgicon.core.SvgAnimated
@@ -198,8 +201,9 @@ private fun SvgIconLayout(
             }
         }
     ) { measurables, constraints ->
-        val defaultWidth = (svg.viewBox.width * density).toInt()
-        val defaultHeight = (svg.viewBox.height * density).toInt()
+        // Use effectiveWidth/Height which considers both width/height attrs and viewBox
+        val defaultWidth = (svg.effectiveWidth * density).toInt()
+        val defaultHeight = (svg.effectiveHeight * density).toInt()
 
         val width = when {
             constraints.hasFixedWidth -> constraints.maxWidth
@@ -278,8 +282,9 @@ fun AnimatedSvgIcon(
             }
         }
     ) { measurables, constraints ->
-        val defaultWidth = (svg.viewBox.width * density).toInt()
-        val defaultHeight = (svg.viewBox.height * density).toInt()
+        // Use effectiveWidth/Height which considers both width/height attrs and viewBox
+        val defaultWidth = (svg.effectiveWidth * density).toInt()
+        val defaultHeight = (svg.effectiveHeight * density).toInt()
 
         val width = when {
             constraints.hasFixedWidth -> constraints.maxWidth
@@ -503,10 +508,22 @@ private data class DefsRegistry(
 
 /**
  * Draws an SVG onto the canvas.
+ * Handles viewBox, viewport, and preserveAspectRatio correctly.
  */
 private fun DrawScope.drawSvg(svg: Svg, tint: Color, strokeWidthOverride: Float?) {
-    val scaleFactor = size.width / svg.viewBox.width
+    val viewBox = svg.effectiveViewBox
     val strokeWidth = strokeWidthOverride ?: svg.strokeWidth
+
+    // Calculate scale factors based on preserveAspectRatio
+    val (scaleX, scaleY, translateX, translateY) = calculateViewBoxTransform(
+        viewportWidth = size.width,
+        viewportHeight = size.height,
+        viewBoxMinX = viewBox.minX,
+        viewBoxMinY = viewBox.minY,
+        viewBoxWidth = viewBox.width,
+        viewBoxHeight = viewBox.height,
+        preserveAspectRatio = svg.preserveAspectRatio
+    )
 
     val defaultStroke = Stroke(
         width = strokeWidth,
@@ -529,14 +546,82 @@ private fun DrawScope.drawSvg(svg: Svg, tint: Color, strokeWidthOverride: Float?
         fillColor = fillColor,
         stroke = defaultStroke,
         hasStroke = strokeColor != null,
-        scaleFactor = scaleFactor
+        scaleFactor = scaleX // Use scaleX for stroke scaling (assuming uniform scale for most cases)
     )
 
-    scale(scaleFactor, scaleFactor, pivot = Offset.Zero) {
-        svg.children.forEach { element ->
-            drawSvgElement(element, context, registry)
+    // Apply viewBox transformation: translate then scale
+    translate(translateX, translateY) {
+        scale(scaleX, scaleY, pivot = Offset.Zero) {
+            // Translate to handle viewBox minX/minY
+            translate(-viewBox.minX, -viewBox.minY) {
+                svg.children.forEach { element ->
+                    drawSvgElement(element, context, registry)
+                }
+            }
         }
     }
+}
+
+/**
+ * Result of viewBox transformation calculation.
+ */
+private data class ViewBoxTransform(
+    val scaleX: Float,
+    val scaleY: Float,
+    val translateX: Float,
+    val translateY: Float
+)
+
+/**
+ * Calculates the transformation needed to map viewBox to viewport
+ * according to preserveAspectRatio.
+ */
+private fun calculateViewBoxTransform(
+    viewportWidth: Float,
+    viewportHeight: Float,
+    viewBoxMinX: Float,
+    viewBoxMinY: Float,
+    viewBoxWidth: Float,
+    viewBoxHeight: Float,
+    preserveAspectRatio: PreserveAspectRatio
+): ViewBoxTransform {
+    if (viewBoxWidth <= 0 || viewBoxHeight <= 0) {
+        return ViewBoxTransform(1f, 1f, 0f, 0f)
+    }
+
+    val scaleX = viewportWidth / viewBoxWidth
+    val scaleY = viewportHeight / viewBoxHeight
+
+    // If align is NONE, use non-uniform scaling
+    if (preserveAspectRatio.align == AspectRatioAlign.NONE) {
+        return ViewBoxTransform(scaleX, scaleY, 0f, 0f)
+    }
+
+    // Uniform scaling based on meet/slice
+    val scale = when (preserveAspectRatio.meetOrSlice) {
+        MeetOrSlice.MEET -> minOf(scaleX, scaleY)  // Fit entirely
+        MeetOrSlice.SLICE -> maxOf(scaleX, scaleY)  // Cover entirely
+    }
+
+    // Calculate the scaled viewBox size
+    val scaledViewBoxWidth = viewBoxWidth * scale
+    val scaledViewBoxHeight = viewBoxHeight * scale
+
+    // Calculate alignment offset
+    val (alignX, alignY) = when (preserveAspectRatio.align) {
+        AspectRatioAlign.NONE -> 0f to 0f  // Already handled above
+        AspectRatioAlign.X_MIN_Y_MIN -> 0f to 0f
+        AspectRatioAlign.X_MID_Y_MIN -> (viewportWidth - scaledViewBoxWidth) / 2 to 0f
+        AspectRatioAlign.X_MAX_Y_MIN -> (viewportWidth - scaledViewBoxWidth) to 0f
+        AspectRatioAlign.X_MIN_Y_MID -> 0f to (viewportHeight - scaledViewBoxHeight) / 2
+        AspectRatioAlign.X_MID_Y_MID -> (viewportWidth - scaledViewBoxWidth) / 2 to (viewportHeight - scaledViewBoxHeight) / 2
+        AspectRatioAlign.X_MAX_Y_MID -> (viewportWidth - scaledViewBoxWidth) to (viewportHeight - scaledViewBoxHeight) / 2
+        AspectRatioAlign.X_MIN_Y_MAX -> 0f to (viewportHeight - scaledViewBoxHeight)
+        AspectRatioAlign.X_MID_Y_MAX -> (viewportWidth - scaledViewBoxWidth) / 2 to (viewportHeight - scaledViewBoxHeight)
+        AspectRatioAlign.X_MAX_Y_MAX -> (viewportWidth - scaledViewBoxWidth) to (viewportHeight - scaledViewBoxHeight)
+    }
+
+    return ViewBoxTransform(scale, scale, alignX, alignY)
 }
 
 /**
@@ -1123,6 +1208,7 @@ private fun DrawScope.drawSvgPolygon(polygon: SvgPolygon, ctx: DrawContext) {
 
 /**
  * Draws an animated SVG onto the canvas.
+ * Handles viewBox, viewport, and preserveAspectRatio correctly.
  */
 private fun DrawScope.drawAnimatedSvg(
     svg: Svg,
@@ -1130,8 +1216,19 @@ private fun DrawScope.drawAnimatedSvg(
     strokeWidthOverride: Float?,
     progressMap: Map<AnimationKey, State<Float>>
 ) {
-    val scaleFactor = size.width / svg.viewBox.width
+    val viewBox = svg.effectiveViewBox
     val strokeWidth = strokeWidthOverride ?: svg.strokeWidth
+
+    // Calculate scale factors based on preserveAspectRatio
+    val (scaleX, scaleY, translateX, translateY) = calculateViewBoxTransform(
+        viewportWidth = size.width,
+        viewportHeight = size.height,
+        viewBoxMinX = viewBox.minX,
+        viewBoxMinY = viewBox.minY,
+        viewBoxWidth = viewBox.width,
+        viewBoxHeight = viewBox.height,
+        preserveAspectRatio = svg.preserveAspectRatio
+    )
 
     val defaultStroke = Stroke(
         width = strokeWidth,
@@ -1153,12 +1250,18 @@ private fun DrawScope.drawAnimatedSvg(
         fillColor = fillColor,
         stroke = defaultStroke,
         hasStroke = strokeColor != null,
-        scaleFactor = scaleFactor
+        scaleFactor = scaleX
     )
 
-    scale(scaleFactor, scaleFactor, pivot = Offset.Zero) {
-        svg.children.forEach { element ->
-            drawAnimatedSvgElement(element, ctx, registry, progressMap)
+    // Apply viewBox transformation: translate then scale
+    translate(translateX, translateY) {
+        scale(scaleX, scaleY, pivot = Offset.Zero) {
+            // Translate to handle viewBox minX/minY
+            translate(-viewBox.minX, -viewBox.minY) {
+                svg.children.forEach { element ->
+                    drawAnimatedSvgElement(element, ctx, registry, progressMap)
+                }
+            }
         }
     }
 }

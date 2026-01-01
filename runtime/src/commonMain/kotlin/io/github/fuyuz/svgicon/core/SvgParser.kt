@@ -93,10 +93,13 @@ internal object SvgXmlParser {
         val attrs = parseAttributes(attrsStr)
 
         // Parse SVG root attributes
-        val width = attrs["width"]?.replace("px", "")?.toIntOrNull() ?: 24
-        val height = attrs["height"]?.replace("px", "")?.toIntOrNull() ?: 24
-        val viewBoxStr = attrs["viewBox"] ?: "0 0 $width $height"
-        val viewBox = ViewBox.parse(viewBoxStr)
+        val width = parseLengthAttribute(attrs["width"])
+        val height = parseLengthAttribute(attrs["height"])
+        val viewBoxStr = attrs["viewBox"]
+        val viewBox = viewBoxStr?.let { ViewBox.parse(it) }
+        val preserveAspectRatio = attrs["preserveAspectRatio"]?.let {
+            PreserveAspectRatio.parse(it)
+        } ?: PreserveAspectRatio.Default
         val fill = parseColorAttribute(attrs["fill"])
         val stroke = parseColorAttribute(attrs["stroke"]) ?: Color.Unspecified
         val strokeWidth = attrs["stroke-width"]?.toFloatOrNull() ?: 2f
@@ -126,7 +129,10 @@ internal object SvgXmlParser {
         }
 
         return Svg(
+            width = width,
+            height = height,
             viewBox = viewBox,
+            preserveAspectRatio = preserveAspectRatio,
             fill = fill,
             stroke = stroke,
             strokeWidth = strokeWidth,
@@ -742,6 +748,28 @@ internal object SvgXmlParser {
             transforms.size == 1 -> transforms[0]
             else -> SvgTransform.Combined(transforms)
         }
+    }
+
+    /**
+     * Parses SVG length attribute (e.g., "24", "24px", "100%").
+     * Returns Float value in user units, or null if not specified.
+     * Note: Percentage values are not fully supported and treated as raw numbers.
+     */
+    private fun parseLengthAttribute(value: String?): Float? {
+        if (value == null) return null
+        val trimmed = value.trim().lowercase()
+        // Remove common unit suffixes
+        val numericPart = trimmed
+            .removeSuffix("px")
+            .removeSuffix("pt")
+            .removeSuffix("em")
+            .removeSuffix("ex")
+            .removeSuffix("cm")
+            .removeSuffix("mm")
+            .removeSuffix("in")
+            .removeSuffix("%")
+            .trim()
+        return numericPart.toFloatOrNull()
     }
 
     /**

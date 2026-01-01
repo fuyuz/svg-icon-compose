@@ -17,6 +17,9 @@ dependencies {
 
     // Kotlin Gradle Plugin API for KotlinCompilationTask
     compileOnly(libs.kotlin.gradle.plugin)
+
+    // Test dependencies
+    testImplementation(kotlin("test"))
 }
 
 kotlin {

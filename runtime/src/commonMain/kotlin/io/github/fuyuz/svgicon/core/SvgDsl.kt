@@ -15,6 +15,94 @@ import kotlin.time.Duration.Companion.milliseconds
 // ============================================
 
 /**
+ * Alignment for preserveAspectRatio.
+ * Specifies how to align the viewBox within the viewport.
+ */
+enum class AspectRatioAlign {
+    /** Do not force uniform scaling */
+    NONE,
+    /** Align min-X of viewBox with min-X of viewport, min-Y with min-Y */
+    X_MIN_Y_MIN,
+    /** Align mid-X of viewBox with mid-X of viewport, min-Y with min-Y */
+    X_MID_Y_MIN,
+    /** Align max-X of viewBox with max-X of viewport, min-Y with min-Y */
+    X_MAX_Y_MIN,
+    /** Align min-X of viewBox with min-X of viewport, mid-Y with mid-Y */
+    X_MIN_Y_MID,
+    /** Align mid-X of viewBox with mid-X of viewport, mid-Y with mid-Y (default) */
+    X_MID_Y_MID,
+    /** Align max-X of viewBox with max-X of viewport, mid-Y with mid-Y */
+    X_MAX_Y_MID,
+    /** Align min-X of viewBox with min-X of viewport, max-Y with max-Y */
+    X_MIN_Y_MAX,
+    /** Align mid-X of viewBox with mid-X of viewport, max-Y with max-Y */
+    X_MID_Y_MAX,
+    /** Align max-X of viewBox with max-X of viewport, max-Y with max-Y */
+    X_MAX_Y_MAX;
+
+    companion object {
+        fun parse(value: String): AspectRatioAlign = when (value.lowercase()) {
+            "none" -> NONE
+            "xminymin" -> X_MIN_Y_MIN
+            "xmidymin" -> X_MID_Y_MIN
+            "xmaxymin" -> X_MAX_Y_MIN
+            "xminymid" -> X_MIN_Y_MID
+            "xmidymid" -> X_MID_Y_MID
+            "xmaxymid" -> X_MAX_Y_MID
+            "xminymax" -> X_MIN_Y_MAX
+            "xmidymax" -> X_MID_Y_MAX
+            "xmaxymax" -> X_MAX_Y_MAX
+            else -> X_MID_Y_MID
+        }
+    }
+}
+
+/**
+ * Meet or slice option for preserveAspectRatio.
+ */
+enum class MeetOrSlice {
+    /** Scale to fit entirely within viewport (default) */
+    MEET,
+    /** Scale to cover entire viewport, may be clipped */
+    SLICE;
+
+    companion object {
+        fun parse(value: String): MeetOrSlice = when (value.lowercase()) {
+            "slice" -> SLICE
+            else -> MEET
+        }
+    }
+}
+
+/**
+ * SVG preserveAspectRatio attribute.
+ * Controls how viewBox is scaled and positioned within the viewport.
+ *
+ * @param align How to align the viewBox within the viewport
+ * @param meetOrSlice Whether to fit (meet) or cover (slice) the viewport
+ */
+data class PreserveAspectRatio(
+    val align: AspectRatioAlign = AspectRatioAlign.X_MID_Y_MID,
+    val meetOrSlice: MeetOrSlice = MeetOrSlice.MEET
+) {
+    companion object {
+        /** Default: xMidYMid meet */
+        val Default = PreserveAspectRatio()
+
+        /** No uniform scaling */
+        val None = PreserveAspectRatio(AspectRatioAlign.NONE)
+
+        /** Parse from SVG preserveAspectRatio string */
+        fun parse(value: String): PreserveAspectRatio {
+            val parts = value.trim().split("\\s+".toRegex())
+            val align = if (parts.isNotEmpty()) AspectRatioAlign.parse(parts[0]) else AspectRatioAlign.X_MID_Y_MID
+            val meetOrSlice = if (parts.size > 1) MeetOrSlice.parse(parts[1]) else MeetOrSlice.MEET
+            return PreserveAspectRatio(align, meetOrSlice)
+        }
+    }
+}
+
+/**
  * Type-safe representation of SVG viewBox.
  *
  * @param minX Minimum X coordinate
@@ -80,7 +168,15 @@ sealed interface SvgElement
  * - null = "none" (no color / transparent)
  * - Any other Color = that specific color
  *
+ * Size determination:
+ * - If width/height are specified, they define the viewport size
+ * - If only viewBox is specified, viewBox dimensions are used
+ * - preserveAspectRatio controls how viewBox maps to viewport
+ *
+ * @param width Viewport width (null = use viewBox width)
+ * @param height Viewport height (null = use viewBox height)
  * @param viewBox ViewBox defining the coordinate system (default: 24x24)
+ * @param preserveAspectRatio How to scale/align viewBox within viewport
  * @param fill Default fill color (default: null = no fill)
  * @param stroke Default stroke color (default: Unspecified = uses tint color)
  * @param strokeWidth Default stroke width (default: 2)
@@ -89,14 +185,35 @@ sealed interface SvgElement
  * @param children Child SVG elements
  */
 data class Svg(
-    val viewBox: ViewBox = ViewBox.Default,
+    val width: Float? = null,
+    val height: Float? = null,
+    val viewBox: ViewBox? = null,
+    val preserveAspectRatio: PreserveAspectRatio = PreserveAspectRatio.Default,
     val fill: Color? = null,
     val stroke: Color? = Color.Unspecified,
     val strokeWidth: Float = 2f,
     val strokeLinecap: LineCap = LineCap.ROUND,
     val strokeLinejoin: LineJoin = LineJoin.ROUND,
     val children: List<SvgElement> = emptyList()
-)
+) {
+    /**
+     * Effective width for rendering.
+     * Priority: explicit width > viewBox width > default (24)
+     */
+    val effectiveWidth: Float get() = width ?: viewBox?.width ?: 24f
+
+    /**
+     * Effective height for rendering.
+     * Priority: explicit height > viewBox height > default (24)
+     */
+    val effectiveHeight: Float get() = height ?: viewBox?.height ?: 24f
+
+    /**
+     * Effective viewBox for rendering.
+     * If viewBox is not specified, creates one from width/height or defaults.
+     */
+    val effectiveViewBox: ViewBox get() = viewBox ?: ViewBox(0f, 0f, effectiveWidth, effectiveHeight)
+}
 
 /**
  * SVG style attributes for presentation.
