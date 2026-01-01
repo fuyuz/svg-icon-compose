@@ -81,15 +81,6 @@ import io.github.fuyuz.svgicon.core.KeySplines
 import io.github.fuyuz.svgicon.core.VectorEffect
 import io.github.fuyuz.svgicon.core.toPath
 
-/**
- * Interface representing an SVG icon.
- */
-interface SvgIcon {
-    /**
-     * SVG data for this icon.
-     */
-    val svg: Svg
-}
 
 // ============================================
 // External Animation State Control API
@@ -239,68 +230,15 @@ fun rememberSvgIconAnimationState(): SvgIconAnimatable {
 /**
  * Composable that renders an SVG icon with Material 3-style API.
  *
- * @param icon The SvgIcon to render
+ * Example:
+ * ```kotlin
+ * SvgIcon(svg = Icons.Check, contentDescription = "Check")
+ * ```
+ *
+ * @param svg The Svg object to render
  * @param contentDescription Text used by accessibility services to describe what this icon represents.
  *   This should always be provided unless this icon is used for decorative purposes, and does not
  *   represent a meaningful action that a user can take.
- * @param modifier Modifier to be applied to the icon. Use Modifier.size() to control the icon size.
- * @param tint Color to tint the icon. Defaults to LocalContentColor.
- */
-@Composable
-fun SvgIcon(
-    icon: SvgIcon,
-    contentDescription: String?,
-    modifier: Modifier = Modifier,
-    tint: Color = LocalContentColor.current
-) {
-    SvgIcon(
-        icon = icon,
-        contentDescription = contentDescription,
-        modifier = modifier,
-        tint = tint,
-        strokeWidth = null
-    )
-}
-
-/**
- * Composable that renders an SVG icon with stroke width control.
- *
- * @param icon The SvgIcon to render
- * @param contentDescription Text used by accessibility services to describe what this icon represents.
- * @param modifier Modifier to be applied to the icon. Use Modifier.size() to control the icon size.
- * @param tint Color to tint the icon. Defaults to LocalContentColor.
- * @param strokeWidth Override the stroke width. If null, uses the SVG's default strokeWidth.
- */
-@Composable
-fun SvgIcon(
-    icon: SvgIcon,
-    contentDescription: String?,
-    modifier: Modifier = Modifier,
-    tint: Color = LocalContentColor.current,
-    strokeWidth: Float? = null
-) {
-    val svg = remember(icon) { icon.svg }
-    SvgIconLayout(
-        svg = svg,
-        contentDescription = contentDescription,
-        modifier = modifier,
-        tint = tint,
-        strokeWidth = strokeWidth
-    )
-}
-
-/**
- * Composable that renders an SVG directly from a parsed [Svg] object.
- * Use this with [parseSvg] for runtime SVG parsing.
- *
- * Example:
- * ```kotlin
- * val svg = remember { parseSvg("<svg>...</svg>") }
- * SvgIcon(svg = svg, contentDescription = "My icon", modifier = Modifier.size(24.dp), tint = Color.White)
- * ```
- *
- * @param svg The parsed Svg object to render
- * @param contentDescription Text used by accessibility services to describe what this icon represents.
  * @param modifier Modifier to be applied to the icon. Use Modifier.size() to control the icon size.
  * @param tint Color to tint the icon. Defaults to LocalContentColor.
  * @param strokeWidth Override the stroke width. If null, uses the SVG's default strokeWidth.
@@ -379,7 +317,12 @@ private fun SvgIconLayout(
 /**
  * Composable that renders an animated SVG icon with SMIL animations.
  *
- * @param icon The SvgIcon to render (must contain SvgAnimated elements for animation)
+ * Example:
+ * ```kotlin
+ * AnimatedSvgIcon(svg = Icons.Check, contentDescription = "Check")
+ * ```
+ *
+ * @param svg The Svg object to render (must contain SvgAnimated elements for animation)
  * @param contentDescription Text used by accessibility services to describe what this icon represents.
  * @param modifier Modifier to be applied to the icon. Use Modifier.size() to control the icon size.
  * @param tint Color to tint the icon. Defaults to LocalContentColor.
@@ -390,7 +333,7 @@ private fun SvgIconLayout(
  */
 @Composable
 fun AnimatedSvgIcon(
-    icon: SvgIcon,
+    svg: Svg,
     contentDescription: String?,
     modifier: Modifier = Modifier,
     tint: Color = LocalContentColor.current,
@@ -399,7 +342,6 @@ fun AnimatedSvgIcon(
     iterations: Int = Int.MAX_VALUE,
     onAnimationEnd: (() -> Unit)? = null
 ) {
-    val svg = remember(icon) { icon.svg }
     val semanticsModifier = if (contentDescription != null) {
         Modifier.semantics {
             this.contentDescription = contentDescription
@@ -409,7 +351,6 @@ fun AnimatedSvgIcon(
         Modifier
     }
 
-    // Check if the SVG has animations
     val hasAnimations = remember(svg) { hasAnimatedElements(svg.children) }
 
     Layout(
@@ -425,14 +366,12 @@ fun AnimatedSvgIcon(
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                // Static rendering
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     drawSvg(svg, tint, strokeWidth)
                 }
             }
         }
     ) { measurables, constraints ->
-        // Use effectiveWidth/Height which considers both width/height attrs and viewBox
         val defaultWidth = (svg.effectiveWidth * density).toInt()
         val defaultHeight = (svg.effectiveHeight * density).toInt()
 
@@ -478,14 +417,14 @@ fun AnimatedSvgIcon(
  *     }
  * ) {
  *     AnimatedSvgIcon(
- *         icon = Icons.Check,
+ *         svg = Icons.Check,
  *         animationState = animationState,
  *         contentDescription = "Check"
  *     )
  * }
  * ```
  *
- * @param icon The SvgIcon to render (must contain SvgAnimated elements for animation)
+ * @param svg The Svg object to render (must contain SvgAnimated elements for animation)
  * @param animationState External animation state for controlling the animation
  * @param contentDescription Text used by accessibility services to describe what this icon represents.
  * @param modifier Modifier to be applied to the icon. Use Modifier.size() to control the icon size.
@@ -494,14 +433,13 @@ fun AnimatedSvgIcon(
  */
 @Composable
 fun AnimatedSvgIcon(
-    icon: SvgIcon,
+    svg: Svg,
     animationState: SvgIconAnimatable,
     contentDescription: String?,
     modifier: Modifier = Modifier,
     tint: Color = LocalContentColor.current,
     strokeWidth: Float? = null
 ) {
-    val svg = remember(icon) { icon.svg }
     val semanticsModifier = if (contentDescription != null) {
         Modifier.semantics {
             this.contentDescription = contentDescription
@@ -542,84 +480,6 @@ fun AnimatedSvgIcon(
         content = {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawAnimatedSvg(svg, tint, strokeWidth, progressMap, pathCache)
-            }
-        }
-    ) { measurables, constraints ->
-        val defaultWidth = (svg.effectiveWidth * density).toInt()
-        val defaultHeight = (svg.effectiveHeight * density).toInt()
-
-        val width = when {
-            constraints.hasFixedWidth -> constraints.maxWidth
-            constraints.hasBoundedWidth -> constraints.maxWidth
-            else -> defaultWidth
-        }
-        val height = when {
-            constraints.hasFixedHeight -> constraints.maxHeight
-            constraints.hasBoundedHeight -> constraints.maxHeight
-            else -> defaultHeight
-        }
-
-        val placeable = measurables.first().measure(
-            Constraints.fixed(width, height)
-        )
-
-        layout(width, height) {
-            placeable.place(0, 0)
-        }
-    }
-}
-
-/**
- * Composable that renders an animated SVG directly from an Svg object.
- * This overload is useful when working with runtime-parsed SVG content.
- *
- * @param svg The Svg object to render
- * @param contentDescription Accessibility description
- * @param modifier Modifier to be applied to the icon
- * @param tint Color to tint the icon (applies to currentColor)
- * @param strokeWidth Optional stroke width override
- * @param animate Whether animation is enabled
- * @param iterations Number of animation iterations
- * @param onAnimationEnd Callback when animation completes
- */
-@Composable
-fun AnimatedSvgIcon(
-    svg: Svg,
-    contentDescription: String?,
-    modifier: Modifier = Modifier,
-    tint: Color = LocalContentColor.current,
-    strokeWidth: Float? = null,
-    animate: Boolean = true,
-    iterations: Int = Int.MAX_VALUE,
-    onAnimationEnd: (() -> Unit)? = null
-) {
-    val semanticsModifier = if (contentDescription != null) {
-        Modifier.semantics {
-            this.contentDescription = contentDescription
-            this.role = Role.Image
-        }
-    } else {
-        Modifier
-    }
-
-    val hasAnimations = remember(svg) { hasAnimatedElements(svg.children) }
-
-    Layout(
-        modifier = modifier.then(semanticsModifier),
-        content = {
-            if (hasAnimations && animate) {
-                AnimatedSvgIconCanvas(
-                    svg = svg,
-                    tint = tint,
-                    strokeWidthOverride = strokeWidth,
-                    iterations = iterations,
-                    onAnimationEnd = onAnimationEnd,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    drawSvg(svg, tint, strokeWidth)
-                }
             }
         }
     ) { measurables, constraints ->
