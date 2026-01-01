@@ -721,11 +721,33 @@ object SvgCodeGenerator {
     )
 
     private data class CssStylesheet(
-        val rules: List<CssRule> = emptyList()
+        val rules: List<CssRule> = emptyList(),
+        val keyframes: List<CssKeyframes> = emptyList()
+    )
+
+    // CSS Animation data structures
+    private data class CssKeyframe(
+        val offset: Float,
+        val properties: Map<String, String>
+    )
+
+    private data class CssKeyframes(
+        val name: String,
+        val keyframes: List<CssKeyframe>
+    )
+
+    private data class CssAnimation(
+        val name: String,
+        val duration: Long, // milliseconds
+        val timingFunction: String,
+        val delay: Long, // milliseconds
+        val iterationCount: Int
     )
 
     private val styleTagPattern = Regex("""<style[^>]*>([\s\S]*?)</style>""", RegexOption.IGNORE_CASE)
-    private val cssRulePattern = Regex("""([^{]+)\{([^}]*)\}""")
+    private val cssRulePattern = Regex("""([^{@]+)\{([^}]*)\}""")
+    private val keyframesPattern = Regex("""@keyframes\s+(\w[\w-]*)\s*\{((?:[^{}]|\{[^{}]*\})*)\}""", RegexOption.IGNORE_CASE)
+    private val keyframePattern = Regex("""([\d.]+%|from|to)\s*\{([^}]*)\}""")
 
     private fun extractStylesheet(svgContent: String): Pair<CssStylesheet, String> {
         val matches = styleTagPattern.findAll(svgContent).toList()
@@ -734,13 +756,55 @@ object SvgCodeGenerator {
         }
 
         val rules = mutableListOf<CssRule>()
+        val keyframes = mutableListOf<CssKeyframes>()
+
         for (match in matches) {
             val cssContent = match.groupValues[1]
-            rules.addAll(parseCssRules(cssContent))
+            // Parse @keyframes first
+            keyframes.addAll(parseCssKeyframes(cssContent))
+            // Parse regular CSS rules (excluding @keyframes content)
+            val cssWithoutKeyframes = cssContent.replace(keyframesPattern, "")
+            rules.addAll(parseCssRules(cssWithoutKeyframes))
         }
 
         val cleanedContent = svgContent.replace(styleTagPattern, "")
-        return CssStylesheet(rules) to cleanedContent
+        return CssStylesheet(rules, keyframes) to cleanedContent
+    }
+
+    private fun parseCssKeyframes(cssContent: String): List<CssKeyframes> {
+        val result = mutableListOf<CssKeyframes>()
+
+        keyframesPattern.findAll(cssContent).forEach { match ->
+            val name = match.groupValues[1]
+            val keyframesContent = match.groupValues[2]
+            val keyframes = parseKeyframeList(keyframesContent)
+            if (keyframes.isNotEmpty()) {
+                result.add(CssKeyframes(name, keyframes))
+            }
+        }
+
+        return result
+    }
+
+    private fun parseKeyframeList(content: String): List<CssKeyframe> {
+        val keyframes = mutableListOf<CssKeyframe>()
+
+        keyframePattern.findAll(content).forEach { match ->
+            val offsetStr = match.groupValues[1].trim().lowercase()
+            val properties = parseCssStyleAttribute(match.groupValues[2])
+
+            val offset = when (offsetStr) {
+                "from" -> 0f
+                "to" -> 1f
+                else -> offsetStr.removeSuffix("%").toFloatOrNull()?.div(100f)
+            }
+
+            if (offset != null && properties.isNotEmpty()) {
+                keyframes.add(CssKeyframe(offset, properties))
+            }
+        }
+
+        return keyframes.sortedBy { it.offset }
     }
 
     private fun parseCssRules(cssContent: String): List<CssRule> {
@@ -915,7 +979,177 @@ object SvgCodeGenerator {
         mergedAttrs.putAll(resolvedStyles)
         mergedAttrs.remove("style")
 
-        return wrapWithStyleFromMergedAttrs(element, mergedAttrs)
+        // Check for CSS animation property
+        val animationValue = mergedAttrs["animation"]
+        val animations = mutableListOf<CodeBlock>()
+
+        if (animationValue != null) {
+            val cssAnimation = parseCssAnimation(animationValue)
+            if (cssAnimation != null) {
+                val keyframes = stylesheet.keyframes.find { it.name == cssAnimation.name }
+                if (keyframes != null) {
+                    animations.addAll(cssAnimationToCodeBlocks(cssAnimation, keyframes))
+                }
+            }
+            mergedAttrs.remove("animation")
+        }
+
+        var result = wrapWithStyleFromMergedAttrs(element, mergedAttrs)
+
+        // Wrap with animations if any
+        if (animations.isNotEmpty()) {
+            result = wrapWithAnimations(result, animations)
+        }
+
+        return result
+    }
+
+    private fun parseCssAnimation(value: String): CssAnimation? {
+        val parts = value.trim().split(Regex("\\s+"))
+        if (parts.isEmpty()) return null
+
+        var name: String? = null
+        var duration: Long = 0
+        var timingFunction = "ease"
+        var delay: Long = 0
+        var iterationCount = 1
+
+        for (part in parts) {
+            val lower = part.lowercase()
+            when {
+                lower.endsWith("ms") -> {
+                    val ms = lower.removeSuffix("ms").toFloatOrNull()?.toLong()
+                    if (ms != null) {
+                        if (duration == 0L) duration = ms else delay = ms
+                    }
+                }
+                lower.endsWith("s") && !lower.endsWith("ms") -> {
+                    val sec = lower.removeSuffix("s").toFloatOrNull()
+                    if (sec != null) {
+                        val ms = (sec * 1000).toLong()
+                        if (duration == 0L) duration = ms else delay = ms
+                    }
+                }
+                lower == "infinite" -> iterationCount = Int.MAX_VALUE
+                lower.toIntOrNull() != null -> iterationCount = lower.toInt()
+                lower in listOf("linear", "ease", "ease-in", "ease-out", "ease-in-out") -> {
+                    timingFunction = lower
+                }
+                lower.startsWith("cubic-bezier(") -> timingFunction = lower
+                name == null && !lower.matches(Regex("^[0-9].*")) -> name = part
+            }
+        }
+
+        return name?.let { CssAnimation(it, duration, timingFunction, delay, iterationCount) }
+    }
+
+    private fun cssAnimationToCodeBlocks(animation: CssAnimation, keyframes: CssKeyframes): List<CodeBlock> {
+        val result = mutableListOf<CodeBlock>()
+
+        // Generate calcMode and keySplines based on timing function
+        val (calcModeStr, keySplinesCode) = when (animation.timingFunction) {
+            "linear" -> "LINEAR" to null
+            "ease" -> "SPLINE" to CodeBlock.of("%T.EASE", keySplinesClass)
+            "ease-in" -> "SPLINE" to CodeBlock.of("%T.EASE_IN", keySplinesClass)
+            "ease-out" -> "SPLINE" to CodeBlock.of("%T.EASE_OUT", keySplinesClass)
+            "ease-in-out" -> "SPLINE" to CodeBlock.of("%T.EASE_IN_OUT", keySplinesClass)
+            else -> "LINEAR" to null
+        }
+
+        // Group keyframe properties
+        val propertyKeyframes = mutableMapOf<String, MutableList<Pair<Float, String>>>()
+        for (kf in keyframes.keyframes) {
+            for ((prop, value) in kf.properties) {
+                propertyKeyframes.getOrPut(prop) { mutableListOf() }.add(kf.offset to value)
+            }
+        }
+
+        // Generate animation CodeBlocks for each property
+        for ((prop, frames) in propertyKeyframes) {
+            if (frames.size < 2) continue
+
+            val fromValue = frames.first().second
+            val toValue = frames.last().second
+
+            val animCode = when (prop.lowercase()) {
+                "opacity" -> {
+                    val from = fromValue.toFloatOrNull() ?: 1f
+                    val to = toValue.toFloatOrNull() ?: 1f
+                    generateOpacityAnimation(from, to, animation.duration, animation.delay, calcModeStr, keySplinesCode)
+                }
+                "transform" -> {
+                    val fromTransform = parseTransformAnimation(fromValue)
+                    val toTransform = parseTransformAnimation(toValue)
+                    if (fromTransform != null && toTransform != null && fromTransform.first == toTransform.first) {
+                        generateTransformAnimation(fromTransform.first, fromTransform.second, toTransform.second,
+                            animation.duration, animation.delay, calcModeStr, keySplinesCode)
+                    } else null
+                }
+                "stroke-width" -> {
+                    val from = fromValue.toFloatOrNull() ?: 2f
+                    val to = toValue.toFloatOrNull() ?: 2f
+                    generateStrokeWidthAnimation(from, to, animation.duration, animation.delay, calcModeStr, keySplinesCode)
+                }
+                else -> null
+            }
+
+            if (animCode != null) result.add(animCode)
+        }
+
+        return result
+    }
+
+    private fun parseTransformAnimation(value: String): Pair<String, Float>? {
+        val trimmed = value.trim().lowercase()
+        return when {
+            trimmed.startsWith("rotate(") -> {
+                val angle = trimmed.removePrefix("rotate(").removeSuffix(")").removeSuffix("deg").trim().toFloatOrNull()
+                angle?.let { "ROTATE" to it }
+            }
+            trimmed.startsWith("scale(") -> {
+                val scale = trimmed.removePrefix("scale(").removeSuffix(")").trim().toFloatOrNull()
+                scale?.let { "SCALE" to it }
+            }
+            trimmed.startsWith("translatex(") -> {
+                val v = trimmed.removePrefix("translatex(").removeSuffix(")").removeSuffix("px").trim().toFloatOrNull()
+                v?.let { "TRANSLATE_X" to it }
+            }
+            trimmed.startsWith("translatey(") -> {
+                val v = trimmed.removePrefix("translatey(").removeSuffix(")").removeSuffix("px").trim().toFloatOrNull()
+                v?.let { "TRANSLATE_Y" to it }
+            }
+            else -> null
+        }
+    }
+
+    private fun generateOpacityAnimation(from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?): CodeBlock {
+        return if (keySplines != null) {
+            CodeBlock.of("%T.Opacity(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines)
+        } else {
+            CodeBlock.of("%T.Opacity(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode)
+        }
+    }
+
+    private fun generateTransformAnimation(type: String, from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?): CodeBlock {
+        return if (keySplines != null) {
+            CodeBlock.of("%T.Transform(%T.%L, %Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L)",
+                svgAnimateClass, transformTypeClass, type, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines)
+        } else {
+            CodeBlock.of("%T.Transform(%T.%L, %Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L)",
+                svgAnimateClass, transformTypeClass, type, from, to, durMs, delayMs, calcModeClass, calcMode)
+        }
+    }
+
+    private fun generateStrokeWidthAnimation(from: Float, to: Float, durMs: Long, delayMs: Long, calcMode: String, keySplines: CodeBlock?): CodeBlock {
+        return if (keySplines != null) {
+            CodeBlock.of("%T.StrokeWidth(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L, %L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode, keySplines)
+        } else {
+            CodeBlock.of("%T.StrokeWidth(%Lf, %Lf, %L.milliseconds, %L.milliseconds, %T.%L)",
+                svgAnimateClass, from, to, durMs, delayMs, calcModeClass, calcMode)
+        }
     }
 
     /**

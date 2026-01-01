@@ -3,6 +3,7 @@ package io.github.fuyuz.svgicon.core
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -781,6 +782,198 @@ class SvgParserTest {
         val styled = svg.children[0] as SvgStyled
         assertEquals(Color.Red, styled.style.fill)
         assertEquals(5f, styled.style.strokeWidth)
+    }
+
+    // ===========================================
+    // CSS Animation Tests
+    // ===========================================
+
+    @Test
+    fun parseKeyframesWithFromTo() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .animated { animation: fadeIn 1s ease; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="animated"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        assertEquals(1, element.animations.size)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.Opacity>(anim)
+        assertEquals(0f, anim.from)
+        assertEquals(1f, anim.to)
+    }
+
+    @Test
+    fun parseKeyframesWithPercentages() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes pulse {
+                        0% { opacity: 0; }
+                        100% { opacity: 1; }
+                    }
+                    .pulsing { animation: pulse 500ms; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="pulsing"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.Opacity>(anim)
+        assertEquals(500.milliseconds, anim.dur)
+    }
+
+    @Test
+    fun parseKeyframesRotateAnimation() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes spin {
+                        from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
+                    }
+                    .spinner { animation: spin 1s linear infinite; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="spinner"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.Transform>(anim)
+        assertEquals(TransformType.ROTATE, anim.type)
+        assertEquals(0f, anim.from)
+        assertEquals(360f, anim.to)
+        assertEquals(CalcMode.LINEAR, anim.calcMode)
+    }
+
+    @Test
+    fun parseKeyframesScaleAnimation() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes grow {
+                        from { transform: scale(0.5); }
+                        to { transform: scale(1.5); }
+                    }
+                    .growing { animation: grow 2s ease-in-out; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="growing"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.Transform>(anim)
+        assertEquals(TransformType.SCALE, anim.type)
+        assertEquals(0.5f, anim.from)
+        assertEquals(1.5f, anim.to)
+        assertEquals(CalcMode.SPLINE, anim.calcMode)
+        assertEquals(KeySplines.EASE_IN_OUT, anim.keySplines)
+    }
+
+    @Test
+    fun parseAnimationWithDelay() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .delayed { animation: fadeIn 1s 500ms; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="delayed"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0] as SvgAnimate.Opacity
+        assertEquals(1000.milliseconds, anim.dur)
+        assertEquals(500.milliseconds, anim.delay)
+    }
+
+    @Test
+    fun parseAnimationWithTimingFunction() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                    .ease { animation: fadeIn 1s ease; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="ease"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertEquals(CalcMode.SPLINE, anim.calcMode)
+        assertEquals(KeySplines.EASE, anim.keySplines)
+    }
+
+    @Test
+    fun parseAnimationWithStyleAndAnimation() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                    .styled { fill: red; animation: fadeIn 1s; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="styled"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        // Should be SvgAnimated wrapping SvgStyled
+        assertIs<SvgAnimated>(element)
+        val innerStyled = element.element
+        assertIs<SvgStyled>(innerStyled)
+        assertEquals(Color.Red, innerStyled.style.fill)
+    }
+
+    @Test
+    fun parseKeyframesStrokeWidthAnimation() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes thicken {
+                        from { stroke-width: 1; }
+                        to { stroke-width: 5; }
+                    }
+                    .thickening { animation: thicken 1s; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="thickening"/>
+            </svg>
+        """)
+        val element = svg.children[0]
+        assertIs<SvgAnimated>(element)
+        val anim = element.animations[0]
+        assertIs<SvgAnimate.StrokeWidth>(anim)
+        assertEquals(1f, anim.from)
+        assertEquals(5f, anim.to)
+    }
+
+    @Test
+    fun parseNoMatchingKeyframes() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    .animated { animation: nonexistent 1s; }
+                </style>
+                <circle cx="12" cy="12" r="10" class="animated"/>
+            </svg>
+        """)
+        // No matching keyframes, should not create animation
+        val element = svg.children[0]
+        assertIs<SvgCircle>(element)
     }
 
     @Test
