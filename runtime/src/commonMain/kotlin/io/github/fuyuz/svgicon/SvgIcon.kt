@@ -19,6 +19,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -811,6 +812,10 @@ private fun AnimatedSvgIconCanvas(
     }
 
     if (isInfinite) {
+        // Track global iteration count using elapsed time
+        var globalIteration by remember { mutableIntStateOf(0) }
+        val startTime = remember { System.currentTimeMillis() }
+
         // Use infinite transition for continuous animations
         val infiniteTransition = rememberInfiniteTransition(label = "svg_animation")
 
@@ -824,6 +829,15 @@ private fun AnimatedSvgIconCanvas(
             ),
             label = "master_timeline"
         )
+
+        // Update global iteration based on elapsed time
+        LaunchedEffect(Unit) {
+            while (true) {
+                val elapsed = System.currentTimeMillis() - startTime
+                globalIteration = (elapsed / totalCycleDuration).toInt()
+                kotlinx.coroutines.delay(16) // ~60fps update
+            }
+        }
 
         // Calculate individual animation progress based on master timeline with easing
         val progressMap = remember(animations) {
@@ -852,13 +866,19 @@ private fun AnimatedSvgIconCanvas(
 
                             // During animation - calculate progress within current iteration
                             val iterationProgress = if (anim.isInfinite) {
-                                (timeInAnimation / durationMs) % 1f
+                                (timeInAnimation / durationMs).coerceIn(0f, 1f).let { if (it < 0) 0f else it % 1f }
                             } else {
                                 val progress = (timeInAnimation / durationMs) % 1f
                                 val currentIter = (timeInAnimation / durationMs).toInt()
                                 if (currentIter >= effectiveIterations - 1 && progress >= 1f - 0.001f) 1f else progress
                             }
-                            val currentIteration = (timeInAnimation / durationMs).toInt().coerceAtLeast(0)
+
+                            // For infinite animations, use global iteration for direction
+                            val currentIteration = if (anim.isInfinite) {
+                                globalIteration
+                            } else {
+                                (timeInAnimation / durationMs).toInt().coerceAtLeast(0)
+                            }
 
                             // Apply direction transformation
                             val directedProgress = applyDirection(iterationProgress, currentIteration, anim.direction)

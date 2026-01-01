@@ -630,12 +630,12 @@ svg(viewBox = ViewBox.Size32) { ... }
 svg(viewBox = ViewBox.square(48f)) { ... }
 ```
 
-### Building Element Lists
+### Building SVG Icons
 
-Use the simpler `svg {}` to build element lists:
+Use the `svg {}` DSL to build complete SVG icons:
 
 ```kotlin
-val elements = svg {
+val myIcon = svg {
     // Basic elements
     path("M20 6L9 17l-5-5")
     circle(12, 12, 10)
@@ -676,10 +676,8 @@ val elements = svg {
     }
 }
 
-// Create icon from builder
-object MyIcon : SvgIcon {
-    override val svg = Svg(children = elements)
-}
+// Use directly in SvgIcon composable
+SvgIcon(icon = myIcon, contentDescription = "My Icon")
 ```
 
 ### AnimationBuilder Functions
@@ -764,20 +762,16 @@ object FilledCircle : SvgIcon {
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-object LoadingSpinner : SvgIcon {
-    override val svg = Svg(
-        children = svg {
-            // Outer circle (static)
-            circle(12, 12, 10) {
-                strokeOpacity(from = 0.3f, to = 0.3f, dur = 1.milliseconds)
-            }
+val LoadingSpinner = svg {
+    // Outer circle (static)
+    circle(12, 12, 10) {
+        strokeOpacity(from = 0.3f, to = 0.3f, dur = 1.milliseconds)
+    }
 
-            // Arc that rotates
-            path("M12 2a10 10 0 0 1 10 10") {
-                rotate(from = 0f, to = 360f, dur = 1.seconds)
-            }
-        }
-    )
+    // Arc that rotates
+    path("M12 2a10 10 0 0 1 10 10") {
+        rotate(from = 0f, to = 360f, dur = 1.seconds)
+    }
 }
 ```
 

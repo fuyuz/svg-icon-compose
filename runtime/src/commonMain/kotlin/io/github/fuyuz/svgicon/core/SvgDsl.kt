@@ -2110,19 +2110,19 @@ class AnimationBuilder {
 }
 
 /**
- * DSL entry point for building SVG elements.
- * Returns a list of elements to be used as children of an Svg.
+ * DSL entry point for building a complete Svg object with default attributes.
+ * Returns an Svg object that can be used directly in SvgIcon.
  *
  * Example:
  * ```kotlin
- * val elements = svg {
+ * val icon = svg {
  *     path("M20 6L9 17l-5-5")
  *     circle(12, 12, 10)
  * }
  * ```
  */
-inline fun svg(block: SvgBuilder.() -> Unit): List<SvgElement> {
-    return SvgBuilder().apply(block).build()
+inline fun svg(block: SvgBuilder.() -> Unit): Svg {
+    return Svg(children = SvgBuilder().apply(block).build())
 }
 
 /**

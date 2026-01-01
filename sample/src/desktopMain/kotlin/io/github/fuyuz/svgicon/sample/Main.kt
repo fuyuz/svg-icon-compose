@@ -141,71 +141,62 @@ private val DslAnimatedCheck = Svg(
 /**
  * Icon with inline styles using stroke/fill parameters.
  */
-private val DslStyledIcon = Svg(
-    children = svg {
-        // Circle with custom fill and stroke
-        circle(12, 12, 10, fill = Color(0xFF3B82F6).copy(alpha = 0.2f), stroke = Color(0xFF3B82F6))
-        // Path with custom stroke color
-        path("M8 12l3 3 5-6", stroke = Color(0xFF22C55E), strokeWidth = 3f)
-    }
-)
+private val DslStyledIcon = svg {
+    // Circle with custom fill and stroke
+    circle(12, 12, 10, fill = Color(0xFF3B82F6).copy(alpha = 0.2f), stroke = Color(0xFF3B82F6))
+    // Path with custom stroke color
+    path("M8 12l3 3 5-6", stroke = Color(0xFF22C55E), strokeWidth = 3f)
+}
 
 /**
  * Icon built with svg {} builder.
  */
-private val DslBuilderIcon = Svg(
-    children = svg {
-        circle(12, 12, 10)
-        path("M8 12l3 3 5-6")
-    }
-)
+private val DslBuilderIcon = svg {
+    circle(12, 12, 10)
+    path("M8 12l3 3 5-6")
+}
 
 /**
  * Animated icon using svg {} builder with animation blocks.
  */
-private val DslBuilderAnimatedIcon = Svg(
-    children = svg {
-        // Circle with stroke draw animation
-        circle(12, 12, 10) {
-            strokeDraw(dur = 1.seconds)
-        }
-        // Path with delayed stroke draw
-        path("M8 12l3 3 5-6") {
-            strokeDraw(dur = 500.milliseconds, delay = 1.seconds)
-        }
+private val DslBuilderAnimatedIcon = svg {
+    // Circle with stroke draw animation
+    circle(12, 12, 10) {
+        strokeDraw(dur = 1.seconds)
     }
-)
+    // Path with delayed stroke draw
+    path("M8 12l3 3 5-6") {
+        strokeDraw(dur = 500.milliseconds, delay = 1.seconds)
+    }
+}
 
 /**
  * Rotating element animation.
  */
-private val DslRotatingIcon = Svg(
-    children = svg {
-        // Static outer circle
-        circle(12, 12, 10)
-        // Rotating inner element
-        path("M12 6v6l4 2") {
-            rotate(from = 0f, to = 360f, dur = 2.seconds)
-        }
+private val DslRotatingIcon = svg {
+    // Static outer circle
+    circle(12, 12, 10)
+    // Rotating inner element
+    path("M12 6v6l4 2") {
+        rotate(from = 0f, to = 360f, dur = 2.seconds)
     }
-)
+}
 
 /**
- * Path morphing animation - triangle to circle.
+ * Path morphing animation - triangle to rounded shape.
  * Uses cubic Bézier curves with matching command structure for smooth morphing.
- * Triangle: 3 straight edges (control points on the line)
- * Circle: 3 curved segments (control points creating arc)
+ * Both paths have: M, C, C, C, Z (5 commands) with matching types.
  */
 private val DslPathMorphIcon = Svg(
     children = listOf(
         SvgAnimated(
-            element = SvgPath("M12 2 C12 2 22 20 22 20 C22 20 2 20 2 20 C2 20 12 2 12 2 Z"),
+            element = SvgPath("M12 4 L20 18 L4 18 Z"),
             animations = listOf(
                 SvgAnimate.D(
-                    // Triangle: top → bottom-right → bottom-left → top (using cubic curves)
-                    from = "M12 2 C12 2 22 20 22 20 C22 20 2 20 2 20 C2 20 12 2 12 2 Z",
-                    // Circle approximation with 3 segments
-                    to = "M12 2 C18 2 22 7 22 12 C22 17 18 22 12 22 C6 22 2 12 12 2 Z",
+                    // Triangle using lines
+                    from = "M12 4 L20 18 L4 18 Z",
+                    // Same shape with different proportions (more like a house)
+                    to = "M12 2 L22 12 L12 22 Z",
                     dur = 1.seconds,
                     direction = AnimationDirection.ALTERNATE
                 )
