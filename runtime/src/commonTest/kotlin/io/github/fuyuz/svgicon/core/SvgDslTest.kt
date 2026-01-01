@@ -225,7 +225,7 @@ class SvgDslTest {
     @Test
     fun testPathWithStyleParams() {
         val result = svg {
-            path("M10 10", strokeWidth = 3f)
+            path("M10 10") styled { strokeWidth = 3f }
         }
 
         assertEquals(1, result.children.size)
@@ -238,7 +238,10 @@ class SvgDslTest {
     @Test
     fun testCircleWithStyleParams() {
         val result = svg {
-            circle(12, 12, 10, strokeWidth = 2f, opacity = 0.5f)
+            circle(12, 12, 10) styled {
+                strokeWidth = 2f
+                opacity = 0.5f
+            }
         }
 
         assertEquals(1, result.children.size)
@@ -295,7 +298,7 @@ class SvgDslTest {
     @Test
     fun testPolygonWithStyleParams() {
         val result = svg {
-            polygon(12 to 2, 22 to 22, 2 to 22, strokeWidth = 2f)
+            polygon(12 to 2, 22 to 22, 2 to 22) styled { strokeWidth = 2f }
         }
 
         assertEquals(1, result.children.size)
@@ -308,7 +311,7 @@ class SvgDslTest {
     @Test
     fun testRectWithStyleParams() {
         val result = svg {
-            rect(x = 4, y = 4, width = 16, height = 16, strokeWidth = 1f)
+            rect(4, 4, 16, 16) styled { strokeWidth = 1f }
         }
 
         assertEquals(1, result.children.size)
@@ -321,7 +324,7 @@ class SvgDslTest {
     @Test
     fun testLineWithStyleParams() {
         val result = svg {
-            line(0, 0, 24, 24, strokeWidth = 2f)
+            line(0, 0, 24, 24) styled { strokeWidth = 2f }
         }
 
         assertEquals(1, result.children.size)
