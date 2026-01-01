@@ -685,20 +685,145 @@ data class SvgAnimated(
 @DslMarker
 annotation class SvgDslMarker
 
+/**
+ * DSL builder for type-safe SVG path commands.
+ */
+@SvgDslMarker
+class PathBuilder {
+    private val commands = mutableListOf<PathCommand>()
+
+    /** Move to absolute position (M) */
+    fun moveTo(x: Float, y: Float) {
+        commands.add(PathCommand.MoveTo(x, y))
+    }
+
+    /** Move to relative position (m) */
+    fun moveToRelative(dx: Float, dy: Float) {
+        commands.add(PathCommand.MoveToRelative(dx, dy))
+    }
+
+    /** Line to absolute position (L) */
+    fun lineTo(x: Float, y: Float) {
+        commands.add(PathCommand.LineTo(x, y))
+    }
+
+    /** Line to relative position (l) */
+    fun lineToRelative(dx: Float, dy: Float) {
+        commands.add(PathCommand.LineToRelative(dx, dy))
+    }
+
+    /** Horizontal line to absolute x (H) */
+    fun horizontalLineTo(x: Float) {
+        commands.add(PathCommand.HorizontalLineTo(x))
+    }
+
+    /** Horizontal line to relative dx (h) */
+    fun horizontalLineToRelative(dx: Float) {
+        commands.add(PathCommand.HorizontalLineToRelative(dx))
+    }
+
+    /** Vertical line to absolute y (V) */
+    fun verticalLineTo(y: Float) {
+        commands.add(PathCommand.VerticalLineTo(y))
+    }
+
+    /** Vertical line to relative dy (v) */
+    fun verticalLineToRelative(dy: Float) {
+        commands.add(PathCommand.VerticalLineToRelative(dy))
+    }
+
+    /** Cubic bezier curve absolute (C) */
+    fun cubicTo(x1: Float, y1: Float, x2: Float, y2: Float, x: Float, y: Float) {
+        commands.add(PathCommand.CubicTo(x1, y1, x2, y2, x, y))
+    }
+
+    /** Cubic bezier curve relative (c) */
+    fun cubicToRelative(dx1: Float, dy1: Float, dx2: Float, dy2: Float, dx: Float, dy: Float) {
+        commands.add(PathCommand.CubicToRelative(dx1, dy1, dx2, dy2, dx, dy))
+    }
+
+    /** Smooth cubic bezier absolute (S) */
+    fun smoothCubicTo(x2: Float, y2: Float, x: Float, y: Float) {
+        commands.add(PathCommand.SmoothCubicTo(x2, y2, x, y))
+    }
+
+    /** Smooth cubic bezier relative (s) */
+    fun smoothCubicToRelative(dx2: Float, dy2: Float, dx: Float, dy: Float) {
+        commands.add(PathCommand.SmoothCubicToRelative(dx2, dy2, dx, dy))
+    }
+
+    /** Quadratic bezier curve absolute (Q) */
+    fun quadTo(x1: Float, y1: Float, x: Float, y: Float) {
+        commands.add(PathCommand.QuadTo(x1, y1, x, y))
+    }
+
+    /** Quadratic bezier curve relative (q) */
+    fun quadToRelative(dx1: Float, dy1: Float, dx: Float, dy: Float) {
+        commands.add(PathCommand.QuadToRelative(dx1, dy1, dx, dy))
+    }
+
+    /** Smooth quadratic bezier absolute (T) */
+    fun smoothQuadTo(x: Float, y: Float) {
+        commands.add(PathCommand.SmoothQuadTo(x, y))
+    }
+
+    /** Smooth quadratic bezier relative (t) */
+    fun smoothQuadToRelative(dx: Float, dy: Float) {
+        commands.add(PathCommand.SmoothQuadToRelative(dx, dy))
+    }
+
+    /** Arc absolute (A) */
+    fun arcTo(rx: Float, ry: Float, xAxisRotation: Float, largeArcFlag: Boolean, sweepFlag: Boolean, x: Float, y: Float) {
+        commands.add(PathCommand.ArcTo(rx, ry, xAxisRotation, largeArcFlag, sweepFlag, x, y))
+    }
+
+    /** Arc relative (a) */
+    fun arcToRelative(rx: Float, ry: Float, xAxisRotation: Float, largeArcFlag: Boolean, sweepFlag: Boolean, dx: Float, dy: Float) {
+        commands.add(PathCommand.ArcToRelative(rx, ry, xAxisRotation, largeArcFlag, sweepFlag, dx, dy))
+    }
+
+    /** Close path (Z/z) */
+    fun close() {
+        commands.add(PathCommand.Close)
+    }
+
+    fun build(): List<PathCommand> = commands.toList()
+}
+
 @SvgDslMarker
 class SvgBuilder {
     private val elements = mutableListOf<SvgElement>()
 
+    /**
+     * Path from string data.
+     */
     fun path(d: String) {
         elements.add(SvgPath(d))
     }
 
     /**
-     * Path with animation builder.
+     * Path from string with animation.
      */
     fun path(d: String, block: AnimationBuilder.() -> Unit) {
         val animations = AnimationBuilder().apply(block).build()
         elements.add(SvgAnimated(SvgPath(d), animations))
+    }
+
+    /**
+     * Type-safe path builder.
+     */
+    fun path(block: PathBuilder.() -> Unit) {
+        val commands = PathBuilder().apply(block).build()
+        elements.add(SvgPath(commands = commands))
+    }
+
+    /**
+     * Type-safe path with animation builder.
+     */
+    fun animatedPath(pathBlock: PathBuilder.() -> Unit, animBlock: AnimationBuilder.() -> Unit) {
+        val commands = PathBuilder().apply(pathBlock).build()
+        val animations = AnimationBuilder().apply(animBlock).build()
+        elements.add(SvgAnimated(SvgPath(commands = commands), animations))
     }
 
     fun circle(cx: Float, cy: Float, r: Float) {
@@ -761,8 +886,35 @@ class SvgBuilder {
         elements.add(SvgPolyline(points))
     }
 
+    /**
+     * Polyline from points string (e.g., "5,12 12,5 19,12").
+     */
+    fun polyline(points: String) {
+        elements.add(SvgPolyline(parsePointsString(points)))
+    }
+
     fun polygon(points: List<Offset>) {
         elements.add(SvgPolygon(points))
+    }
+
+    /**
+     * Polygon from points string (e.g., "12,2 22,22 2,22").
+     */
+    fun polygon(points: String) {
+        elements.add(SvgPolygon(parsePointsString(points)))
+    }
+
+    private fun parsePointsString(points: String): List<Offset> {
+        val numbers = points.trim()
+            .split(Regex("[\\s,]+"))
+            .mapNotNull { it.toFloatOrNull() }
+        val result = mutableListOf<Offset>()
+        for (i in numbers.indices step 2) {
+            if (i + 1 < numbers.size) {
+                result.add(Offset(numbers[i], numbers[i + 1]))
+            }
+        }
+        return result
     }
 
     fun group(block: SvgBuilder.() -> Unit) {
