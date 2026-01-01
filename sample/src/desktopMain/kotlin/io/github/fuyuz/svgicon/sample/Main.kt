@@ -47,6 +47,7 @@ import io.github.fuyuz.svgicon.core.SvgRect
 import io.github.fuyuz.svgicon.core.SvgStyle
 import io.github.fuyuz.svgicon.core.SvgStyled
 import io.github.fuyuz.svgicon.core.SvgTransform
+import io.github.fuyuz.svgicon.core.ViewBox
 import io.github.fuyuz.svgicon.core.TransformType
 import io.github.fuyuz.svgicon.core.parseSvg
 import io.github.fuyuz.svgicon.core.svg
@@ -188,18 +189,27 @@ private val DslRotatingIcon = svg {
  * Both paths have: M, C, C, C, Z (5 commands) with matching types.
  */
 private val DslPathMorphIcon = Svg(
+    viewBox = ViewBox(0f, 0f, 100f, 100f),
     children = listOf(
-        SvgAnimated(
-            element = SvgPath("M12 4 L20 18 L4 18 Z"),
-            animations = listOf(
-                SvgAnimate.D(
-                    // Triangle using lines
-                    from = "M12 4 L20 18 L4 18 Z",
-                    // Same shape with different proportions (more like a house)
-                    to = "M12 2 L22 12 L12 22 Z",
-                    dur = 1.seconds,
-                    direction = AnimationDirection.ALTERNATE
+        SvgStyled(
+            element = SvgAnimated(
+                // Triangle with 4 cubic segments (M + 4 C = 5 commands) to match circle
+                element = SvgPath("M 50,15 C 50,15 85,75 85,75 C 85,75 50,75 50,75 C 50,75 15,75 15,75 C 15,75 50,15 50,15"),
+                animations = listOf(
+                    SvgAnimate.D(
+                        // Triangle: top -> bottom-right -> bottom-center -> bottom-left -> top
+                        // Using degenerate cubics (control points = endpoints for straight lines)
+                        from = "M 50,15 C 50,15 85,75 85,75 C 85,75 50,75 50,75 C 50,75 15,75 15,75 C 15,75 50,15 50,15",
+                        // Circle: 4 cubic bezier curves forming a circle
+                        to = "M 50,10 C 72,10 90,28 90,50 C 90,72 72,90 50,90 C 28,90 10,72 10,50 C 10,28 28,10 50,10",
+                        dur = 2.seconds,
+                        direction = AnimationDirection.ALTERNATE
+                    )
                 )
+            ),
+            style = SvgStyle(
+                fill = Color(0xFF3498DB),
+                stroke = null
             )
         )
     )

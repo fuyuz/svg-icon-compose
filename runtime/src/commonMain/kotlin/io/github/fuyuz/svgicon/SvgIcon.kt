@@ -2,10 +2,6 @@ package io.github.fuyuz.svgicon
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.MutatorMutex
@@ -19,7 +15,9 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.withFrameMillis
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -812,34 +810,20 @@ private fun AnimatedSvgIconCanvas(
     }
 
     if (isInfinite) {
-        // Track global iteration count using elapsed time
-        var globalIteration by remember { mutableIntStateOf(0) }
-        val startTime = remember { System.currentTimeMillis() }
+        // Time-based animation using withFrameMillis for single source of truth
+        // This eliminates race conditions between iteration count and progress
+        var elapsedMs by remember { mutableFloatStateOf(0f) }
 
-        // Use infinite transition for continuous animations
-        val infiniteTransition = rememberInfiniteTransition(label = "svg_animation")
-
-        // Single master timeline for the entire cycle
-        val masterProgress by infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(totalCycleDuration, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "master_timeline"
-        )
-
-        // Update global iteration based on elapsed time
         LaunchedEffect(Unit) {
+            val startTime = withFrameMillis { it }
             while (true) {
-                val elapsed = System.currentTimeMillis() - startTime
-                globalIteration = (elapsed / totalCycleDuration).toInt()
-                kotlinx.coroutines.delay(16) // ~60fps update
+                withFrameMillis { frameTime ->
+                    elapsedMs = (frameTime - startTime).toFloat()
+                }
             }
         }
 
-        // Calculate individual animation progress based on master timeline with easing
+        // Calculate individual animation progress based on elapsed time
         val progressMap = remember(animations) {
             animations.associate { entry ->
                 entry.key to object : State<Float> {
@@ -848,30 +832,22 @@ private fun AnimatedSvgIconCanvas(
                             val anim = entry.animation
                             val delayMs = anim.delay.inWholeMilliseconds.toFloat()
                             val durationMs = anim.dur.inWholeMilliseconds.toFloat()
-                            val currentTimeMs = masterProgress * totalCycleDuration
-                            val effectiveIterations = if (anim.isInfinite) 1 else anim.iterations.coerceAtLeast(1)
-                            val totalAnimationMs = durationMs * effectiveIterations
 
-                            val timeInAnimation = currentTimeMs - delayMs
-                            val finalIteration = (effectiveIterations - 1).coerceAtLeast(0)
+                            // Calculate time within current cycle
+                            val cycleTimeMs = elapsedMs % totalCycleDuration
+                            val timeInAnimation = cycleTimeMs - delayMs
 
-                            // Check fill mode for before/after animation
-                            val fillProgress = getFillProgress(
-                                timeInAnimation, totalAnimationMs,
-                                anim.fillMode, anim.direction, finalIteration
-                            )
-                            if (fillProgress != null) {
-                                return applyEasing(fillProgress, anim.calcMode, anim.keySplines)
+                            // Before delay
+                            if (timeInAnimation < 0) {
+                                return 0f
                             }
 
-                            // During animation - calculate progress within current iteration
-                            val iterationProgress = if (anim.isInfinite) {
-                                (timeInAnimation / durationMs).coerceIn(0f, 1f).let { if (it < 0) 0f else it % 1f }
-                            } else {
-                                val progress = (timeInAnimation / durationMs) % 1f
-                                val currentIter = (timeInAnimation / durationMs).toInt()
-                                if (currentIter >= effectiveIterations - 1 && progress >= 1f - 0.001f) 1f else progress
-                            }
+                            // Calculate progress and iteration from the same elapsed time
+                            // This is the key - both are derived from elapsedMs, no race condition
+                            val totalCycles = elapsedMs / totalCycleDuration
+                            val globalIteration = totalCycles.toInt()
+
+                            val iterationProgress = (timeInAnimation / durationMs).coerceIn(0f, 1f)
 
                             // For infinite animations, use global iteration for direction
                             val currentIteration = if (anim.isInfinite) {
