@@ -480,6 +480,76 @@ class SvgParserTest {
     // Style Parsing Tests
     // ===========================================
 
+    // ===========================================
+    // Inline CSS Style Attribute Tests
+    // ===========================================
+
+    @Test
+    fun parseInlineStyleFill() {
+        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style="fill:red"/></svg>""")
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
+    }
+
+    @Test
+    fun parseInlineStyleMultipleProperties() {
+        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style="fill:red; stroke:blue; stroke-width:3"/></svg>""")
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
+        assertEquals(Color.Blue, styled.style.stroke)
+        assertEquals(3f, styled.style.strokeWidth)
+    }
+
+    @Test
+    fun parseInlineStyleOverridesXmlAttribute() {
+        // CSS style should take precedence over XML attributes
+        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" fill="blue" style="fill:red"/></svg>""")
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
+    }
+
+    @Test
+    fun parseInlineStyleWithWhitespace() {
+        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style="  fill : red ;  stroke : blue  "/></svg>""")
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
+        assertEquals(Color.Blue, styled.style.stroke)
+    }
+
+    @Test
+    fun parseInlineStyleWithHexColor() {
+        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style="fill:#ff0000; stroke:#00ff00"/></svg>""")
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
+        assertEquals(Color.Green, styled.style.stroke)
+    }
+
+    @Test
+    fun parseInlineStyleMixedWithXmlAttributes() {
+        // XML: stroke-width, CSS: fill and stroke
+        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" stroke-width="5" style="fill:red; stroke:blue"/></svg>""")
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
+        assertEquals(Color.Blue, styled.style.stroke)
+        assertEquals(5f, styled.style.strokeWidth)
+    }
+
+    @Test
+    fun parseInlineStyleOpacity() {
+        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style="opacity:0.5; fill-opacity:0.8"/></svg>""")
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(0.5f, styled.style.opacity)
+        assertEquals(0.8f, styled.style.fillOpacity)
+    }
+
+    @Test
+    fun parseInlineStyleLinecapLinejoin() {
+        val svg = parseSvg("""<svg><path d="M0 0" style="stroke-linecap:square; stroke-linejoin:bevel"/></svg>""")
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(LineCap.SQUARE, styled.style.strokeLinecap)
+        assertEquals(LineJoin.BEVEL, styled.style.strokeLinejoin)
+    }
+
     @Test
     fun parseElementWithFill() {
         val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" fill="red"/></svg>""")
