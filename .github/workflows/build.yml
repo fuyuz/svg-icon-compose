@@ -67,6 +67,13 @@ jobs:
 
   build:
     needs: build-target
+    if: always()
     runs-on: ubuntu-latest
     steps:
-      - run: echo "All builds passed"
+      - name: Check build results
+        run: |
+          if [[ "${{ needs.build-target.result }}" != "success" ]]; then
+            echo "Build failed: ${{ needs.build-target.result }}"
+            exit 1
+          fi
+          echo "All builds passed"
