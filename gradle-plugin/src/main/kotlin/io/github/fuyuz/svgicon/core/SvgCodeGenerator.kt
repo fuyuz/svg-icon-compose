@@ -634,7 +634,9 @@ object SvgCodeGenerator {
                     "from" to effectiveFrom, "to" to effectiveTo)
             } else null
             "stroke-dashoffset" -> {
-                val reverse = (effectiveFrom ?: 0f) > (effectiveTo ?: 0f)
+                // stroke-dashoffset from high to low (e.g., 50 to 0) = stroke appearing (normal)
+                // stroke-dashoffset from low to high (e.g., 0 to 50) = stroke disappearing (reverse)
+                val reverse = (effectiveFrom ?: 0f) < (effectiveTo ?: 0f)
                 generateStrokeDrawCodeBlock(dur, delay, reverse, calcMode, keySplines)
             }
             else -> null
