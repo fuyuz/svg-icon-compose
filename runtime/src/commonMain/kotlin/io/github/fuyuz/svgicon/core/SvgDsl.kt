@@ -794,11 +794,32 @@ class PathBuilder {
 class SvgBuilder {
     private val elements = mutableListOf<SvgElement>()
 
+    /** Helper to wrap element with style if any style properties are set */
+    private fun addWithStyle(
+        element: SvgElement,
+        stroke: Color? = null,
+        fill: Color? = null,
+        strokeWidth: Float? = null,
+        opacity: Float? = null
+    ) {
+        if (stroke != null || fill != null || strokeWidth != null || opacity != null) {
+            elements.add(SvgStyled(element, SvgStyle(stroke = stroke, fill = fill, strokeWidth = strokeWidth, opacity = opacity)))
+        } else {
+            elements.add(element)
+        }
+    }
+
     /**
      * Path from string data.
      */
-    fun path(d: String) {
-        elements.add(SvgPath(d))
+    fun path(
+        d: String,
+        stroke: Color? = null,
+        fill: Color? = null,
+        strokeWidth: Float? = null,
+        opacity: Float? = null
+    ) {
+        addWithStyle(SvgPath(d), stroke, fill, strokeWidth, opacity)
     }
 
     /**
@@ -812,9 +833,15 @@ class SvgBuilder {
     /**
      * Type-safe path builder.
      */
-    fun path(block: PathBuilder.() -> Unit) {
+    fun path(
+        stroke: Color? = null,
+        fill: Color? = null,
+        strokeWidth: Float? = null,
+        opacity: Float? = null,
+        block: PathBuilder.() -> Unit
+    ) {
         val commands = PathBuilder().apply(block).build()
-        elements.add(SvgPath(commands = commands))
+        addWithStyle(SvgPath(commands = commands), stroke, fill, strokeWidth, opacity)
     }
 
     /**
@@ -826,12 +853,16 @@ class SvgBuilder {
         elements.add(SvgAnimated(SvgPath(commands = commands), animations))
     }
 
-    fun circle(cx: Float, cy: Float, r: Float) {
-        elements.add(SvgCircle(cx, cy, r))
-    }
-
-    fun circle(cx: Number, cy: Number, r: Number) {
-        elements.add(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()))
+    fun circle(
+        cx: Number,
+        cy: Number,
+        r: Number,
+        stroke: Color? = null,
+        fill: Color? = null,
+        strokeWidth: Float? = null,
+        opacity: Float? = null
+    ) {
+        addWithStyle(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()), stroke, fill, strokeWidth, opacity)
     }
 
     fun circle(cx: Number, cy: Number, r: Number, block: AnimationBuilder.() -> Unit) {
@@ -839,23 +870,17 @@ class SvgBuilder {
         elements.add(SvgAnimated(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()), animations))
     }
 
-    fun ellipse(cx: Float, cy: Float, rx: Float, ry: Float) {
-        elements.add(SvgEllipse(cx, cy, rx, ry))
-    }
-
-    fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number) {
-        elements.add(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()))
-    }
-
-    fun rect(
-        x: Float = 0f,
-        y: Float = 0f,
-        width: Float,
-        height: Float,
-        rx: Float = 0f,
-        ry: Float = rx
+    fun ellipse(
+        cx: Number,
+        cy: Number,
+        rx: Number,
+        ry: Number,
+        stroke: Color? = null,
+        fill: Color? = null,
+        strokeWidth: Float? = null,
+        opacity: Float? = null
     ) {
-        elements.add(SvgRect(x, y, width, height, rx, ry))
+        addWithStyle(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()), stroke, fill, strokeWidth, opacity)
     }
 
     fun rect(
@@ -864,17 +889,25 @@ class SvgBuilder {
         width: Number,
         height: Number,
         rx: Number = 0,
-        ry: Number = rx
+        ry: Number = rx,
+        stroke: Color? = null,
+        fill: Color? = null,
+        strokeWidth: Float? = null,
+        opacity: Float? = null
     ) {
-        elements.add(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()))
+        addWithStyle(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()), stroke, fill, strokeWidth, opacity)
     }
 
-    fun line(x1: Float, y1: Float, x2: Float, y2: Float) {
-        elements.add(SvgLine(x1, y1, x2, y2))
-    }
-
-    fun line(x1: Number, y1: Number, x2: Number, y2: Number) {
-        elements.add(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()))
+    fun line(
+        x1: Number,
+        y1: Number,
+        x2: Number,
+        y2: Number,
+        stroke: Color? = null,
+        strokeWidth: Float? = null,
+        opacity: Float? = null
+    ) {
+        addWithStyle(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()), stroke, null, strokeWidth, opacity)
     }
 
     fun line(x1: Number, y1: Number, x2: Number, y2: Number, block: AnimationBuilder.() -> Unit) {
@@ -882,26 +915,44 @@ class SvgBuilder {
         elements.add(SvgAnimated(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()), animations))
     }
 
-    fun polyline(points: List<Offset>) {
-        elements.add(SvgPolyline(points))
+    fun polyline(
+        points: List<Offset>,
+        stroke: Color? = null,
+        fill: Color? = null,
+        strokeWidth: Float? = null,
+        opacity: Float? = null
+    ) {
+        addWithStyle(SvgPolyline(points), stroke, fill, strokeWidth, opacity)
     }
 
-    /**
-     * Polyline from points string (e.g., "5,12 12,5 19,12").
-     */
-    fun polyline(points: String) {
-        elements.add(SvgPolyline(parsePointsString(points)))
+    fun polyline(
+        points: String,
+        stroke: Color? = null,
+        fill: Color? = null,
+        strokeWidth: Float? = null,
+        opacity: Float? = null
+    ) {
+        addWithStyle(SvgPolyline(parsePointsString(points)), stroke, fill, strokeWidth, opacity)
     }
 
-    fun polygon(points: List<Offset>) {
-        elements.add(SvgPolygon(points))
+    fun polygon(
+        points: List<Offset>,
+        stroke: Color? = null,
+        fill: Color? = null,
+        strokeWidth: Float? = null,
+        opacity: Float? = null
+    ) {
+        addWithStyle(SvgPolygon(points), stroke, fill, strokeWidth, opacity)
     }
 
-    /**
-     * Polygon from points string (e.g., "12,2 22,22 2,22").
-     */
-    fun polygon(points: String) {
-        elements.add(SvgPolygon(parsePointsString(points)))
+    fun polygon(
+        points: String,
+        stroke: Color? = null,
+        fill: Color? = null,
+        strokeWidth: Float? = null,
+        opacity: Float? = null
+    ) {
+        addWithStyle(SvgPolygon(parsePointsString(points)), stroke, fill, strokeWidth, opacity)
     }
 
     private fun parsePointsString(points: String): List<Offset> {
