@@ -386,12 +386,6 @@ sealed interface SvgAnimate {
     val dur: Duration
     val delay: Duration
 
-    /**
-     * Duration in milliseconds (for internal use).
-     */
-    val durMillis: Int get() = dur.inWholeMilliseconds.toInt()
-    val delayMillis: Int get() = delay.inWholeMilliseconds.toInt()
-
     // ============================================
     // Stroke Properties
     // ============================================
@@ -767,16 +761,8 @@ class SvgBuilder {
         elements.add(SvgPolyline(points))
     }
 
-    fun polyline(vararg points: Pair<Float, Float>) {
-        elements.add(SvgPolyline(points.map { Offset(it.first, it.second) }))
-    }
-
     fun polygon(points: List<Offset>) {
         elements.add(SvgPolygon(points))
-    }
-
-    fun polygon(vararg points: Pair<Float, Float>) {
-        elements.add(SvgPolygon(points.map { Offset(it.first, it.second) }))
     }
 
     fun group(block: SvgBuilder.() -> Unit) {

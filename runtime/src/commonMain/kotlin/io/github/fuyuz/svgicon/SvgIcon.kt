@@ -348,7 +348,7 @@ private fun AnimatedSvgIconCanvas(
 
     // Find the maximum duration among all animations
     val maxDuration = remember(animations) {
-        animations.maxOfOrNull { it.animation.durMillis } ?: 1000
+        animations.maxOfOrNull { it.animation.dur.inWholeMilliseconds.toInt() } ?: 1000
     }
 
     val isInfinite = iterations == Int.MAX_VALUE
@@ -359,7 +359,7 @@ private fun AnimatedSvgIconCanvas(
 
         val animationValues = animations.map { entry ->
             val anim = entry.animation
-            val duration = anim.durMillis.coerceAtLeast(1)
+            val duration = anim.dur.inWholeMilliseconds.toInt().coerceAtLeast(1)
 
             val repeatMode = when (anim) {
                 is SvgAnimate.Opacity -> RepeatMode.Reverse
@@ -398,7 +398,7 @@ private fun AnimatedSvgIconCanvas(
 
         val animationValues = animations.map { entry ->
             val anim = entry.animation
-            val duration = anim.durMillis.coerceAtLeast(1)
+            val duration = anim.dur.inWholeMilliseconds.toInt().coerceAtLeast(1)
 
             val progress = remember { Animatable(0f) }
 
