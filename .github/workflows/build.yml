@@ -45,11 +45,12 @@ jobs:
           distribution: 'temurin'
 
       - name: Cache Konan
+        if: matrix.target == 'ios'
         uses: actions/cache@v4
         with:
           path: ~/.konan
-          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle.kts') }}
-          restore-keys: ${{ runner.os }}-konan-
+          key: konan-${{ hashFiles('**/*.gradle.kts') }}
+          restore-keys: konan-
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
