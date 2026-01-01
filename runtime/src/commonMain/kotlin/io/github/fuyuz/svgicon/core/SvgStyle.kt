@@ -91,6 +91,9 @@ sealed interface SvgTransform {
  * @param vectorEffect Special rendering effects (e.g., non-scaling-stroke)
  * @param clipPathId Reference to a clip path by ID
  * @param maskId Reference to a mask by ID
+ * @param markerStart Marker at the start of a path/line (e.g., "url(#arrow)")
+ * @param markerMid Marker at middle vertices of a path
+ * @param markerEnd Marker at the end of a path/line
  */
 data class SvgStyle(
     val fill: Color? = null,
@@ -109,7 +112,10 @@ data class SvgStyle(
     val paintOrder: PaintOrder? = null,
     val vectorEffect: VectorEffect? = null,
     val clipPathId: String? = null,
-    val maskId: String? = null
+    val maskId: String? = null,
+    val markerStart: String? = null,
+    val markerMid: String? = null,
+    val markerEnd: String? = null
 ) {
     companion object {
         val Empty = SvgStyle()

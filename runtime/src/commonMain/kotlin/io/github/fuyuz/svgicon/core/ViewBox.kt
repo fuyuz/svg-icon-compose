@@ -132,5 +132,18 @@ data class ViewBox(
                 else -> Default
             }
         }
+
+        /** Create a viewBox with origin at (0, 0) */
+        fun of(width: Number, height: Number) = ViewBox(0f, 0f, width.toFloat(), height.toFloat())
     }
 }
+
+/**
+ * Parse a string to ViewBox.
+ *
+ * Example:
+ * ```kotlin
+ * svg(viewBox = "0 0 100 50".toViewBox()) { ... }
+ * ```
+ */
+fun String.toViewBox(): ViewBox = ViewBox.parse(this)

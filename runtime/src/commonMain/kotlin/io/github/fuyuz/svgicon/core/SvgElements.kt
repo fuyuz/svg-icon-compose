@@ -347,3 +347,115 @@ data class SvgRadialGradient(
     val gradientTransform: SvgTransform? = null
 ) : SvgElement
 
+// ============================================
+// Marker Elements
+// ============================================
+
+/**
+ * Marker orientation.
+ */
+sealed interface MarkerOrient {
+    /** Auto-rotate to match the direction of the path. */
+    data object Auto : MarkerOrient
+
+    /** Auto-rotate, but reverse for start markers. */
+    data object AutoStartReverse : MarkerOrient
+
+    /** Fixed rotation angle in degrees. */
+    data class Angle(val degrees: Float) : MarkerOrient
+}
+
+/**
+ * SVG marker element.
+ * Defines arrowheads, dots, or other decorations for lines and paths.
+ *
+ * @param id Unique identifier for referencing this marker
+ * @param viewBox ViewBox defining the marker's coordinate system
+ * @param refX Reference point x coordinate (where the marker attaches)
+ * @param refY Reference point y coordinate
+ * @param markerWidth Width of the marker
+ * @param markerHeight Height of the marker
+ * @param orient Orientation of the marker (auto, auto-start-reverse, or fixed angle)
+ * @param children Child elements that define the marker shape
+ */
+data class SvgMarker(
+    val id: String,
+    val viewBox: ViewBox? = null,
+    val refX: Float = 0f,
+    val refY: Float = 0f,
+    val markerWidth: Float = 3f,
+    val markerHeight: Float = 3f,
+    val orient: MarkerOrient = MarkerOrient.Auto,
+    val children: List<SvgElement> = emptyList()
+) : SvgElement
+
+// ============================================
+// Symbol and Use Elements
+// ============================================
+
+/**
+ * SVG symbol element.
+ * Defines a reusable graphical element that can be instantiated with use.
+ *
+ * @param id Unique identifier for referencing this symbol
+ * @param viewBox ViewBox defining the symbol's coordinate system
+ * @param children Child elements that define the symbol
+ */
+data class SvgSymbol(
+    val id: String,
+    val viewBox: ViewBox? = null,
+    val children: List<SvgElement> = emptyList()
+) : SvgElement
+
+/**
+ * SVG use element.
+ * References and instantiates another element defined elsewhere.
+ *
+ * @param href Reference to the element to use (e.g., "#mySymbol")
+ * @param x X coordinate for placement
+ * @param y Y coordinate for placement
+ * @param width Width override (optional)
+ * @param height Height override (optional)
+ */
+data class SvgUse(
+    val href: String,
+    val x: Float = 0f,
+    val y: Float = 0f,
+    val width: Float? = null,
+    val height: Float? = null
+) : SvgElement
+
+// ============================================
+// Pattern Element
+// ============================================
+
+/**
+ * Pattern units.
+ */
+enum class PatternUnits {
+    USER_SPACE_ON_USE,
+    OBJECT_BOUNDING_BOX
+}
+
+/**
+ * SVG pattern element.
+ * Defines a repeating pattern that can be used as a fill or stroke.
+ *
+ * @param id Unique identifier for referencing this pattern
+ * @param width Width of the pattern tile
+ * @param height Height of the pattern tile
+ * @param patternUnits Coordinate system for pattern position
+ * @param patternContentUnits Coordinate system for pattern content
+ * @param patternTransform Transform applied to pattern
+ * @param children Child elements that define the pattern
+ */
+data class SvgPattern(
+    val id: String,
+    val width: Float,
+    val height: Float,
+    val patternUnits: PatternUnits = PatternUnits.USER_SPACE_ON_USE,
+    val patternContentUnits: PatternUnits = PatternUnits.USER_SPACE_ON_USE,
+    val patternTransform: SvgTransform? = null,
+    val children: List<SvgElement> = emptyList()
+) : SvgElement
+
