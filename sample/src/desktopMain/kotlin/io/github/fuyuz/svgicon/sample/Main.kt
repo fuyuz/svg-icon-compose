@@ -138,6 +138,20 @@ object DslAnimatedCheck : SvgIcon {
 }
 
 /**
+ * Icon with inline styles using stroke/fill parameters.
+ */
+object DslStyledIcon : SvgIcon {
+    override val svg = Svg(
+        children = svg {
+            // Circle with custom fill and stroke
+            circle(12, 12, 10, fill = Color(0xFF3B82F6).copy(alpha = 0.2f), stroke = Color(0xFF3B82F6))
+            // Path with custom stroke color
+            path("M8 12l3 3 5-6", stroke = Color(0xFF22C55E), strokeWidth = 3f)
+        }
+    )
+}
+
+/**
  * Icon built with svg {} builder.
  */
 object DslBuilderIcon : SvgIcon {
@@ -645,6 +659,20 @@ fun App() {
                             size = 48.dp
                         )
                         Text("svg {}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Styled icon with stroke/fill params
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            icon = DslStyledIcon,
+                            contentDescription = "Styled Icon",
+                            tint = Color.White,
+                            size = 48.dp
+                        )
+                        Text("stroke/fill", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 }
 
