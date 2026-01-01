@@ -11,12 +11,94 @@ package io.github.fuyuz.svgicon.core
 sealed interface SvgElement
 
 /**
+ * Alignment for preserveAspectRatio (for code generation).
+ */
+enum class AspectRatioAlign {
+    NONE, X_MIN_Y_MIN, X_MID_Y_MIN, X_MAX_Y_MIN,
+    X_MIN_Y_MID, X_MID_Y_MID, X_MAX_Y_MID,
+    X_MIN_Y_MAX, X_MID_Y_MAX, X_MAX_Y_MAX;
+
+    companion object {
+        fun parse(value: String): AspectRatioAlign = when (value.lowercase()) {
+            "none" -> NONE
+            "xminymin" -> X_MIN_Y_MIN
+            "xmidymin" -> X_MID_Y_MIN
+            "xmaxymin" -> X_MAX_Y_MIN
+            "xminymid" -> X_MIN_Y_MID
+            "xmidymid" -> X_MID_Y_MID
+            "xmaxymid" -> X_MAX_Y_MID
+            "xminymax" -> X_MIN_Y_MAX
+            "xmidymax" -> X_MID_Y_MAX
+            "xmaxymax" -> X_MAX_Y_MAX
+            else -> X_MID_Y_MID
+        }
+    }
+}
+
+/**
+ * Meet or slice option for preserveAspectRatio.
+ */
+enum class MeetOrSlice {
+    MEET, SLICE;
+
+    companion object {
+        fun parse(value: String): MeetOrSlice = when (value.lowercase()) {
+            "slice" -> SLICE
+            else -> MEET
+        }
+    }
+}
+
+/**
+ * SVG preserveAspectRatio attribute (for code generation).
+ */
+data class PreserveAspectRatio(
+    val align: AspectRatioAlign = AspectRatioAlign.X_MID_Y_MID,
+    val meetOrSlice: MeetOrSlice = MeetOrSlice.MEET
+) {
+    companion object {
+        val Default = PreserveAspectRatio()
+
+        fun parse(value: String): PreserveAspectRatio {
+            val parts = value.trim().split("\\s+".toRegex())
+            val align = if (parts.isNotEmpty()) AspectRatioAlign.parse(parts[0]) else AspectRatioAlign.X_MID_Y_MID
+            val meetOrSlice = if (parts.size > 1) MeetOrSlice.parse(parts[1]) else MeetOrSlice.MEET
+            return PreserveAspectRatio(align, meetOrSlice)
+        }
+    }
+}
+
+/**
+ * Type-safe representation of SVG viewBox.
+ */
+data class ViewBox(
+    val minX: Float = 0f,
+    val minY: Float = 0f,
+    val width: Float = 24f,
+    val height: Float = 24f
+) {
+    companion object {
+        val Default = ViewBox(0f, 0f, 24f, 24f)
+
+        fun parse(viewBox: String): ViewBox {
+            val parts = viewBox.split(" ", ",").mapNotNull { it.trim().toFloatOrNull() }
+            return when (parts.size) {
+                4 -> ViewBox(parts[0], parts[1], parts[2], parts[3])
+                2 -> ViewBox(0f, 0f, parts[0], parts[1])
+                else -> Default
+            }
+        }
+    }
+}
+
+/**
  * SVG root element.
  * Represents the <svg> tag with its attributes.
  *
- * @param width Width of the SVG (default: 24)
- * @param height Height of the SVG (default: 24)
- * @param viewBox ViewBox string (default: "0 0 24 24")
+ * @param width Viewport width (null = use viewBox width)
+ * @param height Viewport height (null = use viewBox height)
+ * @param viewBox ViewBox defining the coordinate system
+ * @param preserveAspectRatio How to scale/align viewBox within viewport
  * @param fill Default fill (default: "none")
  * @param stroke Default stroke (default: "currentColor")
  * @param strokeWidth Default stroke width (default: 2)
@@ -25,9 +107,10 @@ sealed interface SvgElement
  * @param children Child SVG elements
  */
 data class Svg(
-    val width: Int = 24,
-    val height: Int = 24,
-    val viewBox: String = "0 0 24 24",
+    val width: Float? = null,
+    val height: Float? = null,
+    val viewBox: ViewBox? = null,
+    val preserveAspectRatio: PreserveAspectRatio = PreserveAspectRatio.Default,
     val fill: String = "none",
     val stroke: String = "currentColor",
     val strokeWidth: Float = 2f,

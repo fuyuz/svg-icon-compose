@@ -40,6 +40,9 @@ class IconGenerator(
     private val vectorEffectClass = ClassName("io.github.fuyuz.svgicon.core", "VectorEffect")
     private val svgTransformClass = ClassName("io.github.fuyuz.svgicon.core", "SvgTransform")
     private val viewBoxClass = ClassName("io.github.fuyuz.svgicon.core", "ViewBox")
+    private val preserveAspectRatioClass = ClassName("io.github.fuyuz.svgicon.core", "PreserveAspectRatio")
+    private val aspectRatioAlignClass = ClassName("io.github.fuyuz.svgicon.core", "AspectRatioAlign")
+    private val meetOrSliceClass = ClassName("io.github.fuyuz.svgicon.core", "MeetOrSlice")
     private val millisecondsProperty = MemberName("kotlin.time.Duration.Companion", "milliseconds")
     private val colorClass = ClassName("androidx.compose.ui.graphics", "Color")
     private val offsetClass = ClassName("androidx.compose.ui.geometry", "Offset")
@@ -151,25 +154,42 @@ class IconGenerator(
         builder.add("%T(\n", svgClass)
         builder.indent()
 
-        // Generate viewBox as ViewBox type
-        val viewBoxParts = svg.viewBox.split(" ", ",").mapNotNull { it.trim().toFloatOrNull() }
-        val isDefaultViewBox = viewBoxParts.size == 4 &&
-            viewBoxParts[0] == 0f && viewBoxParts[1] == 0f &&
-            viewBoxParts[2] == 24f && viewBoxParts[3] == 24f
-        if (!isDefaultViewBox) {
-            if (viewBoxParts.size == 4) {
+        // Generate width if specified
+        svg.width?.let {
+            builder.add("width = %Lf,\n", it)
+        }
+
+        // Generate height if specified
+        svg.height?.let {
+            builder.add("height = %Lf,\n", it)
+        }
+
+        // Generate viewBox if specified and not default
+        svg.viewBox?.let { viewBox ->
+            val isDefaultViewBox = viewBox.minX == 0f && viewBox.minY == 0f &&
+                viewBox.width == 24f && viewBox.height == 24f
+            if (!isDefaultViewBox) {
                 builder.add("viewBox = %T(%Lf, %Lf, %Lf, %Lf),\n",
-                    viewBoxClass, viewBoxParts[0], viewBoxParts[1], viewBoxParts[2], viewBoxParts[3])
+                    viewBoxClass, viewBox.minX, viewBox.minY, viewBox.width, viewBox.height)
             }
         }
 
-        // Generate fill as Color type
+        // Generate preserveAspectRatio if not default
+        val par = svg.preserveAspectRatio
+        if (par.align != AspectRatioAlign.X_MID_Y_MID || par.meetOrSlice != MeetOrSlice.MEET) {
+            builder.add("preserveAspectRatio = %T(%T.%L, %T.%L),\n",
+                preserveAspectRatioClass,
+                aspectRatioAlignClass, par.align.name,
+                meetOrSliceClass, par.meetOrSlice.name)
+        }
+
+        // Generate fill as Color type (if not default "none")
         if (svg.fill != "none") {
             builder.add(generateSvgColorCodeBlock("fill", svg.fill))
             builder.add(",\n")
         }
 
-        // Generate stroke as Color type
+        // Generate stroke as Color type (only if not default currentColor)
         if (svg.stroke != "currentColor") {
             builder.add(generateSvgColorCodeBlock("stroke", svg.stroke))
             builder.add(",\n")

@@ -11,20 +11,7 @@ data class ParsedSvg(
     val elements: List<SvgElement>
 )
 
-/**
- * SVG viewBox attribute.
- *
- * @param minX The minimum x coordinate
- * @param minY The minimum y coordinate
- * @param width The width of the viewBox
- * @param height The height of the viewBox
- */
-data class ViewBox(
-    val minX: Float,
-    val minY: Float,
-    val width: Float,
-    val height: Float
-)
+// Note: ViewBox is defined in SvgDsl.kt
 
 /**
  * Parses raw SVG string into a ParsedSvg with viewBox and elements.
@@ -101,9 +88,12 @@ internal object SvgXmlParser {
         val attrs = parseAttributes(attrsStr)
 
         // Parse SVG root attributes
-        val width = attrs["width"]?.replace("px", "")?.toIntOrNull() ?: 24
-        val height = attrs["height"]?.replace("px", "")?.toIntOrNull() ?: 24
-        val viewBox = attrs["viewBox"] ?: "0 0 $width $height"
+        val width = parseLengthAttribute(attrs["width"])
+        val height = parseLengthAttribute(attrs["height"])
+        val viewBox = attrs["viewBox"]?.let { ViewBox.parse(it) }
+        val preserveAspectRatio = attrs["preserveAspectRatio"]?.let {
+            PreserveAspectRatio.parse(it)
+        } ?: PreserveAspectRatio.Default
         val fill = attrs["fill"] ?: "none"
         val stroke = attrs["stroke"] ?: "currentColor"
         val strokeWidth = attrs["stroke-width"]?.toFloatOrNull() ?: 2f
@@ -136,6 +126,7 @@ internal object SvgXmlParser {
             width = width,
             height = height,
             viewBox = viewBox,
+            preserveAspectRatio = preserveAspectRatio,
             fill = fill,
             stroke = stroke,
             strokeWidth = strokeWidth,
@@ -143,6 +134,21 @@ internal object SvgXmlParser {
             strokeLinejoin = strokeLinejoin,
             children = children
         )
+    }
+
+    /**
+     * Parses SVG length attribute (e.g., "24", "24px").
+     */
+    private fun parseLengthAttribute(value: String?): Float? {
+        if (value == null) return null
+        val trimmed = value.trim().lowercase()
+        val numericPart = trimmed
+            .removeSuffix("px")
+            .removeSuffix("pt")
+            .removeSuffix("em")
+            .removeSuffix("%")
+            .trim()
+        return numericPart.toFloatOrNull()
     }
 
     fun parseFull(svg: String): ParsedSvg {
