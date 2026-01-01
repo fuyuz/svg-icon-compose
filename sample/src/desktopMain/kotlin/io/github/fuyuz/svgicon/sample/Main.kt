@@ -33,16 +33,21 @@ import androidx.compose.ui.window.application
 import io.github.fuyuz.svgicon.AnimatedSvgIcon
 import io.github.fuyuz.svgicon.SvgIcon
 import io.github.fuyuz.svgicon.rememberSvgIconAnimationState
+import io.github.fuyuz.svgicon.core.AnimationDirection
 import io.github.fuyuz.svgicon.core.LineCap
+import io.github.fuyuz.svgicon.core.MotionRotate
 import io.github.fuyuz.svgicon.core.Svg
 import io.github.fuyuz.svgicon.core.SvgAnimate
 import io.github.fuyuz.svgicon.core.SvgAnimated
 import io.github.fuyuz.svgicon.core.SvgCircle
+import io.github.fuyuz.svgicon.core.SvgLine
 import io.github.fuyuz.svgicon.core.SvgPath
+import io.github.fuyuz.svgicon.core.SvgPolygon
 import io.github.fuyuz.svgicon.core.SvgRect
 import io.github.fuyuz.svgicon.core.SvgStyle
 import io.github.fuyuz.svgicon.core.SvgStyled
 import io.github.fuyuz.svgicon.core.SvgTransform
+import io.github.fuyuz.svgicon.core.TransformType
 import io.github.fuyuz.svgicon.core.parseSvg
 import io.github.fuyuz.svgicon.core.svg
 import io.github.fuyuz.svgicon.sample.generated.icons.AllIcons
@@ -183,6 +188,154 @@ private val DslRotatingIcon = Svg(
             rotate(from = 0f, to = 360f, dur = 2.seconds)
         }
     }
+)
+
+/**
+ * Path morphing animation - triangle to circle.
+ * Uses cubic Bézier curves with matching command structure for smooth morphing.
+ * Triangle: 3 straight edges (control points on the line)
+ * Circle: 3 curved segments (control points creating arc)
+ */
+private val DslPathMorphIcon = Svg(
+    children = listOf(
+        SvgAnimated(
+            element = SvgPath("M12 2 C12 2 22 20 22 20 C22 20 2 20 2 20 C2 20 12 2 12 2 Z"),
+            animations = listOf(
+                SvgAnimate.D(
+                    // Triangle: top → bottom-right → bottom-left → top (using cubic curves)
+                    from = "M12 2 C12 2 22 20 22 20 C22 20 2 20 2 20 C2 20 12 2 12 2 Z",
+                    // Circle approximation with 3 segments
+                    to = "M12 2 C18 2 22 7 22 12 C22 17 18 22 12 22 C6 22 2 12 12 2 Z",
+                    dur = 1.seconds,
+                    direction = AnimationDirection.ALTERNATE
+                )
+            )
+        )
+    )
+)
+
+/**
+ * Circle radius animation.
+ */
+private val DslCircleGrowIcon = Svg(
+    children = listOf(
+        SvgAnimated(
+            element = SvgCircle(12f, 12f, 2f),
+            animations = listOf(
+                SvgAnimate.R(from = 2f, to = 10f, dur = 800.milliseconds)
+            )
+        )
+    )
+)
+
+/**
+ * Line animation - X1/Y1/X2/Y2.
+ */
+private val DslLineAnimIcon = Svg(
+    children = listOf(
+        SvgAnimated(
+            element = SvgLine(4f, 12f, 12f, 12f),
+            animations = listOf(
+                SvgAnimate.X2(from = 12f, to = 20f, dur = 500.milliseconds),
+                SvgAnimate.Y1(from = 12f, to = 4f, dur = 500.milliseconds),
+                SvgAnimate.Y2(from = 12f, to = 20f, dur = 500.milliseconds)
+            )
+        )
+    )
+)
+
+/**
+ * Rect size animation.
+ */
+private val DslRectGrowIcon = Svg(
+    children = listOf(
+        SvgAnimated(
+            element = SvgRect(10f, 10f, 4f, 4f),
+            animations = listOf(
+                SvgAnimate.X(from = 10f, to = 4f, dur = 600.milliseconds),
+                SvgAnimate.Y(from = 10f, to = 4f, dur = 600.milliseconds),
+                SvgAnimate.Width(from = 4f, to = 16f, dur = 600.milliseconds),
+                SvgAnimate.Height(from = 4f, to = 16f, dur = 600.milliseconds)
+            )
+        )
+    )
+)
+
+/**
+ * Motion path animation - element moving along a path.
+ */
+private val DslMotionPathIcon = Svg(
+    children = listOf(
+        // Static guide path
+        SvgStyled(
+            element = SvgPath("M4 12Q12 4 20 12"),
+            style = SvgStyle(strokeWidth = 1f, stroke = Color.Gray.copy(alpha = 0.3f))
+        ),
+        // Moving dot
+        SvgAnimated(
+            element = SvgCircle(0f, 0f, 2f),
+            animations = listOf(
+                SvgAnimate.Motion(
+                    path = "M4 12Q12 4 20 12",
+                    dur = 1.5.seconds,
+                    rotate = MotionRotate.AUTO
+                )
+            )
+        )
+    )
+)
+
+/**
+ * Fill opacity animation.
+ */
+private val DslFillOpacityIcon = Svg(
+    children = listOf(
+        SvgAnimated(
+            element = SvgStyled(
+                element = SvgCircle(12f, 12f, 10f),
+                style = SvgStyle(fill = Color(0xFF3B82F6))
+            ),
+            animations = listOf(
+                SvgAnimate.FillOpacity(from = 0.2f, to = 1f, dur = 800.milliseconds)
+            )
+        )
+    )
+)
+
+/**
+ * Stroke dashoffset animation (marching ants).
+ */
+private val DslDashOffsetIcon = Svg(
+    children = listOf(
+        SvgAnimated(
+            element = SvgStyled(
+                element = SvgCircle(12f, 12f, 8f),
+                style = SvgStyle(strokeDasharray = listOf(4f, 4f))
+            ),
+            animations = listOf(
+                SvgAnimate.StrokeDashoffset(from = 0f, to = 16f, dur = 1.seconds)
+            )
+        )
+    )
+)
+
+/**
+ * Skew animation.
+ */
+private val DslSkewAnimIcon = Svg(
+    children = listOf(
+        SvgAnimated(
+            element = SvgRect(6f, 6f, 12f, 12f),
+            animations = listOf(
+                SvgAnimate.Transform(
+                    type = TransformType.SKEW_X,
+                    from = 0f,
+                    to = 15f,
+                    dur = 500.milliseconds
+                )
+            )
+        )
+    )
 )
 
 fun main() = application {
@@ -793,6 +946,140 @@ fun App() {
                             tint = Color(0xFFF59E0B)
                         )
                         Text("Rotate", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                }
+
+                Text(
+                    "Advanced animations (path morph, geometry, motion):",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Path morphing
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = DslPathMorphIcon,
+                            contentDescription = "Path Morph",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF8B5CF6)
+                        )
+                        Text("Path Morph", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Circle radius
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = DslCircleGrowIcon,
+                            contentDescription = "Circle Grow",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF22C55E)
+                        )
+                        Text("Circle R", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Rect grow
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = DslRectGrowIcon,
+                            contentDescription = "Rect Grow",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF3B82F6)
+                        )
+                        Text("Rect XY/WH", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Line animation
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = DslLineAnimIcon,
+                            contentDescription = "Line Anim",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFFF59E0B)
+                        )
+                        Text("Line X1Y1X2Y2", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Motion path
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = DslMotionPathIcon,
+                            contentDescription = "Motion Path",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFFEF4444)
+                        )
+                        Text("Motion Path", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                }
+
+                Text(
+                    "Stroke & opacity animations:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Fill opacity
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = DslFillOpacityIcon,
+                            contentDescription = "Fill Opacity",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("FillOpacity", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Dash offset (marching ants)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = DslDashOffsetIcon,
+                            contentDescription = "Dash Offset",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF3B82F6)
+                        )
+                        Text("DashOffset", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Skew animation
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = DslSkewAnimIcon,
+                            contentDescription = "Skew",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF22C55E)
+                        )
+                        Text("SkewX", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 }
 

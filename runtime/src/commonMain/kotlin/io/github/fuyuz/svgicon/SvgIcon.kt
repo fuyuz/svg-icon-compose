@@ -78,7 +78,12 @@ import io.github.fuyuz.svgicon.core.SvgTransform
 import io.github.fuyuz.svgicon.core.TransformType
 import io.github.fuyuz.svgicon.core.CalcMode
 import io.github.fuyuz.svgicon.core.KeySplines
+import io.github.fuyuz.svgicon.core.MotionRotate
+import io.github.fuyuz.svgicon.core.PathCommand
 import io.github.fuyuz.svgicon.core.VectorEffect
+import io.github.fuyuz.svgicon.core.AnimationDirection
+import io.github.fuyuz.svgicon.core.AnimationFillMode
+import io.github.fuyuz.svgicon.core.parsePathCommands
 import io.github.fuyuz.svgicon.core.toPath
 
 
@@ -526,6 +531,52 @@ private fun applyEasing(progress: Float, calcMode: CalcMode, keySplines: KeySpli
 }
 
 /**
+ * Applies animation direction to progress within a single iteration.
+ */
+private fun applyDirection(progress: Float, iteration: Int, direction: AnimationDirection): Float {
+    return when (direction) {
+        AnimationDirection.NORMAL -> progress
+        AnimationDirection.REVERSE -> 1f - progress
+        AnimationDirection.ALTERNATE -> if (iteration % 2 == 0) progress else 1f - progress
+        AnimationDirection.ALTERNATE_REVERSE -> if (iteration % 2 == 0) 1f - progress else progress
+    }
+}
+
+/**
+ * Gets fill progress value for animation fill mode handling.
+ * Returns null if normal animation calculation should be used.
+ */
+private fun getFillProgress(
+    timeInAnimation: Float,
+    totalAnimationMs: Float,
+    fillMode: AnimationFillMode,
+    direction: AnimationDirection,
+    finalIteration: Int
+): Float? {
+    return when {
+        timeInAnimation < 0 -> {
+            // Before animation starts
+            when (fillMode) {
+                AnimationFillMode.BACKWARDS, AnimationFillMode.BOTH -> {
+                    applyDirection(0f, 0, direction)
+                }
+                else -> null
+            }
+        }
+        timeInAnimation >= totalAnimationMs -> {
+            // After animation ends
+            when (fillMode) {
+                AnimationFillMode.FORWARDS, AnimationFillMode.BOTH -> {
+                    applyDirection(1f, finalIteration, direction)
+                }
+                else -> null
+            }
+        }
+        else -> null // During animation
+    }
+}
+
+/**
  * Cubic bezier easing implementation.
  * Matches CSS cubic-bezier() behavior.
  */
@@ -787,29 +838,33 @@ private fun AnimatedSvgIconCanvas(
                             val effectiveIterations = if (anim.isInfinite) 1 else anim.iterations.coerceAtLeast(1)
                             val totalAnimationMs = durationMs * effectiveIterations
 
-                            val rawProgress = when {
-                                currentTimeMs < delayMs -> 0f  // Still in delay period
-                                currentTimeMs >= delayMs + totalAnimationMs -> 1f  // All iterations complete
-                                else -> {
-                                    // During animation - calculate progress within current iteration
-                                    val timeInAnimation = currentTimeMs - delayMs
-                                    if (anim.isInfinite) {
-                                        // Infinite: cycle forever
-                                        (timeInAnimation / durationMs) % 1f
-                                    } else {
-                                        // Finite: cycle within iterations, end at 1.0
-                                        val iterationProgress = (timeInAnimation / durationMs) % 1f
-                                        val currentIteration = (timeInAnimation / durationMs).toInt()
-                                        if (currentIteration >= effectiveIterations - 1 && iterationProgress >= 1f - 0.001f) {
-                                            1f
-                                        } else {
-                                            iterationProgress
-                                        }
-                                    }
-                                }
+                            val timeInAnimation = currentTimeMs - delayMs
+                            val finalIteration = (effectiveIterations - 1).coerceAtLeast(0)
+
+                            // Check fill mode for before/after animation
+                            val fillProgress = getFillProgress(
+                                timeInAnimation, totalAnimationMs,
+                                anim.fillMode, anim.direction, finalIteration
+                            )
+                            if (fillProgress != null) {
+                                return applyEasing(fillProgress, anim.calcMode, anim.keySplines)
                             }
+
+                            // During animation - calculate progress within current iteration
+                            val iterationProgress = if (anim.isInfinite) {
+                                (timeInAnimation / durationMs) % 1f
+                            } else {
+                                val progress = (timeInAnimation / durationMs) % 1f
+                                val currentIter = (timeInAnimation / durationMs).toInt()
+                                if (currentIter >= effectiveIterations - 1 && progress >= 1f - 0.001f) 1f else progress
+                            }
+                            val currentIteration = (timeInAnimation / durationMs).toInt().coerceAtLeast(0)
+
+                            // Apply direction transformation
+                            val directedProgress = applyDirection(iterationProgress, currentIteration, anim.direction)
+
                             // Apply easing based on calcMode and keySplines
-                            return applyEasing(rawProgress, anim.calcMode, anim.keySplines)
+                            return applyEasing(directedProgress, anim.calcMode, anim.keySplines)
                         }
                 }
             }
@@ -851,29 +906,33 @@ private fun AnimatedSvgIconCanvas(
                             val effectiveIterations = if (anim.isInfinite) 1 else anim.iterations.coerceAtLeast(1)
                             val totalAnimationMs = durationMs * effectiveIterations
 
-                            val rawProgress = when {
-                                currentTimeMs < delayMs -> 0f  // Still in delay period
-                                currentTimeMs >= delayMs + totalAnimationMs -> 1f  // All iterations complete
-                                else -> {
-                                    // During animation - calculate progress within current iteration
-                                    val timeInAnimation = currentTimeMs - delayMs
-                                    if (anim.isInfinite) {
-                                        // Infinite: cycle forever
-                                        (timeInAnimation / durationMs) % 1f
-                                    } else {
-                                        // Finite: cycle within iterations, end at 1.0
-                                        val iterationProgress = (timeInAnimation / durationMs) % 1f
-                                        val currentIteration = (timeInAnimation / durationMs).toInt()
-                                        if (currentIteration >= effectiveIterations - 1 && iterationProgress >= 1f - 0.001f) {
-                                            1f
-                                        } else {
-                                            iterationProgress
-                                        }
-                                    }
-                                }
+                            val timeInAnimation = currentTimeMs - delayMs
+                            val finalIteration = (effectiveIterations - 1).coerceAtLeast(0)
+
+                            // Check fill mode for before/after animation
+                            val fillProgress = getFillProgress(
+                                timeInAnimation, totalAnimationMs,
+                                anim.fillMode, anim.direction, finalIteration
+                            )
+                            if (fillProgress != null) {
+                                return applyEasing(fillProgress, anim.calcMode, anim.keySplines)
                             }
+
+                            // During animation - calculate progress within current iteration
+                            val iterationProgress = if (anim.isInfinite) {
+                                (timeInAnimation / durationMs) % 1f
+                            } else {
+                                val progress = (timeInAnimation / durationMs) % 1f
+                                val currentIter = (timeInAnimation / durationMs).toInt()
+                                if (currentIter >= effectiveIterations - 1 && progress >= 1f - 0.001f) 1f else progress
+                            }
+                            val currentIteration = (timeInAnimation / durationMs).toInt().coerceAtLeast(0)
+
+                            // Apply direction transformation
+                            val directedProgress = applyDirection(iterationProgress, currentIteration, anim.direction)
+
                             // Apply easing based on calcMode and keySplines
-                            return applyEasing(rawProgress, anim.calcMode, anim.keySplines)
+                            return applyEasing(directedProgress, anim.calcMode, anim.keySplines)
                         }
                 }
             }
@@ -1740,6 +1799,61 @@ private fun DrawScope.drawAnimatedStyledElement(
 }
 
 /**
+ * State container for all animation values.
+ */
+private data class AnimatedElementState(
+    // Transform animations
+    var rotationAngle: Float = 0f,
+    var scaleX: Float = 1f,
+    var scaleY: Float = 1f,
+    var translateX: Float = 0f,
+    var translateY: Float = 0f,
+    var skewX: Float = 0f,
+    var skewY: Float = 0f,
+
+    // Opacity animations
+    var opacity: Float = 1f,
+    var strokeOpacity: Float = 1f,
+    var fillOpacity: Float = 1f,
+
+    // Stroke animations
+    var strokeWidth: Float? = null,
+    var strokeDrawProgress: Float? = null,
+    var strokeDasharray: List<Float>? = null,
+    var strokeDashoffset: Float? = null,
+
+    // Geometric property animations (for circles/ellipses)
+    var cx: Float? = null,
+    var cy: Float? = null,
+    var r: Float? = null,
+    var rx: Float? = null,
+    var ry: Float? = null,
+
+    // Geometric property animations (for rects)
+    var x: Float? = null,
+    var y: Float? = null,
+    var width: Float? = null,
+    var height: Float? = null,
+
+    // Geometric property animations (for lines)
+    var x1: Float? = null,
+    var y1: Float? = null,
+    var x2: Float? = null,
+    var y2: Float? = null,
+
+    // Path morphing
+    var morphedPath: List<PathCommand>? = null,
+
+    // Points morphing (for polygon/polyline)
+    var morphedPoints: List<Offset>? = null,
+
+    // Motion path
+    var motionPath: String? = null,
+    var motionProgress: Float = 0f,
+    var motionRotate: MotionRotate = MotionRotate.NONE
+)
+
+/**
  * Draws an animated element with its animations applied.
  */
 private fun DrawScope.drawAnimatedElement(
@@ -1750,90 +1864,603 @@ private fun DrawScope.drawAnimatedElement(
     pathCache: Map<SvgElement, CachedPathInfo>
 ) {
     val innerElement = animated.element
+    val state = AnimatedElementState()
 
-    // Find animation progress values
-    var rotationAngle = 0f
-    var scaleValue = 1f
-    var translateX = 0f
-    var translateY = 0f
-    var opacity = 1f
-    var strokeWidthMultiplier = 1f
-    var strokeDrawProgress: Float? = null
-    var strokeDrawReverse = false
-
+    // Process all animations
     animated.animations.forEach { anim ->
-        // O(1) lookup using AnimationKey instead of O(N) linear search
         val progress = progressMap[AnimationKey(innerElement, anim)]?.value ?: 1f
 
         when (anim) {
             is SvgAnimate.Transform -> {
                 val value = anim.from + (anim.to - anim.from) * progress
                 when (anim.type) {
-                    TransformType.ROTATE -> rotationAngle = value
-                    TransformType.SCALE, TransformType.SCALE_X, TransformType.SCALE_Y -> scaleValue = value
-                    TransformType.TRANSLATE -> { translateX = value; translateY = value }
-                    TransformType.TRANSLATE_X -> translateX = value
-                    TransformType.TRANSLATE_Y -> translateY = value
-                    TransformType.SKEW_X, TransformType.SKEW_Y -> {}
+                    TransformType.ROTATE -> state.rotationAngle = value
+                    TransformType.SCALE -> { state.scaleX = value; state.scaleY = value }
+                    TransformType.SCALE_X -> state.scaleX = value
+                    TransformType.SCALE_Y -> state.scaleY = value
+                    TransformType.TRANSLATE -> { state.translateX = value; state.translateY = value }
+                    TransformType.TRANSLATE_X -> state.translateX = value
+                    TransformType.TRANSLATE_Y -> state.translateY = value
+                    TransformType.SKEW_X -> state.skewX = value
+                    TransformType.SKEW_Y -> state.skewY = value
                 }
             }
             is SvgAnimate.Opacity -> {
-                opacity = anim.from + (anim.to - anim.from) * progress
-            }
-            is SvgAnimate.StrokeWidth -> {
-                val from = anim.from
-                val to = anim.to
-                val currentWidth = from + (to - from) * progress
-                strokeWidthMultiplier = currentWidth / ctx.stroke.width
-            }
-            is SvgAnimate.StrokeDraw -> {
-                strokeDrawProgress = if (anim.reverse) 1f - progress else progress
-                strokeDrawReverse = anim.reverse
+                state.opacity = anim.from + (anim.to - anim.from) * progress
             }
             is SvgAnimate.StrokeOpacity -> {
-                // Apply stroke opacity animation
-                opacity *= anim.from + (anim.to - anim.from) * progress
+                state.strokeOpacity = anim.from + (anim.to - anim.from) * progress
             }
-            else -> {
-                // Other animation types not yet implemented
+            is SvgAnimate.FillOpacity -> {
+                state.fillOpacity = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.StrokeWidth -> {
+                state.strokeWidth = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.StrokeDraw -> {
+                state.strokeDrawProgress = if (anim.reverse) 1f - progress else progress
+            }
+            is SvgAnimate.StrokeDasharray -> {
+                state.strokeDasharray = interpolateDasharray(anim.from, anim.to, progress)
+            }
+            is SvgAnimate.StrokeDashoffset -> {
+                state.strokeDashoffset = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.Cx -> {
+                state.cx = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.Cy -> {
+                state.cy = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.R -> {
+                state.r = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.Rx -> {
+                state.rx = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.Ry -> {
+                state.ry = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.X -> {
+                state.x = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.Y -> {
+                state.y = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.Width -> {
+                state.width = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.Height -> {
+                state.height = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.X1 -> {
+                state.x1 = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.Y1 -> {
+                state.y1 = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.X2 -> {
+                state.x2 = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.Y2 -> {
+                state.y2 = anim.from + (anim.to - anim.from) * progress
+            }
+            is SvgAnimate.D -> {
+                state.morphedPath = interpolatePathCommands(anim.from, anim.to, progress)
+            }
+            is SvgAnimate.Points -> {
+                state.morphedPoints = interpolatePoints(anim.from, anim.to, progress)
+            }
+            is SvgAnimate.Motion -> {
+                state.motionPath = anim.path
+                state.motionProgress = progress
+                state.motionRotate = anim.rotate
             }
         }
     }
 
-    // Apply opacity
-    val effectiveCtx = if (opacity != 1f) {
-        ctx.copy(
-            strokeColor = ctx.strokeColor.copy(alpha = ctx.strokeColor.alpha * opacity),
-            fillColor = ctx.fillColor?.copy(alpha = ctx.fillColor.alpha * opacity)
+    // Build the effective context with opacity and stroke modifications
+    val effectiveCtx = buildAnimatedContext(ctx, state)
+
+    // Calculate pivot point based on element type
+    val pivot = calculatePivot(innerElement)
+
+    // Apply transforms including skew
+    withAnimatedTransform(state, pivot) {
+        // Apply motion path if present
+        if (state.motionPath != null) {
+            withMotionPath(state.motionPath!!, state.motionProgress, state.motionRotate) {
+                drawAnimatedInnerElement(innerElement, effectiveCtx, registry, pathCache, state)
+            }
+        } else {
+            drawAnimatedInnerElement(innerElement, effectiveCtx, registry, pathCache, state)
+        }
+    }
+}
+
+/**
+ * Interpolates between two dasharray values.
+ */
+private fun interpolateDasharray(from: List<Float>, to: List<Float>, progress: Float): List<Float> {
+    val maxSize = maxOf(from.size, to.size)
+    return List(maxSize) { i ->
+        val fromVal = from.getOrElse(i) { from.lastOrNull() ?: 0f }
+        val toVal = to.getOrElse(i) { to.lastOrNull() ?: 0f }
+        fromVal + (toVal - fromVal) * progress
+    }
+}
+
+/**
+ * Interpolates between two lists of points.
+ */
+private fun interpolatePoints(from: List<Offset>, to: List<Offset>, progress: Float): List<Offset> {
+    val maxSize = maxOf(from.size, to.size)
+    return List(maxSize) { i ->
+        val fromPoint = from.getOrElse(i) { from.lastOrNull() ?: Offset.Zero }
+        val toPoint = to.getOrElse(i) { to.lastOrNull() ?: Offset.Zero }
+        Offset(
+            fromPoint.x + (toPoint.x - fromPoint.x) * progress,
+            fromPoint.y + (toPoint.y - fromPoint.y) * progress
         )
-    } else {
-        ctx
+    }
+}
+
+/**
+ * Interpolates between two path data strings.
+ * Both paths must have the same command structure for proper interpolation.
+ */
+private fun interpolatePathCommands(fromData: String, toData: String, progress: Float): List<PathCommand> {
+    val fromCommands = parsePathCommands(fromData)
+    val toCommands = parsePathCommands(toData)
+
+    // If command counts don't match, just return the from or to based on progress
+    if (fromCommands.size != toCommands.size) {
+        return if (progress < 0.5f) fromCommands else toCommands
     }
 
-    // Apply stroke width multiplier
-    val finalCtx = if (strokeWidthMultiplier != 1f) {
-        effectiveCtx.copy(
+    return fromCommands.zip(toCommands).map { (from, to) ->
+        interpolateCommand(from, to, progress)
+    }
+}
+
+/**
+ * Interpolates a single path command.
+ */
+private fun interpolateCommand(from: PathCommand, to: PathCommand, progress: Float): PathCommand {
+    // If command types don't match, return from or to based on progress
+    if (from::class != to::class) {
+        return if (progress < 0.5f) from else to
+    }
+
+    fun lerp(a: Float, b: Float) = a + (b - a) * progress
+
+    return when (from) {
+        is PathCommand.MoveTo -> {
+            val t = to as PathCommand.MoveTo
+            PathCommand.MoveTo(lerp(from.x, t.x), lerp(from.y, t.y))
+        }
+        is PathCommand.MoveToRelative -> {
+            val t = to as PathCommand.MoveToRelative
+            PathCommand.MoveToRelative(lerp(from.dx, t.dx), lerp(from.dy, t.dy))
+        }
+        is PathCommand.LineTo -> {
+            val t = to as PathCommand.LineTo
+            PathCommand.LineTo(lerp(from.x, t.x), lerp(from.y, t.y))
+        }
+        is PathCommand.LineToRelative -> {
+            val t = to as PathCommand.LineToRelative
+            PathCommand.LineToRelative(lerp(from.dx, t.dx), lerp(from.dy, t.dy))
+        }
+        is PathCommand.HorizontalLineTo -> {
+            val t = to as PathCommand.HorizontalLineTo
+            PathCommand.HorizontalLineTo(lerp(from.x, t.x))
+        }
+        is PathCommand.HorizontalLineToRelative -> {
+            val t = to as PathCommand.HorizontalLineToRelative
+            PathCommand.HorizontalLineToRelative(lerp(from.dx, t.dx))
+        }
+        is PathCommand.VerticalLineTo -> {
+            val t = to as PathCommand.VerticalLineTo
+            PathCommand.VerticalLineTo(lerp(from.y, t.y))
+        }
+        is PathCommand.VerticalLineToRelative -> {
+            val t = to as PathCommand.VerticalLineToRelative
+            PathCommand.VerticalLineToRelative(lerp(from.dy, t.dy))
+        }
+        is PathCommand.CubicTo -> {
+            val t = to as PathCommand.CubicTo
+            PathCommand.CubicTo(
+                lerp(from.x1, t.x1), lerp(from.y1, t.y1),
+                lerp(from.x2, t.x2), lerp(from.y2, t.y2),
+                lerp(from.x, t.x), lerp(from.y, t.y)
+            )
+        }
+        is PathCommand.CubicToRelative -> {
+            val t = to as PathCommand.CubicToRelative
+            PathCommand.CubicToRelative(
+                lerp(from.dx1, t.dx1), lerp(from.dy1, t.dy1),
+                lerp(from.dx2, t.dx2), lerp(from.dy2, t.dy2),
+                lerp(from.dx, t.dx), lerp(from.dy, t.dy)
+            )
+        }
+        is PathCommand.SmoothCubicTo -> {
+            val t = to as PathCommand.SmoothCubicTo
+            PathCommand.SmoothCubicTo(
+                lerp(from.x2, t.x2), lerp(from.y2, t.y2),
+                lerp(from.x, t.x), lerp(from.y, t.y)
+            )
+        }
+        is PathCommand.SmoothCubicToRelative -> {
+            val t = to as PathCommand.SmoothCubicToRelative
+            PathCommand.SmoothCubicToRelative(
+                lerp(from.dx2, t.dx2), lerp(from.dy2, t.dy2),
+                lerp(from.dx, t.dx), lerp(from.dy, t.dy)
+            )
+        }
+        is PathCommand.QuadTo -> {
+            val t = to as PathCommand.QuadTo
+            PathCommand.QuadTo(
+                lerp(from.x1, t.x1), lerp(from.y1, t.y1),
+                lerp(from.x, t.x), lerp(from.y, t.y)
+            )
+        }
+        is PathCommand.QuadToRelative -> {
+            val t = to as PathCommand.QuadToRelative
+            PathCommand.QuadToRelative(
+                lerp(from.dx1, t.dx1), lerp(from.dy1, t.dy1),
+                lerp(from.dx, t.dx), lerp(from.dy, t.dy)
+            )
+        }
+        is PathCommand.SmoothQuadTo -> {
+            val t = to as PathCommand.SmoothQuadTo
+            PathCommand.SmoothQuadTo(lerp(from.x, t.x), lerp(from.y, t.y))
+        }
+        is PathCommand.SmoothQuadToRelative -> {
+            val t = to as PathCommand.SmoothQuadToRelative
+            PathCommand.SmoothQuadToRelative(lerp(from.dx, t.dx), lerp(from.dy, t.dy))
+        }
+        is PathCommand.ArcTo -> {
+            val t = to as PathCommand.ArcTo
+            PathCommand.ArcTo(
+                lerp(from.rx, t.rx), lerp(from.ry, t.ry),
+                lerp(from.xAxisRotation, t.xAxisRotation),
+                if (progress < 0.5f) from.largeArcFlag else t.largeArcFlag,
+                if (progress < 0.5f) from.sweepFlag else t.sweepFlag,
+                lerp(from.x, t.x), lerp(from.y, t.y)
+            )
+        }
+        is PathCommand.ArcToRelative -> {
+            val t = to as PathCommand.ArcToRelative
+            PathCommand.ArcToRelative(
+                lerp(from.rx, t.rx), lerp(from.ry, t.ry),
+                lerp(from.xAxisRotation, t.xAxisRotation),
+                if (progress < 0.5f) from.largeArcFlag else t.largeArcFlag,
+                if (progress < 0.5f) from.sweepFlag else t.sweepFlag,
+                lerp(from.dx, t.dx), lerp(from.dy, t.dy)
+            )
+        }
+        is PathCommand.Close -> PathCommand.Close
+    }
+}
+
+/**
+ * Builds an animated context with opacity and stroke modifications applied.
+ */
+private fun buildAnimatedContext(ctx: DrawContext, state: AnimatedElementState): DrawContext {
+    var result = ctx
+
+    // Apply overall opacity
+    if (state.opacity != 1f || state.strokeOpacity != 1f || state.fillOpacity != 1f) {
+        val strokeAlpha = ctx.strokeColor.alpha * state.opacity * state.strokeOpacity
+        val fillAlpha = ctx.fillColor?.alpha?.times(state.opacity)?.times(state.fillOpacity)
+        result = result.copy(
+            strokeColor = ctx.strokeColor.copy(alpha = strokeAlpha),
+            fillColor = ctx.fillColor?.copy(alpha = fillAlpha ?: 0f)
+        )
+    }
+
+    // Apply stroke width
+    if (state.strokeWidth != null) {
+        result = result.copy(
             stroke = Stroke(
-                width = effectiveCtx.stroke.width * strokeWidthMultiplier,
-                cap = effectiveCtx.stroke.cap,
-                join = effectiveCtx.stroke.join,
-                miter = effectiveCtx.stroke.miter,
-                pathEffect = effectiveCtx.stroke.pathEffect
+                width = state.strokeWidth!!,
+                cap = ctx.stroke.cap,
+                join = ctx.stroke.join,
+                miter = ctx.stroke.miter,
+                pathEffect = ctx.stroke.pathEffect
             )
         )
-    } else {
-        effectiveCtx
     }
 
-    // Apply transforms
-    translate(translateX, translateY) {
-        scale(scaleValue, scaleValue, pivot = Offset(12f, 12f)) {
-            rotate(rotationAngle, pivot = Offset(12f, 12f)) {
-                if (strokeDrawProgress != null) {
-                    drawElementWithStrokeDraw(innerElement, finalCtx, strokeDrawProgress, pathCache)
-                } else {
-                    drawSvgElement(innerElement, finalCtx, registry)
+    // Apply dasharray and dashoffset
+    if (state.strokeDasharray != null || state.strokeDashoffset != null) {
+        val dasharray = state.strokeDasharray
+        val dashoffset = state.strokeDashoffset ?: 0f
+
+        val pathEffect = if (dasharray != null && dasharray.isNotEmpty()) {
+            val intervals = if (dasharray.size % 2 == 0) {
+                dasharray.toFloatArray()
+            } else {
+                FloatArray(dasharray.size * 2) { i -> dasharray[i % dasharray.size] }
+            }
+            PathEffect.dashPathEffect(intervals, dashoffset)
+        } else {
+            result.stroke.pathEffect
+        }
+
+        result = result.copy(
+            stroke = Stroke(
+                width = result.stroke.width,
+                cap = result.stroke.cap,
+                join = result.stroke.join,
+                miter = result.stroke.miter,
+                pathEffect = pathEffect
+            )
+        )
+    }
+
+    return result
+}
+
+/**
+ * Calculates the pivot point for transforms based on element type.
+ */
+private fun calculatePivot(element: SvgElement): Offset {
+    return when (element) {
+        is SvgCircle -> Offset(element.cx, element.cy)
+        is SvgEllipse -> Offset(element.cx, element.cy)
+        is SvgRect -> Offset(element.x + element.width / 2, element.y + element.height / 2)
+        else -> Offset(12f, 12f) // Default pivot for 24x24 icons
+    }
+}
+
+/**
+ * Applies animated transforms including skew.
+ */
+private inline fun DrawScope.withAnimatedTransform(
+    state: AnimatedElementState,
+    pivot: Offset,
+    block: DrawScope.() -> Unit
+) {
+    translate(state.translateX, state.translateY) {
+        // Apply skew if needed
+        if (state.skewX != 0f || state.skewY != 0f) {
+            val skewMatrix = Matrix().apply {
+                if (state.skewX != 0f) {
+                    val tanX = tan(state.skewX.toDouble() * PI / 180.0).toFloat()
+                    this[0, 1] = tanX
                 }
+                if (state.skewY != 0f) {
+                    val tanY = tan(state.skewY.toDouble() * PI / 180.0).toFloat()
+                    this[1, 0] = tanY
+                }
+            }
+            withTransform({ transform(skewMatrix) }) {
+                scale(state.scaleX, state.scaleY, pivot = pivot) {
+                    rotate(state.rotationAngle, pivot = pivot) {
+                        block()
+                    }
+                }
+            }
+        } else {
+            scale(state.scaleX, state.scaleY, pivot = pivot) {
+                rotate(state.rotationAngle, pivot = pivot) {
+                    block()
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Applies motion path animation.
+ */
+private inline fun DrawScope.withMotionPath(
+    pathData: String,
+    progress: Float,
+    motionRotate: MotionRotate,
+    block: DrawScope.() -> Unit
+) {
+    val commands = parsePathCommands(pathData)
+    val path = commands.toPath()
+    val pathMeasure = androidx.compose.ui.graphics.PathMeasure()
+    pathMeasure.setPath(path, false)
+
+    val length = pathMeasure.length
+    if (length <= 0f) {
+        block()
+        return
+    }
+
+    val distance = length * progress.coerceIn(0f, 1f)
+    val position = pathMeasure.getPosition(distance)
+
+    translate(position.x, position.y) {
+        if (motionRotate != MotionRotate.NONE) {
+            val tangent = pathMeasure.getTangent(distance)
+            val angle = kotlin.math.atan2(tangent.y, tangent.x) * 180f / PI.toFloat()
+            val finalAngle = when (motionRotate) {
+                MotionRotate.AUTO -> angle
+                MotionRotate.AUTO_REVERSE -> angle + 180f
+                else -> 0f
+            }
+            rotate(finalAngle, pivot = Offset.Zero) {
+                block()
+            }
+        } else {
+            block()
+        }
+    }
+}
+
+/**
+ * Draws the inner element with animation state applied.
+ */
+private fun DrawScope.drawAnimatedInnerElement(
+    element: SvgElement,
+    ctx: DrawContext,
+    registry: DefsRegistry,
+    pathCache: Map<SvgElement, CachedPathInfo>,
+    state: AnimatedElementState
+) {
+    // Handle stroke draw animation
+    if (state.strokeDrawProgress != null) {
+        drawElementWithStrokeDraw(element, ctx, state.strokeDrawProgress!!, pathCache)
+        return
+    }
+
+    // Handle path morphing
+    if (state.morphedPath != null && element is SvgPath) {
+        drawMorphedPath(state.morphedPath!!, ctx)
+        return
+    }
+
+    // Handle points morphing
+    if (state.morphedPoints != null) {
+        when (element) {
+            is SvgPolygon -> drawMorphedPolygon(state.morphedPoints!!, ctx)
+            is SvgPolyline -> drawMorphedPolyline(state.morphedPoints!!, ctx)
+            else -> {}
+        }
+        return
+    }
+
+    // Handle geometric property animations
+    when (element) {
+        is SvgCircle -> {
+            val animatedCircle = SvgCircle(
+                cx = state.cx ?: element.cx,
+                cy = state.cy ?: element.cy,
+                r = state.r ?: element.r
+            )
+            drawSvgCircle(animatedCircle, ctx)
+        }
+        is SvgEllipse -> {
+            val animatedEllipse = SvgEllipse(
+                cx = state.cx ?: element.cx,
+                cy = state.cy ?: element.cy,
+                rx = state.rx ?: element.rx,
+                ry = state.ry ?: element.ry
+            )
+            drawSvgEllipse(animatedEllipse, ctx)
+        }
+        is SvgRect -> {
+            val animatedRect = SvgRect(
+                x = state.x ?: element.x,
+                y = state.y ?: element.y,
+                width = state.width ?: element.width,
+                height = state.height ?: element.height,
+                rx = state.rx ?: element.rx,
+                ry = state.ry ?: element.ry
+            )
+            drawSvgRect(animatedRect, ctx)
+        }
+        is SvgLine -> {
+            val animatedLine = SvgLine(
+                x1 = state.x1 ?: element.x1,
+                y1 = state.y1 ?: element.y1,
+                x2 = state.x2 ?: element.x2,
+                y2 = state.y2 ?: element.y2
+            )
+            drawSvgLine(animatedLine, ctx)
+        }
+        else -> drawSvgElement(element, ctx, registry)
+    }
+}
+
+/**
+ * Draws a morphed path from interpolated commands.
+ */
+private fun DrawScope.drawMorphedPath(commands: List<PathCommand>, ctx: DrawContext) {
+    val path = commands.toPath().apply { fillType = ctx.fillRule }
+    val effectiveStroke = ctx.getEffectiveStroke()
+
+    when (ctx.paintOrder) {
+        PaintOrder.FILL_STROKE -> {
+            ctx.fillColor?.let { fill ->
+                drawPath(path = path, color = fill, style = Fill)
+            }
+            if (ctx.hasStroke && effectiveStroke.width > 0) {
+                drawPath(path = path, color = ctx.strokeColor, style = effectiveStroke)
+            }
+        }
+        PaintOrder.STROKE_FILL -> {
+            if (ctx.hasStroke && effectiveStroke.width > 0) {
+                drawPath(path = path, color = ctx.strokeColor, style = effectiveStroke)
+            }
+            ctx.fillColor?.let { fill ->
+                drawPath(path = path, color = fill, style = Fill)
+            }
+        }
+    }
+}
+
+/**
+ * Draws a morphed polygon from interpolated points.
+ */
+private fun DrawScope.drawMorphedPolygon(points: List<Offset>, ctx: DrawContext) {
+    if (points.size < 2) return
+
+    val path = Path().apply {
+        fillType = ctx.fillRule
+        moveTo(points.first().x, points.first().y)
+        for (i in 1 until points.size) {
+            lineTo(points[i].x, points[i].y)
+        }
+        close()
+    }
+    val effectiveStroke = ctx.getEffectiveStroke()
+
+    when (ctx.paintOrder) {
+        PaintOrder.FILL_STROKE -> {
+            ctx.fillColor?.let { fill ->
+                drawPath(path, fill, style = Fill)
+            }
+            if (ctx.hasStroke && effectiveStroke.width > 0) {
+                drawPath(path, ctx.strokeColor, style = effectiveStroke)
+            }
+        }
+        PaintOrder.STROKE_FILL -> {
+            if (ctx.hasStroke && effectiveStroke.width > 0) {
+                drawPath(path, ctx.strokeColor, style = effectiveStroke)
+            }
+            ctx.fillColor?.let { fill ->
+                drawPath(path, fill, style = Fill)
+            }
+        }
+    }
+}
+
+/**
+ * Draws a morphed polyline from interpolated points.
+ */
+private fun DrawScope.drawMorphedPolyline(points: List<Offset>, ctx: DrawContext) {
+    if (points.size < 2) return
+
+    val path = Path().apply {
+        fillType = ctx.fillRule
+        moveTo(points.first().x, points.first().y)
+        for (i in 1 until points.size) {
+            lineTo(points[i].x, points[i].y)
+        }
+    }
+    val effectiveStroke = ctx.getEffectiveStroke()
+
+    when (ctx.paintOrder) {
+        PaintOrder.FILL_STROKE -> {
+            ctx.fillColor?.let { fill ->
+                drawPath(path, fill, style = Fill)
+            }
+            if (ctx.hasStroke && effectiveStroke.width > 0) {
+                drawPath(path, ctx.strokeColor, style = effectiveStroke)
+            }
+        }
+        PaintOrder.STROKE_FILL -> {
+            if (ctx.hasStroke && effectiveStroke.width > 0) {
+                drawPath(path, ctx.strokeColor, style = effectiveStroke)
+            }
+            ctx.fillColor?.let { fill ->
+                drawPath(path, fill, style = Fill)
             }
         }
     }

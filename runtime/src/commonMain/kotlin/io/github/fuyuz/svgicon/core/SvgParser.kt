@@ -1012,8 +1012,7 @@ internal object SvgXmlParser {
      * Example: "spin 1s linear infinite"
      */
     private fun parseCssAnimation(value: String): CssAnimation? {
-        val parts = value.trim().split(Regex("\\s+"))
-        if (parts.isEmpty()) return null
+        var processedValue = value.trim()
 
         var name: String? = null
         var duration: Duration = Duration.ZERO
@@ -1023,9 +1022,42 @@ internal object SvgXmlParser {
         var direction = AnimationDirection.NORMAL
         var fillMode = AnimationFillMode.NONE
 
+        // Extract cubic-bezier() or steps() functions before splitting on whitespace
+        val cubicBezierRegex = Regex("""cubic-bezier\s*\([^)]+\)""", RegexOption.IGNORE_CASE)
+        val stepsRegex = Regex("""steps\s*\([^)]+\)""", RegexOption.IGNORE_CASE)
+
+        cubicBezierRegex.find(processedValue)?.let { match ->
+            timingFunction = CssTimingFunction.parse(match.value.replace(Regex("\\s+"), ""))
+            processedValue = processedValue.replace(match.value, "")
+        }
+
+        stepsRegex.find(processedValue)?.let { match ->
+            timingFunction = CssTimingFunction.parse(match.value.replace(Regex("\\s+"), ""))
+            processedValue = processedValue.replace(match.value, "")
+        }
+
+        val parts = processedValue.split(Regex("\\s+")).filter { it.isNotEmpty() }
+        if (parts.isEmpty()) return null
+
         for (part in parts) {
             val lower = part.lowercase()
             when {
+                // Direction (check before duration since some end with 's')
+                lower == "normal" -> direction = AnimationDirection.NORMAL
+                lower == "reverse" -> direction = AnimationDirection.REVERSE
+                lower == "alternate" -> direction = AnimationDirection.ALTERNATE
+                lower == "alternate-reverse" -> direction = AnimationDirection.ALTERNATE_REVERSE
+                // Fill mode (check before duration since 'forwards'/'backwards' end with 's')
+                lower == "none" -> fillMode = AnimationFillMode.NONE
+                lower == "forwards" -> fillMode = AnimationFillMode.FORWARDS
+                lower == "backwards" -> fillMode = AnimationFillMode.BACKWARDS
+                lower == "both" -> fillMode = AnimationFillMode.BOTH
+                // Timing function (check before duration)
+                lower == "linear" -> timingFunction = CssTimingFunction.Linear
+                lower == "ease" -> timingFunction = CssTimingFunction.Ease
+                lower == "ease-in" -> timingFunction = CssTimingFunction.EaseIn
+                lower == "ease-out" -> timingFunction = CssTimingFunction.EaseOut
+                lower == "ease-in-out" -> timingFunction = CssTimingFunction.EaseInOut
                 // Duration/delay (e.g., "1s", "500ms")
                 lower.endsWith("ms") -> {
                     val ms = lower.removeSuffix("ms").toFloatOrNull()
@@ -1050,25 +1082,6 @@ internal object SvgXmlParser {
                 // Iteration count (negative value for infinite)
                 lower == "infinite" -> iterationCount = SvgAnimate.INFINITE
                 lower.toIntOrNull() != null -> iterationCount = lower.toInt()
-                // Direction
-                lower == "normal" -> direction = AnimationDirection.NORMAL
-                lower == "reverse" -> direction = AnimationDirection.REVERSE
-                lower == "alternate" -> direction = AnimationDirection.ALTERNATE
-                lower == "alternate-reverse" -> direction = AnimationDirection.ALTERNATE_REVERSE
-                // Fill mode
-                lower == "none" -> fillMode = AnimationFillMode.NONE
-                lower == "forwards" -> fillMode = AnimationFillMode.FORWARDS
-                lower == "backwards" -> fillMode = AnimationFillMode.BACKWARDS
-                lower == "both" -> fillMode = AnimationFillMode.BOTH
-                // Timing function
-                lower == "linear" -> timingFunction = CssTimingFunction.Linear
-                lower == "ease" -> timingFunction = CssTimingFunction.Ease
-                lower == "ease-in" -> timingFunction = CssTimingFunction.EaseIn
-                lower == "ease-out" -> timingFunction = CssTimingFunction.EaseOut
-                lower == "ease-in-out" -> timingFunction = CssTimingFunction.EaseInOut
-                lower.startsWith("cubic-bezier(") || lower.startsWith("steps(") -> {
-                    timingFunction = CssTimingFunction.parse(lower)
-                }
                 // Animation name (identifier)
                 name == null && !lower.matches(Regex("^[0-9].*")) -> name = part
             }
@@ -1100,6 +1113,8 @@ internal object SvgXmlParser {
         val dur = animation.duration
         val delay = animation.delay
         val iterations = animation.iterationCount
+        val direction = animation.direction
+        val fillMode = animation.fillMode
 
         // Group keyframe properties
         val propertyKeyframes = mutableMapOf<String, MutableList<Pair<Float, String>>>()
@@ -1120,22 +1135,22 @@ internal object SvgXmlParser {
                 "opacity" -> {
                     val from = fromValue.toFloatOrNull() ?: 1f
                     val to = toValue.toFloatOrNull() ?: 1f
-                    result.add(SvgAnimate.Opacity(from, to, dur, delay, calcMode, keySplines, iterations))
+                    result.add(SvgAnimate.Opacity(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
                 }
                 "stroke-width" -> {
                     val from = fromValue.toFloatOrNull() ?: 2f
                     val to = toValue.toFloatOrNull() ?: 2f
-                    result.add(SvgAnimate.StrokeWidth(from, to, dur, delay, calcMode, keySplines, iterations))
+                    result.add(SvgAnimate.StrokeWidth(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
                 }
                 "stroke-opacity" -> {
                     val from = fromValue.toFloatOrNull() ?: 1f
                     val to = toValue.toFloatOrNull() ?: 1f
-                    result.add(SvgAnimate.StrokeOpacity(from, to, dur, delay, calcMode, keySplines, iterations))
+                    result.add(SvgAnimate.StrokeOpacity(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
                 }
                 "fill-opacity" -> {
                     val from = fromValue.toFloatOrNull() ?: 1f
                     val to = toValue.toFloatOrNull() ?: 1f
-                    result.add(SvgAnimate.FillOpacity(from, to, dur, delay, calcMode, keySplines, iterations))
+                    result.add(SvgAnimate.FillOpacity(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
                 }
                 "transform" -> {
                     val fromTransform = parseTransformAnimation(fromValue)
@@ -1144,14 +1159,14 @@ internal object SvgXmlParser {
                         fromTransform.first == toTransform.first) {
                         result.add(SvgAnimate.Transform(
                             fromTransform.first, fromTransform.second, toTransform.second,
-                            dur, delay, calcMode, keySplines, iterations
+                            dur, delay, calcMode, keySplines, iterations, direction, fillMode
                         ))
                     }
                 }
                 "stroke-dashoffset" -> {
                     val from = fromValue.toFloatOrNull() ?: 0f
                     val to = toValue.toFloatOrNull() ?: 0f
-                    result.add(SvgAnimate.StrokeDashoffset(from, to, dur, delay, calcMode, keySplines, iterations))
+                    result.add(SvgAnimate.StrokeDashoffset(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
                 }
             }
         }
