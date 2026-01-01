@@ -464,8 +464,9 @@ internal object SvgXmlParser {
             }
             "stroke-dashoffset" -> {
                 if (effectiveFrom != null && effectiveTo != null) {
-                    // If it's a dashoffset animation, use StrokeDraw for drawing effect
-                    SvgAnimate.StrokeDraw(dur, delay, reverse = effectiveFrom > effectiveTo, calcMode, keySplines)
+                    // stroke-dashoffset from high to low (e.g., 50 to 0) = stroke appearing (normal)
+                    // stroke-dashoffset from low to high (e.g., 0 to 50) = stroke disappearing (reverse)
+                    SvgAnimate.StrokeDraw(dur, delay, reverse = effectiveFrom < effectiveTo, calcMode, keySplines)
                 } else null
             }
             "cx" -> {
