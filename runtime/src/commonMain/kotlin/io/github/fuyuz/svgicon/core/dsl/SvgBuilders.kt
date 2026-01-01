@@ -409,8 +409,8 @@ class SvgBuilder {
      * ```
      */
     infix fun SvgElement.styled(block: SvgStyleBuilder.() -> Unit): SvgStyled {
-        // Remove the element that was just added
-        elements.remove(this)
+        // Remove the last added element (always the one just created)
+        elements.removeAt(elements.lastIndex)
         val styledElement = SvgStyled(this, svgStyle(block))
         elements.add(styledElement)
         return styledElement
