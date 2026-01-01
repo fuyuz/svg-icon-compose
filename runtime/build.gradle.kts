@@ -84,7 +84,7 @@ mavenPublishing {
     publishToMavenCentral()
     signAllPublications()
 
-    coordinates(group.toString(), "runtime", version.toString())
+    coordinates(group.toString(), "runtime")
 
     pom {
         name.set("SVG Icon Compose Runtime")

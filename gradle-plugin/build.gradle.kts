@@ -8,7 +8,6 @@ plugins {
 }
 
 group = "io.github.fuyuz.svgicon"
-version = findProperty("VERSION_NAME") as String
 
 dependencies {
     implementation(libs.kotlinpoet)
@@ -36,7 +35,7 @@ mavenPublishing {
 
     configure(GradlePlugin(javadocJar = JavadocJar.Javadoc()))
 
-    coordinates(group.toString(), "gradle-plugin", version.toString())
+    coordinates(group.toString(), "gradle-plugin")
 
     pom {
         name.set("SVG Icon Compose Gradle Plugin")
