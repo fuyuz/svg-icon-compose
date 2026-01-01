@@ -939,11 +939,14 @@ private data class DrawContext(
 )
 
 /**
- * Registry for storing clip paths and masks by ID.
+ * Registry for storing clip paths, masks, symbols, markers, and patterns by ID.
  */
 private data class DefsRegistry(
     val clipPaths: Map<String, SvgClipPath> = emptyMap(),
     val masks: Map<String, SvgMask> = emptyMap(),
+    val symbols: Map<String, SvgSymbol> = emptyMap(),
+    val markers: Map<String, SvgMarker> = emptyMap(),
+    val patterns: Map<String, SvgPattern> = emptyMap(),
     val textMeasurer: TextMeasurer? = null
 )
 
@@ -1066,24 +1069,30 @@ private fun calculateViewBoxTransform(
 }
 
 /**
- * Collects clip paths and masks from defs elements.
+ * Collects clip paths, masks, symbols, markers, and patterns from defs elements.
  */
 private fun collectDefs(elements: List<SvgElement>, textMeasurer: TextMeasurer? = null): DefsRegistry {
     val clipPaths = mutableMapOf<String, SvgClipPath>()
     val masks = mutableMapOf<String, SvgMask>()
+    val symbols = mutableMapOf<String, SvgSymbol>()
+    val markers = mutableMapOf<String, SvgMarker>()
+    val patterns = mutableMapOf<String, SvgPattern>()
 
     fun collect(element: SvgElement) {
         when (element) {
             is SvgDefs -> element.children.forEach { collect(it) }
             is SvgClipPath -> clipPaths[element.id] = element
             is SvgMask -> masks[element.id] = element
+            is SvgSymbol -> symbols[element.id] = element
+            is SvgMarker -> markers[element.id] = element
+            is SvgPattern -> patterns[element.id] = element
             is SvgGroup -> element.children.forEach { collect(it) }
             else -> {}
         }
     }
 
     elements.forEach { collect(it) }
-    return DefsRegistry(clipPaths, masks, textMeasurer)
+    return DefsRegistry(clipPaths, masks, symbols, markers, patterns, textMeasurer)
 }
 
 private fun DrawScope.drawSvgElement(element: SvgElement, ctx: DrawContext, registry: DefsRegistry = DefsRegistry()) {
@@ -1111,7 +1120,7 @@ private fun DrawScope.drawSvgElement(element: SvgElement, ctx: DrawContext, regi
         is SvgMarker -> {} // Markers are referenced, not drawn directly
         is SvgPattern -> {} // Patterns are referenced, not drawn directly
         is SvgSymbol -> {} // Symbols are referenced via use, not drawn directly
-        is SvgUse -> {} // TODO: Implement use element rendering
+        is SvgUse -> drawSvgUse(element, ctx, registry)
     }
 }
 
@@ -1712,6 +1721,24 @@ private fun DrawScope.drawSvgText(text: SvgText, ctx: DrawContext, textMeasurer:
     )
 }
 
+/**
+ * Draws an SvgUse element by looking up the referenced symbol and rendering it.
+ */
+private fun DrawScope.drawSvgUse(use: SvgUse, ctx: DrawContext, registry: DefsRegistry) {
+    // Extract ID from href (e.g., "#symbolId" -> "symbolId")
+    val refId = use.href.removePrefix("#")
+    val symbol = registry.symbols[refId] ?: return
+
+    // Apply translation for x, y positioning
+    translate(left = use.x, top = use.y) {
+        // If width/height are specified, we may need to scale
+        // For now, just render the symbol's children
+        symbol.children.forEach { child ->
+            drawSvgElement(child, ctx, registry)
+        }
+    }
+}
+
 // ============================================
 // Animated SVG Drawing
 // ============================================
@@ -1813,7 +1840,27 @@ private fun DrawScope.drawAnimatedSvgElement(
         is SvgMarker -> {}
         is SvgPattern -> {}
         is SvgSymbol -> {}
-        is SvgUse -> {}
+        is SvgUse -> drawAnimatedSvgUse(element, ctx, registry, progressMap, pathCache)
+    }
+}
+
+/**
+ * Draws an animated SvgUse element by looking up the referenced symbol and rendering it.
+ */
+private fun DrawScope.drawAnimatedSvgUse(
+    use: SvgUse,
+    ctx: DrawContext,
+    registry: DefsRegistry,
+    progressMap: Map<AnimationKey, State<Float>>,
+    pathCache: Map<SvgElement, CachedPathInfo>
+) {
+    val refId = use.href.removePrefix("#")
+    val symbol = registry.symbols[refId] ?: return
+
+    translate(left = use.x, top = use.y) {
+        symbol.children.forEach { child ->
+            drawAnimatedSvgElement(child, ctx, registry, progressMap, pathCache)
+        }
     }
 }
 

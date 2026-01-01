@@ -416,6 +416,49 @@ class SvgBuilder {
         return styledElement
     }
 
+    /**
+     * Apply animation to an element using infix notation.
+     * The element is replaced with an animated version.
+     *
+     * Example:
+     * ```kotlin
+     * svg {
+     *     circle(12, 12, 10) animated { strokeDraw(dur = 1.seconds) }
+     *     path("M8 12l3 3 5-6") animated {
+     *         strokeDraw(dur = 500.milliseconds, delay = 1.seconds)
+     *     }
+     * }
+     * ```
+     */
+    infix fun SvgElement.animated(block: AnimationBuilder.() -> Unit): SvgAnimated {
+        // Remove the last added element (always the one just created)
+        elements.removeAt(elements.lastIndex)
+        val animations = AnimationBuilder().apply(block).build()
+        val animatedElement = SvgAnimated(this, animations)
+        elements.add(animatedElement)
+        return animatedElement
+    }
+
+    /**
+     * Apply predefined animations to an element using infix notation.
+     * The element is replaced with an animated version.
+     *
+     * Example:
+     * ```kotlin
+     * svg {
+     *     circle(12, 12, 10) with Animations.fadeIn
+     *     path("M8 12l3 3 5-6") with Animations.strokeDraw()
+     * }
+     * ```
+     */
+    infix fun SvgElement.with(animations: List<SvgAnimate>): SvgAnimated {
+        // Remove the last added element (always the one just created)
+        elements.removeAt(elements.lastIndex)
+        val animatedElement = SvgAnimated(this, animations)
+        elements.add(animatedElement)
+        return animatedElement
+    }
+
     // ============================================
     // Path
     // ============================================
