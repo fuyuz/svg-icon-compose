@@ -123,14 +123,14 @@ object DslAnimatedCheck : SvgIcon {
             SvgAnimated(
                 element = SvgCircle(12f, 12f, 10f),
                 animations = listOf(
-                    SvgAnimate.StrokeDraw(dur = 400.milliseconds)
+                    SvgAnimate.StrokeDraw(dur = 1.seconds)
                 )
             ),
             // Checkmark appears after circle
             SvgAnimated(
                 element = SvgPath("M8 12l3 3 5-6"),
                 animations = listOf(
-                    SvgAnimate.StrokeDraw(dur = 300.milliseconds, delay = 400.milliseconds)
+                    SvgAnimate.StrokeDraw(dur = 500.milliseconds, delay = 1.seconds)
                 )
             )
         )
@@ -169,13 +169,13 @@ object DslBuilderIcon : SvgIcon {
 object DslBuilderAnimatedIcon : SvgIcon {
     override val svg = Svg(
         children = svg {
-            // Circle with scale animation
+            // Circle with stroke draw animation
             circle(12, 12, 10) {
-                strokeDraw(dur = 500.milliseconds)
+                strokeDraw(dur = 1.seconds)
             }
             // Path with delayed stroke draw
             path("M8 12l3 3 5-6") {
-                strokeDraw(dur = 300.milliseconds, delay = 500.milliseconds)
+                strokeDraw(dur = 500.milliseconds, delay = 1.seconds)
             }
         }
     )

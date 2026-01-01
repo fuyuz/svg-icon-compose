@@ -353,39 +353,50 @@ private fun AnimatedSvgIconCanvas(
 
     val isInfinite = iterations == Int.MAX_VALUE
 
+    // Calculate total cycle duration (max of delay + duration across all animations)
+    val totalCycleDuration = remember(animations) {
+        animations.maxOfOrNull { entry ->
+            entry.animation.delay.inWholeMilliseconds + entry.animation.dur.inWholeMilliseconds
+        }?.toInt()?.coerceAtLeast(1) ?: 1000
+    }
+
     if (isInfinite) {
         // Use infinite transition for continuous animations
         val infiniteTransition = rememberInfiniteTransition(label = "svg_animation")
 
-        val animationValues = animations.map { entry ->
-            val anim = entry.animation
-            val duration = anim.dur.inWholeMilliseconds.toInt().coerceAtLeast(1)
+        // Single master timeline for the entire cycle
+        val masterProgress by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(totalCycleDuration, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "master_timeline"
+        )
 
-            val repeatMode = when (anim) {
-                is SvgAnimate.Opacity -> RepeatMode.Reverse
-                is SvgAnimate.StrokeWidth -> RepeatMode.Reverse
-                is SvgAnimate.Transform -> when (anim.type) {
-                    TransformType.ROTATE -> RepeatMode.Restart
-                    else -> RepeatMode.Reverse
+        // Calculate individual animation progress based on master timeline
+        val progressMap = remember(animations) {
+            animations.associate { entry ->
+                entry.key to object : State<Float> {
+                    override val value: Float
+                        get() {
+                            val anim = entry.animation
+                            val delayMs = anim.delay.inWholeMilliseconds.toFloat()
+                            val durationMs = anim.dur.inWholeMilliseconds.toFloat()
+                            val currentTimeMs = masterProgress * totalCycleDuration
+
+                            return when {
+                                currentTimeMs < delayMs -> 0f  // Still in delay period
+                                currentTimeMs >= delayMs + durationMs -> 1f  // Animation complete
+                                else -> {
+                                    // During animation
+                                    ((currentTimeMs - delayMs) / durationMs).coerceIn(0f, 1f)
+                                }
+                            }
+                        }
                 }
-                else -> RepeatMode.Restart
             }
-
-            infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(duration, easing = LinearEasing),
-                    repeatMode = repeatMode
-                ),
-                label = "anim_${entry.index}"
-            )
-        }
-
-        val progressMap = remember(animations, animationValues) {
-            animations.mapIndexed { idx, entry ->
-                entry.key to animationValues[idx]
-            }.toMap()
         }
 
         Canvas(modifier = modifier) {
@@ -1210,6 +1221,8 @@ private fun DrawScope.drawAnimatedElement(
     var translateY = 0f
     var opacity = 1f
     var strokeWidthMultiplier = 1f
+    var strokeDrawProgress: Float? = null
+    var strokeDrawReverse = false
 
     animated.animations.forEach { anim ->
         // O(1) lookup using AnimationKey instead of O(N) linear search
@@ -1236,7 +1249,17 @@ private fun DrawScope.drawAnimatedElement(
                 val currentWidth = from + (to - from) * progress
                 strokeWidthMultiplier = currentWidth / ctx.stroke.width
             }
-            else -> {}
+            is SvgAnimate.StrokeDraw -> {
+                strokeDrawProgress = if (anim.reverse) 1f - progress else progress
+                strokeDrawReverse = anim.reverse
+            }
+            is SvgAnimate.StrokeOpacity -> {
+                // Apply stroke opacity animation
+                opacity *= anim.from + (anim.to - anim.from) * progress
+            }
+            else -> {
+                // Other animation types not yet implemented
+            }
         }
     }
 
@@ -1269,7 +1292,128 @@ private fun DrawScope.drawAnimatedElement(
     translate(translateX, translateY) {
         scale(scaleValue, scaleValue, pivot = Offset(12f, 12f)) {
             rotate(rotationAngle, pivot = Offset(12f, 12f)) {
-                drawSvgElement(innerElement, finalCtx, registry)
+                if (strokeDrawProgress != null) {
+                    drawElementWithStrokeDraw(innerElement, finalCtx, strokeDrawProgress)
+                } else {
+                    drawSvgElement(innerElement, finalCtx, registry)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Draws an element with stroke-draw animation (progressive stroke reveal).
+ */
+private fun DrawScope.drawElementWithStrokeDraw(
+    element: SvgElement,
+    ctx: DrawContext,
+    progress: Float
+) {
+    val path = when (element) {
+        is SvgPath -> element.toPath()
+        is SvgCircle -> Path().apply {
+            addOval(
+                androidx.compose.ui.geometry.Rect(
+                    element.cx - element.r, element.cy - element.r,
+                    element.cx + element.r, element.cy + element.r
+                )
+            )
+        }
+        is SvgRect -> Path().apply {
+            if (element.rx > 0f || element.ry > 0f) {
+                addRoundRect(
+                    androidx.compose.ui.geometry.RoundRect(
+                        element.x, element.y,
+                        element.x + element.width, element.y + element.height,
+                        CornerRadius(element.rx, element.ry)
+                    )
+                )
+            } else {
+                addRect(
+                    androidx.compose.ui.geometry.Rect(
+                        element.x, element.y,
+                        element.x + element.width, element.y + element.height
+                    )
+                )
+            }
+        }
+        is SvgEllipse -> Path().apply {
+            addOval(
+                androidx.compose.ui.geometry.Rect(
+                    element.cx - element.rx, element.cy - element.ry,
+                    element.cx + element.rx, element.cy + element.ry
+                )
+            )
+        }
+        is SvgLine -> Path().apply {
+            moveTo(element.x1, element.y1)
+            lineTo(element.x2, element.y2)
+        }
+        is SvgPolyline -> Path().apply {
+            if (element.points.isNotEmpty()) {
+                val first = element.points.first()
+                moveTo(first.x, first.y)
+                for (i in 1 until element.points.size) {
+                    val point = element.points[i]
+                    lineTo(point.x, point.y)
+                }
+            }
+        }
+        is SvgPolygon -> Path().apply {
+            if (element.points.isNotEmpty()) {
+                val first = element.points.first()
+                moveTo(first.x, first.y)
+                for (i in 1 until element.points.size) {
+                    val point = element.points[i]
+                    lineTo(point.x, point.y)
+                }
+                close()
+            }
+        }
+        else -> null
+    }
+
+    if (path != null) {
+        // Don't draw anything if progress is 0 or less
+        if (progress <= 0f) {
+            return
+        }
+
+        // Measure path length
+        val pathMeasure = androidx.compose.ui.graphics.PathMeasure()
+        pathMeasure.setPath(path, false)
+        val pathLength = pathMeasure.length
+
+        if (pathLength > 0f && progress < 1f) {
+            // Draw partial stroke using dash path effect
+            val drawnLength = pathLength * progress
+            val gapLength = pathLength * 2  // Use larger gap to ensure nothing extra is drawn
+
+            val dashEffect = PathEffect.dashPathEffect(
+                floatArrayOf(drawnLength, gapLength),
+                0f
+            )
+
+            val animatedStroke = Stroke(
+                width = ctx.stroke.width,
+                cap = ctx.stroke.cap,
+                join = ctx.stroke.join,
+                miter = ctx.stroke.miter,
+                pathEffect = dashEffect
+            )
+
+            if (ctx.hasStroke) {
+                drawPath(path = path, color = ctx.strokeColor, style = animatedStroke)
+            }
+        } else {
+            // Full stroke (progress >= 1.0)
+            val effectiveStroke = ctx.getEffectiveStroke()
+            ctx.fillColor?.let { fill ->
+                drawPath(path = path, color = fill, style = Fill)
+            }
+            if (ctx.hasStroke && effectiveStroke.width > 0) {
+                drawPath(path = path, color = ctx.strokeColor, style = effectiveStroke)
             }
         }
     }
