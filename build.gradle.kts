@@ -9,5 +9,4 @@ plugins {
 
 allprojects {
     group = "io.github.fuyuz.svgicon"
-    version = findProperty("VERSION_NAME") as String
 }
