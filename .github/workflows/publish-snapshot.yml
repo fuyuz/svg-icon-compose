@@ -1,0 +1,46 @@
+name: Publish Snapshot
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: macos-latest
+    if: github.repository == 'fuyuz/svg-icon-compose'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Generate snapshot version
+        run: |
+          SNAPSHOT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null | awk -F. '{$NF++;print}' OFS=. || echo "0.0.1")-SNAPSHOT
+          echo "ORG_GRADLE_PROJECT_VERSION_NAME=$SNAPSHOT_VERSION" >> $GITHUB_ENV
+          echo "Generated snapshot version: $SNAPSHOT_VERSION"
+
+      - name: Publish to Maven Central Snapshots
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_PRIVATE_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          ./gradlew publishAllPublicationsToMavenCentralRepository -PVERSION_NAME=${{ env.ORG_GRADLE_PROJECT_VERSION_NAME }}
+          ./gradlew :gradle-plugin:publishAllPublicationsToMavenCentralRepository -PVERSION_NAME=${{ env.ORG_GRADLE_PROJECT_VERSION_NAME }}

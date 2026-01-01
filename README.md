@@ -16,9 +16,9 @@ A Kotlin Multiplatform library for rendering SVG icons in Compose Multiplatform 
 | Web (JS) | ✅      |
 | Web (Wasm) | ✅    |
 
-## Setup
+## Installation
 
-### 1. Add Plugin
+### Release Version
 
 In your `settings.gradle.kts`:
 
@@ -36,17 +36,54 @@ In your `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("io.github.fuyuz.svgicon") version "0.1.0-SNAPSHOT"
+    id("io.github.fuyuz.svgicon") version "0.1.0"
 }
-```
 
-### 2. Add Runtime Dependency
-
-```kotlin
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.fuyuz.svgicon:runtime:0.1.0-SNAPSHOT")
+            implementation("io.github.fuyuz.svgicon:runtime:0.1.0")
+        }
+    }
+}
+```
+
+### Snapshot Version
+
+For the latest development version, add the snapshot repository:
+
+In your `settings.gradle.kts`:
+
+```kotlin
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+        maven("https://central.sonatype.com/repository/maven-snapshots/")
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven("https://central.sonatype.com/repository/maven-snapshots/")
+    }
+}
+```
+
+In your `build.gradle.kts`:
+
+```kotlin
+plugins {
+    id("io.github.fuyuz.svgicon") version "0.1.1-SNAPSHOT"
+}
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation("io.github.fuyuz.svgicon:runtime:0.1.1-SNAPSHOT")
         }
     }
 }
