@@ -172,19 +172,19 @@ private val DslAnimatedCheck = Svg(
 )
 
 /**
- * Icon with inline styles using withStyle scope.
+ * Icon with inline styles using infix styled syntax.
  */
 private val DslStyledIcon = svg {
-    // Circle with custom fill and stroke
-    circle(12, 12, 10, svgStyle {
+    // Circle with custom fill and stroke using infix styled
+    circle(12, 12, 10) styled {
         fill = Color(0xFF3B82F6).withAlpha(0.2f)
         stroke = Color(0xFF3B82F6)
-    })
-    // Path with custom stroke color
-    path("M8 12l3 3 5-6", svgStyle {
+    }
+    // Path with custom stroke color using infix styled
+    path("M8 12l3 3 5-6") styled {
         stroke = Color(0xFF22C55E)
         strokeWidth = 3f
-    })
+    }
 }
 
 /**
@@ -204,13 +204,13 @@ private val DslWithStyleIcon = svg {
  * Icon using transform DSL with operator chaining.
  */
 private val DslTransformIcon = svg {
-    rect(x = 4, y = 4, width = 8, height = 8, style = svgStyle {
+    rect(4, 4, 8, 8) styled {
         fill = SvgColors.Success
         transform = rotate(45, 8 to 8) + scale(1.2)
-    })
-    circle(16, 16, 4, svgStyle {
+    }
+    circle(16, 16, 4) styled {
         fill = SvgColors.Primary.withAlpha(0.5f)
-    })
+    }
 }
 
 /**
@@ -218,30 +218,30 @@ private val DslTransformIcon = svg {
  */
 private val DslColorExtensionsIcon = svg {
     // Using hex color extension
-    circle(8, 8, 5, svgStyle { fill = "#3B82F6".toSvgColor() })
+    circle(8, 8, 5) styled { fill = "#3B82F6".toSvgColor() }
     // Using withAlpha extension
-    circle(16, 16, 5, svgStyle { fill = SvgColors.Error.withAlpha(0.6f) })
+    circle(16, 16, 5) styled { fill = SvgColors.Error.withAlpha(0.6f) }
     // Using predefined SvgColors
-    path("M4 16L12 8L20 16", svgStyle {
+    path("M4 16L12 8L20 16") styled {
         stroke = SvgColors.Warning
         strokeWidth = 2f
-    })
+    }
 }
 
 /**
  * Icon using ViewBox convenience.
  */
 private val DslViewBoxIcon = svg(viewBox = "0 0 100 100".toViewBox()) {
-    circle(50, 50, 40, svgStyle {
+    circle(50, 50, 40) styled {
         stroke = SvgColors.Primary
         strokeWidth = 4f
-    })
-    path("M30 50L45 65L70 35", svgStyle {
+    }
+    path("M30 50L45 65L70 35") styled {
         stroke = SvgColors.Success
         strokeWidth = 6f
         strokeLinecap = LineCap.ROUND
         strokeLinejoin = LineJoin.ROUND
-    })
+    }
 }
 
 /**

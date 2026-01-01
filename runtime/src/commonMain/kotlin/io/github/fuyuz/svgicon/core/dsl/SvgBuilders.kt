@@ -376,104 +376,179 @@ class SvgBuilder {
     }
 
     // ============================================
+    // Infix Styled Functions
+    // ============================================
+
+    /**
+     * Add an element directly to the builder.
+     *
+     * Example:
+     * ```kotlin
+     * svg {
+     *     +SvgCircle(12f, 12f, 10f)
+     * }
+     * ```
+     */
+    operator fun SvgElement.unaryPlus() {
+        elements.add(this)
+    }
+
+    /**
+     * Apply style to an element using infix notation.
+     * The element is replaced with a styled version.
+     *
+     * Example:
+     * ```kotlin
+     * svg {
+     *     rect(4, 4, 16, 16) styled { fill = Color.Blue }
+     *     circle(12, 12, 10) styled {
+     *         stroke = Color.Red
+     *         strokeWidth = 2f
+     *     }
+     * }
+     * ```
+     */
+    infix fun SvgElement.styled(block: SvgStyleBuilder.() -> Unit): SvgStyled {
+        // Remove the element that was just added
+        elements.remove(this)
+        val styledElement = SvgStyled(this, svgStyle(block))
+        elements.add(styledElement)
+        return styledElement
+    }
+
+    // ============================================
     // Path
     // ============================================
 
     /** Path from string data. */
-    fun path(d: String) {
-        elements.add(SvgPath(d))
+    fun path(d: String): SvgPath {
+        val elem = SvgPath(d)
+        elements.add(elem)
+        return elem
     }
 
     /** Path from string with animation. */
-    fun path(d: String, block: AnimationBuilder.() -> Unit) {
+    fun path(d: String, block: AnimationBuilder.() -> Unit): SvgAnimated {
         val animations = AnimationBuilder().apply(block).build()
-        elements.add(SvgAnimated(SvgPath(d), animations))
+        val elem = SvgAnimated(SvgPath(d), animations)
+        elements.add(elem)
+        return elem
     }
 
     /** Path from string with style. */
-    fun path(d: String, style: SvgStyle) {
-        elements.add(SvgStyled(SvgPath(d), style))
+    fun path(d: String, style: SvgStyle): SvgStyled {
+        val elem = SvgStyled(SvgPath(d), style)
+        elements.add(elem)
+        return elem
     }
 
     /** Type-safe path builder. */
-    fun path(block: PathBuilder.() -> Unit) {
+    fun path(block: PathBuilder.() -> Unit): SvgPath {
         val commands = PathBuilder().apply(block).build()
-        elements.add(SvgPath(commands = commands))
+        val elem = SvgPath(commands = commands)
+        elements.add(elem)
+        return elem
     }
 
     /** Type-safe path with animation builder. */
-    fun animatedPath(pathBlock: PathBuilder.() -> Unit, animBlock: AnimationBuilder.() -> Unit) {
+    fun animatedPath(pathBlock: PathBuilder.() -> Unit, animBlock: AnimationBuilder.() -> Unit): SvgAnimated {
         val commands = PathBuilder().apply(pathBlock).build()
         val animations = AnimationBuilder().apply(animBlock).build()
-        elements.add(SvgAnimated(SvgPath(commands = commands), animations))
+        val elem = SvgAnimated(SvgPath(commands = commands), animations)
+        elements.add(elem)
+        return elem
     }
 
     // ============================================
     // Circle
     // ============================================
 
-    fun circle(cx: Number, cy: Number, r: Number) {
-        elements.add(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()))
+    fun circle(cx: Number, cy: Number, r: Number): SvgCircle {
+        val elem = SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat())
+        elements.add(elem)
+        return elem
     }
 
-    fun circle(cx: Number, cy: Number, r: Number, block: AnimationBuilder.() -> Unit) {
+    fun circle(cx: Number, cy: Number, r: Number, block: AnimationBuilder.() -> Unit): SvgAnimated {
         val animations = AnimationBuilder().apply(block).build()
-        elements.add(SvgAnimated(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()), animations))
+        val elem = SvgAnimated(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()), animations)
+        elements.add(elem)
+        return elem
     }
 
-    fun circle(cx: Number, cy: Number, r: Number, style: SvgStyle) {
-        elements.add(SvgStyled(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()), style))
+    fun circle(cx: Number, cy: Number, r: Number, style: SvgStyle): SvgStyled {
+        val elem = SvgStyled(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()), style)
+        elements.add(elem)
+        return elem
     }
 
     // ============================================
     // Ellipse
     // ============================================
 
-    fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number) {
-        elements.add(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()))
+    fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number): SvgEllipse {
+        val elem = SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat())
+        elements.add(elem)
+        return elem
     }
 
-    fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number, block: AnimationBuilder.() -> Unit) {
+    fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number, block: AnimationBuilder.() -> Unit): SvgAnimated {
         val animations = AnimationBuilder().apply(block).build()
-        elements.add(SvgAnimated(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()), animations))
+        val elem = SvgAnimated(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()), animations)
+        elements.add(elem)
+        return elem
     }
 
-    fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number, style: SvgStyle) {
-        elements.add(SvgStyled(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()), style))
+    fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number, style: SvgStyle): SvgStyled {
+        val elem = SvgStyled(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()), style)
+        elements.add(elem)
+        return elem
     }
 
     // ============================================
     // Rectangle
     // ============================================
 
-    fun rect(x: Number = 0, y: Number = 0, width: Number, height: Number, rx: Number = 0, ry: Number = rx) {
-        elements.add(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()))
+    fun rect(x: Number = 0, y: Number = 0, width: Number, height: Number, rx: Number = 0, ry: Number = rx): SvgRect {
+        val elem = SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat())
+        elements.add(elem)
+        return elem
     }
 
-    fun rect(x: Number, y: Number, width: Number, height: Number, rx: Number = 0, ry: Number = rx, block: AnimationBuilder.() -> Unit) {
+    fun rect(x: Number, y: Number, width: Number, height: Number, rx: Number = 0, ry: Number = rx, block: AnimationBuilder.() -> Unit): SvgAnimated {
         val animations = AnimationBuilder().apply(block).build()
-        elements.add(SvgAnimated(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()), animations))
+        val elem = SvgAnimated(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()), animations)
+        elements.add(elem)
+        return elem
     }
 
-    fun rect(x: Number, y: Number, width: Number, height: Number, rx: Number = 0, ry: Number = rx, style: SvgStyle) {
-        elements.add(SvgStyled(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()), style))
+    fun rect(x: Number, y: Number, width: Number, height: Number, rx: Number = 0, ry: Number = rx, style: SvgStyle): SvgStyled {
+        val elem = SvgStyled(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()), style)
+        elements.add(elem)
+        return elem
     }
 
     // ============================================
     // Line
     // ============================================
 
-    fun line(x1: Number, y1: Number, x2: Number, y2: Number) {
-        elements.add(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()))
+    fun line(x1: Number, y1: Number, x2: Number, y2: Number): SvgLine {
+        val elem = SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat())
+        elements.add(elem)
+        return elem
     }
 
-    fun line(x1: Number, y1: Number, x2: Number, y2: Number, block: AnimationBuilder.() -> Unit) {
+    fun line(x1: Number, y1: Number, x2: Number, y2: Number, block: AnimationBuilder.() -> Unit): SvgAnimated {
         val animations = AnimationBuilder().apply(block).build()
-        elements.add(SvgAnimated(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()), animations))
+        val elem = SvgAnimated(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()), animations)
+        elements.add(elem)
+        return elem
     }
 
-    fun line(x1: Number, y1: Number, x2: Number, y2: Number, style: SvgStyle) {
-        elements.add(SvgStyled(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()), style))
+    fun line(x1: Number, y1: Number, x2: Number, y2: Number, style: SvgStyle): SvgStyled {
+        val elem = SvgStyled(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()), style)
+        elements.add(elem)
+        return elem
     }
 
     // ============================================
@@ -492,8 +567,8 @@ class SvgBuilder {
         letterSpacing: Float? = null,
         dx: Float? = null,
         dy: Float? = null
-    ) {
-        elements.add(SvgText(
+    ): SvgText {
+        val elem = SvgText(
             text = text,
             x = x.toFloat(),
             y = y.toFloat(),
@@ -505,7 +580,9 @@ class SvgBuilder {
             letterSpacing = letterSpacing,
             dx = dx,
             dy = dy
-        ))
+        )
+        elements.add(elem)
+        return elem
     }
 
     fun text(
@@ -516,7 +593,7 @@ class SvgBuilder {
         dominantBaseline: DominantBaseline? = null,
         fontSize: Float? = null,
         block: AnimationBuilder.() -> Unit
-    ) {
+    ): SvgAnimated {
         val textElement = SvgText(
             text = text,
             x = x.toFloat(),
@@ -526,7 +603,9 @@ class SvgBuilder {
             fontSize = fontSize
         )
         val animations = AnimationBuilder().apply(block).build()
-        elements.add(SvgAnimated(textElement, animations))
+        val elem = SvgAnimated(textElement, animations)
+        elements.add(elem)
+        return elem
     }
 
     // ============================================
@@ -534,25 +613,33 @@ class SvgBuilder {
     // ============================================
 
     /** Polyline with vararg points: polyline(5 to 12, 12 to 5, 19 to 12) */
-    fun polyline(vararg points: Pair<Number, Number>) {
+    fun polyline(vararg points: Pair<Number, Number>): SvgPolyline {
         val offsets = points.map { Offset(it.first.toFloat(), it.second.toFloat()) }
-        elements.add(SvgPolyline(offsets))
+        val elem = SvgPolyline(offsets)
+        elements.add(elem)
+        return elem
     }
 
     /** Polyline from points string: polyline("5,12 12,5 19,12") */
-    fun polyline(points: String) {
-        elements.add(SvgPolyline(parsePointsString(points)))
+    fun polyline(points: String): SvgPolyline {
+        val elem = SvgPolyline(parsePointsString(points))
+        elements.add(elem)
+        return elem
     }
 
-    fun polyline(vararg points: Pair<Number, Number>, block: AnimationBuilder.() -> Unit) {
+    fun polyline(vararg points: Pair<Number, Number>, block: AnimationBuilder.() -> Unit): SvgAnimated {
         val offsets = points.map { Offset(it.first.toFloat(), it.second.toFloat()) }
         val animations = AnimationBuilder().apply(block).build()
-        elements.add(SvgAnimated(SvgPolyline(offsets), animations))
+        val elem = SvgAnimated(SvgPolyline(offsets), animations)
+        elements.add(elem)
+        return elem
     }
 
-    fun polyline(points: String, block: AnimationBuilder.() -> Unit) {
+    fun polyline(points: String, block: AnimationBuilder.() -> Unit): SvgAnimated {
         val animations = AnimationBuilder().apply(block).build()
-        elements.add(SvgAnimated(SvgPolyline(parsePointsString(points)), animations))
+        val elem = SvgAnimated(SvgPolyline(parsePointsString(points)), animations)
+        elements.add(elem)
+        return elem
     }
 
     // ============================================
@@ -560,25 +647,33 @@ class SvgBuilder {
     // ============================================
 
     /** Polygon with vararg points: polygon(12 to 2, 22 to 22, 2 to 22) */
-    fun polygon(vararg points: Pair<Number, Number>) {
+    fun polygon(vararg points: Pair<Number, Number>): SvgPolygon {
         val offsets = points.map { Offset(it.first.toFloat(), it.second.toFloat()) }
-        elements.add(SvgPolygon(offsets))
+        val elem = SvgPolygon(offsets)
+        elements.add(elem)
+        return elem
     }
 
     /** Polygon from points string: polygon("12,2 22,22 2,22") */
-    fun polygon(points: String) {
-        elements.add(SvgPolygon(parsePointsString(points)))
+    fun polygon(points: String): SvgPolygon {
+        val elem = SvgPolygon(parsePointsString(points))
+        elements.add(elem)
+        return elem
     }
 
-    fun polygon(vararg points: Pair<Number, Number>, block: AnimationBuilder.() -> Unit) {
+    fun polygon(vararg points: Pair<Number, Number>, block: AnimationBuilder.() -> Unit): SvgAnimated {
         val offsets = points.map { Offset(it.first.toFloat(), it.second.toFloat()) }
         val animations = AnimationBuilder().apply(block).build()
-        elements.add(SvgAnimated(SvgPolygon(offsets), animations))
+        val elem = SvgAnimated(SvgPolygon(offsets), animations)
+        elements.add(elem)
+        return elem
     }
 
-    fun polygon(points: String, block: AnimationBuilder.() -> Unit) {
+    fun polygon(points: String, block: AnimationBuilder.() -> Unit): SvgAnimated {
         val animations = AnimationBuilder().apply(block).build()
-        elements.add(SvgAnimated(SvgPolygon(parsePointsString(points)), animations))
+        val elem = SvgAnimated(SvgPolygon(parsePointsString(points)), animations)
+        elements.add(elem)
+        return elem
     }
 
     // ============================================
@@ -586,15 +681,19 @@ class SvgBuilder {
     // ============================================
 
     /** Group elements without style. */
-    fun group(block: SvgBuilder.() -> Unit) {
+    fun group(block: SvgBuilder.() -> Unit): SvgGroup {
         val children = SvgBuilder().apply(block).build()
-        elements.add(SvgGroup(children))
+        val elem = SvgGroup(children)
+        elements.add(elem)
+        return elem
     }
 
     /** Group elements with transform. */
-    fun group(transform: SvgTransform, block: SvgBuilder.() -> Unit) {
+    fun group(transform: SvgTransform, block: SvgBuilder.() -> Unit): SvgGroup {
         val children = SvgBuilder().apply(block).build()
-        elements.add(SvgGroup(children, SvgStyle(transform = transform)))
+        val elem = SvgGroup(children, SvgStyle(transform = transform))
+        elements.add(elem)
+        return elem
     }
 
     // ============================================
@@ -802,15 +901,6 @@ class SvgBuilder {
     fun animated(element: SvgElement, block: AnimationBuilder.() -> Unit) {
         val animations = AnimationBuilder().apply(block).build()
         elements.add(SvgAnimated(element, animations))
-    }
-
-    // ============================================
-    // Raw element addition
-    // ============================================
-
-    /** Add a raw SvgElement. */
-    operator fun SvgElement.unaryPlus() {
-        elements.add(this)
     }
 
     // ============================================
