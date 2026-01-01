@@ -670,34 +670,70 @@ internal object SvgXmlParser {
         }
     }
 
+    /**
+     * Parses CSS inline style string into a Map.
+     * Example: "fill:red; stroke:blue; stroke-width:2" -> {fill=red, stroke=blue, stroke-width=2}
+     */
+    private fun parseCssStyleAttribute(styleStr: String?): Map<String, String> {
+        if (styleStr.isNullOrBlank()) return emptyMap()
+
+        val cssProperties = mutableMapOf<String, String>()
+        val declarations = styleStr.split(";")
+
+        for (declaration in declarations) {
+            val colonIndex = declaration.indexOf(':')
+            if (colonIndex > 0) {
+                val property = declaration.substring(0, colonIndex).trim().lowercase()
+                val value = declaration.substring(colonIndex + 1).trim()
+                if (property.isNotEmpty() && value.isNotEmpty()) {
+                    cssProperties[property] = value
+                }
+            }
+        }
+
+        return cssProperties
+    }
+
     private fun parseStyle(attrs: Map<String, String>): SvgStyle? {
-        val fill = parseColorAttribute(attrs["fill"])
-        val fillOpacity = attrs["fill-opacity"]?.toFloatOrNull()
-        val fillRule = when (attrs["fill-rule"]?.lowercase()) {
+        // Parse inline style attribute if present and merge with XML attributes
+        // CSS style takes precedence over XML attributes
+        val cssStyles = parseCssStyleAttribute(attrs["style"])
+        val mergedAttrs = if (cssStyles.isNotEmpty()) {
+            attrs.toMutableMap().apply {
+                putAll(cssStyles)
+                remove("style")
+            }
+        } else {
+            attrs
+        }
+
+        val fill = parseColorAttribute(mergedAttrs["fill"])
+        val fillOpacity = mergedAttrs["fill-opacity"]?.toFloatOrNull()
+        val fillRule = when (mergedAttrs["fill-rule"]?.lowercase()) {
             "evenodd" -> FillRule.EVENODD
             "nonzero" -> FillRule.NONZERO
             else -> null
         }
-        val stroke = parseColorAttribute(attrs["stroke"])
-        val strokeWidth = attrs["stroke-width"]?.toFloatOrNull()
-        val strokeOpacity = attrs["stroke-opacity"]?.toFloatOrNull()
-        val strokeLinecap = when (attrs["stroke-linecap"]?.lowercase()) {
+        val stroke = parseColorAttribute(mergedAttrs["stroke"])
+        val strokeWidth = mergedAttrs["stroke-width"]?.toFloatOrNull()
+        val strokeOpacity = mergedAttrs["stroke-opacity"]?.toFloatOrNull()
+        val strokeLinecap = when (mergedAttrs["stroke-linecap"]?.lowercase()) {
             "butt" -> LineCap.BUTT
             "round" -> LineCap.ROUND
             "square" -> LineCap.SQUARE
             else -> null
         }
-        val strokeLinejoin = when (attrs["stroke-linejoin"]?.lowercase()) {
+        val strokeLinejoin = when (mergedAttrs["stroke-linejoin"]?.lowercase()) {
             "miter" -> LineJoin.MITER
             "round" -> LineJoin.ROUND
             "bevel" -> LineJoin.BEVEL
             else -> null
         }
-        val strokeDasharray = attrs["stroke-dasharray"]?.let { parseDashArray(it) }
-        val strokeDashoffset = attrs["stroke-dashoffset"]?.toFloatOrNull()
-        val strokeMiterlimit = attrs["stroke-miterlimit"]?.toFloatOrNull()
-        val opacity = attrs["opacity"]?.toFloatOrNull()
-        val transform = attrs["transform"]?.let { parseTransform(it) }
+        val strokeDasharray = mergedAttrs["stroke-dasharray"]?.let { parseDashArray(it) }
+        val strokeDashoffset = mergedAttrs["stroke-dashoffset"]?.toFloatOrNull()
+        val strokeMiterlimit = mergedAttrs["stroke-miterlimit"]?.toFloatOrNull()
+        val opacity = mergedAttrs["opacity"]?.toFloatOrNull()
+        val transform = mergedAttrs["transform"]?.let { parseTransform(it) }
 
         // Only create style if at least one attribute is present
         if (fill == null && fillOpacity == null && fillRule == null &&
