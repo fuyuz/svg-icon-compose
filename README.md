@@ -216,6 +216,37 @@ Animations.scaleIn         // Scale from 0 to 1
 Animations.strokeDraw()    // Draw stroke progressively
 ```
 
+### Path Morphing (Type-Safe)
+
+```kotlin
+// morphTo with string - only available for path elements (compile-time checked)
+val morphIcon = svg {
+    path("M10 10 L20 20") animated {
+        morphTo("M5 15 L25 15", dur = 500.milliseconds)
+    }
+}
+
+// morphTo with path builder - type-safe target path
+val morphBuilderIcon = svg {
+    path("M10 10 L20 20") animated {
+        morphTo(dur = 500.milliseconds) {
+            moveTo(5f, 15f)
+            lineTo(25f, 15f)
+        }
+    }
+}
+
+// morphPointsTo for polygon/polyline
+val morphPolygon = svg {
+    polygon(12 to 2, 22 to 22, 2 to 22) animated {
+        morphPointsTo(
+            to = listOf(Offset(6f, 12f), Offset(18f, 12f), Offset(12f, 22f)),
+            dur = 500.milliseconds
+        )
+    }
+}
+```
+
 ### Symbol and Use Elements
 
 ```kotlin
