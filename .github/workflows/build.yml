@@ -12,7 +12,27 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - target: jvm
+            os: ubuntu-latest
+            tasks: ':runtime:compileKotlinDesktop :runtime:desktopTest :gradle-plugin:build'
+          - target: android
+            os: ubuntu-latest
+            tasks: ':runtime:compileDebugKotlinAndroid :runtime:compileReleaseKotlinAndroid'
+          - target: ios
+            os: macos-latest
+            tasks: ':runtime:compileKotlinIosArm64 :runtime:compileKotlinIosX64 :runtime:compileKotlinIosSimulatorArm64 :runtime:linkDebugFrameworkIosArm64'
+          - target: js
+            os: ubuntu-latest
+            tasks: ':runtime:compileKotlinJs :runtime:jsTest'
+          - target: wasm
+            os: ubuntu-latest
+            tasks: ':runtime:compileKotlinWasmJs :runtime:wasmJsTest'
+
+    runs-on: ${{ matrix.os }}
+    name: Build (${{ matrix.target }})
 
     steps:
       - name: Checkout
@@ -24,18 +44,22 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Cache Konan
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle.kts') }}
+          restore-keys: ${{ runner.os }}-konan-
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build
-        run: ./gradlew build
-        env:
-          GRADLE_OPTS: -Xmx4g -XX:MaxMetaspaceSize=1g
-          KOTLIN_NATIVE_MAX_MEMORY: 4G
+        run: ./gradlew ${{ matrix.tasks }}
 
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-${{ matrix.target }}
           path: '**/build/reports/tests/'
