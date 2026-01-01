@@ -6,14 +6,6 @@ import io.github.fuyuz.svgicon.core.*
 import java.io.File
 
 /**
- * Visibility modifier for generated icons.
- */
-enum class IconVisibility {
-    PUBLIC,
-    INTERNAL
-}
-
-/**
  * Generates Kotlin icon files from SVG files using KotlinPoet.
  */
 class IconGenerator(
