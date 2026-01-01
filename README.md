@@ -93,10 +93,10 @@ kotlin {
 
 ### 1. Add SVG files
 
-Place your SVG files in `src/commonMain/composeResources/svg/`:
+Place your SVG files in `src/commonMain/svgicons/`:
 
 ```
-src/commonMain/composeResources/svg/
+src/commonMain/svgicons/
 ├── check.svg
 ├── arrow-right.svg
 └── menu.svg
@@ -126,9 +126,9 @@ For custom configuration:
 import io.github.fuyuz.svgicon.gradle.IconVisibility
 
 svgIcon {
-    svgDir = file("src/commonMain/composeResources/svg")  // default
-    packageName = "com.example.icons"                      // default: "${project.group}.icons"
-    visibility = IconVisibility.PUBLIC                     // default: PUBLIC
+    svgDir = file("src/commonMain/svgicons")  // default
+    packageName = "com.example.icons"          // default: "${project.group}.icons"
+    visibility = IconVisibility.PUBLIC         // default: PUBLIC
 }
 ```
 

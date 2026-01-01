@@ -9,9 +9,9 @@ plugins {
 }
 
 svgIcon {
-    // svgDir defaults to "src/commonMain/composeResources/svg"
+    // svgDir defaults to "src/commonMain/svgicons"
+    // visibility defaults to IconVisibility.PUBLIC
     packageName = "io.github.fuyuz.svgicon.sample.generated.icons"
-    visibility = IconVisibility.PUBLIC
 }
 
 kotlin {

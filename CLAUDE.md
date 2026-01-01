@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Kotlin Multiplatform library for SVG icons in Jetpack Compose. Supports Android, Desktop/JVM, iOS, JavaScript, and WebAssembly targets. Icons placed in `composeResources/svg/` are automatically converted to `Icons.xxx` accessors at build time.
+Kotlin Multiplatform library for SVG icons in Jetpack Compose. Supports Android, Desktop/JVM, iOS, JavaScript, and WebAssembly targets. Icons placed in `src/commonMain/svgicons/` are automatically converted to `Icons.xxx` accessors at build time.
 
 ## Build Commands
 
@@ -33,18 +33,18 @@ Kotlin Multiplatform library for SVG icons in Jetpack Compose. Supports Android,
 
 ### Icon Generation
 
-Icons in `composeResources/svg/` are processed by the Gradle plugin:
+Icons in `src/commonMain/svgicons/` are processed by the Gradle plugin:
 1. SVG files are parsed at build time
 2. Kotlin code is generated as `Icons.IconName`
 3. Generated code is added to the compilation
 
 ## Adding Icons
 
-### Method 1: composeResources (Recommended)
+### Method 1: svgicons directory (Recommended)
 
-Place SVG files in `src/commonMain/composeResources/svg/`:
+Place SVG files in `src/commonMain/svgicons/`:
 ```
-sample/src/commonMain/composeResources/svg/
+src/commonMain/svgicons/
 ├── check.svg
 ├── arrow-right.svg
 └── menu.svg
@@ -79,7 +79,7 @@ object MyIcon : SvgIcon {
 ## Dependencies
 
 Managed via `/gradle/libs.versions.toml`:
-- Kotlin 2.1.10
+- Kotlin 2.1.21
 - Compose Multiplatform 1.9.3
 - KSP for code generation
 - Android: minSdk 24, compileSdk 35
