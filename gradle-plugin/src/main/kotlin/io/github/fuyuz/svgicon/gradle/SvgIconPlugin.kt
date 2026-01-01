@@ -2,6 +2,9 @@ package io.github.fuyuz.svgicon.gradle
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 /**
  * Gradle plugin for generating SvgIcon implementations from SVG files.
@@ -44,38 +47,27 @@ class SvgIconPlugin : Plugin<Project> {
             task.visibility.set(extension.visibility)
         }
 
-        // Hook into Kotlin compilation
-        project.afterEvaluate {
-            project.tasks.matching { it.name.startsWith("compileKotlin") }.configureEach { compileTask ->
-                compileTask.dependsOn(generateTask)
-            }
+        // Hook into Kotlin compilation - use KotlinCompilationTask to match all Kotlin compile tasks
+        // including Android variants (compileDebugKotlin, compileReleaseKotlin, etc.)
+        // No afterEvaluate needed - withType().configureEach is lazy
+        project.tasks.withType(KotlinCompilationTask::class.java).configureEach { compileTask ->
+            compileTask.dependsOn(generateTask)
+        }
 
-            // Add generated sources to source sets
-            project.pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
-                val kotlinExtension = project.extensions.findByName("kotlin")
-                if (kotlinExtension != null) {
-                    try {
-                        val sourceSets = kotlinExtension.javaClass.getMethod("getSourceSets").invoke(kotlinExtension)
-                        val commonMain = sourceSets.javaClass.getMethod("getByName", String::class.java).invoke(sourceSets, "commonMain")
-                        val kotlin = commonMain.javaClass.getMethod("getKotlin").invoke(commonMain)
-                        kotlin.javaClass.getMethod("srcDir", Any::class.java).invoke(kotlin, outputDir)
-                    } catch (e: Exception) {
-                        project.logger.warn("Failed to add generated sources to commonMain: ${e.message}")
-                    }
-                }
+        // Add generated sources to source sets for Kotlin Multiplatform
+        project.pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+            val kotlinExtension = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+            kotlinExtension.sourceSets.named("commonMain") { sourceSet ->
+                // Passing task provider automatically sets up task dependency
+                sourceSet.kotlin.srcDir(generateTask.map { it.outputDir })
             }
+        }
 
-            project.pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
-                val sourceSets = project.extensions.findByName("sourceSets")
-                if (sourceSets != null) {
-                    try {
-                        val main = sourceSets.javaClass.getMethod("getByName", String::class.java).invoke(sourceSets, "main")
-                        val kotlin = main.javaClass.getMethod("getKotlin").invoke(main)
-                        kotlin.javaClass.getMethod("srcDir", Any::class.java).invoke(kotlin, outputDir)
-                    } catch (e: Exception) {
-                        project.logger.warn("Failed to add generated sources to main: ${e.message}")
-                    }
-                }
+        // Add generated sources to source sets for Kotlin JVM
+        project.pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+            val kotlinExtension = project.extensions.getByType(KotlinProjectExtension::class.java)
+            kotlinExtension.sourceSets.named("main") { sourceSet ->
+                sourceSet.kotlin.srcDir(generateTask.map { it.outputDir })
             }
         }
     }
