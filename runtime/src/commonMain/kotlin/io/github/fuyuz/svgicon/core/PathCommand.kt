@@ -206,6 +206,38 @@ fun parsePathCommands(pathData: String): List<PathCommand> {
     return commands
 }
 
+/**
+ * Converts a list of PathCommands back to SVG path data string.
+ */
+fun List<PathCommand>.toPathString(): String = buildString {
+    for (cmd in this@toPathString) {
+        if (isNotEmpty()) append(' ')
+        append(
+            when (cmd) {
+                is PathCommand.MoveTo -> "M${cmd.x} ${cmd.y}"
+                is PathCommand.MoveToRelative -> "m${cmd.dx} ${cmd.dy}"
+                is PathCommand.LineTo -> "L${cmd.x} ${cmd.y}"
+                is PathCommand.LineToRelative -> "l${cmd.dx} ${cmd.dy}"
+                is PathCommand.HorizontalLineTo -> "H${cmd.x}"
+                is PathCommand.HorizontalLineToRelative -> "h${cmd.dx}"
+                is PathCommand.VerticalLineTo -> "V${cmd.y}"
+                is PathCommand.VerticalLineToRelative -> "v${cmd.dy}"
+                is PathCommand.CubicTo -> "C${cmd.x1} ${cmd.y1} ${cmd.x2} ${cmd.y2} ${cmd.x} ${cmd.y}"
+                is PathCommand.CubicToRelative -> "c${cmd.dx1} ${cmd.dy1} ${cmd.dx2} ${cmd.dy2} ${cmd.dx} ${cmd.dy}"
+                is PathCommand.SmoothCubicTo -> "S${cmd.x2} ${cmd.y2} ${cmd.x} ${cmd.y}"
+                is PathCommand.SmoothCubicToRelative -> "s${cmd.dx2} ${cmd.dy2} ${cmd.dx} ${cmd.dy}"
+                is PathCommand.QuadTo -> "Q${cmd.x1} ${cmd.y1} ${cmd.x} ${cmd.y}"
+                is PathCommand.QuadToRelative -> "q${cmd.dx1} ${cmd.dy1} ${cmd.dx} ${cmd.dy}"
+                is PathCommand.SmoothQuadTo -> "T${cmd.x} ${cmd.y}"
+                is PathCommand.SmoothQuadToRelative -> "t${cmd.dx} ${cmd.dy}"
+                is PathCommand.ArcTo -> "A${cmd.rx} ${cmd.ry} ${cmd.xAxisRotation} ${if (cmd.largeArcFlag) 1 else 0} ${if (cmd.sweepFlag) 1 else 0} ${cmd.x} ${cmd.y}"
+                is PathCommand.ArcToRelative -> "a${cmd.rx} ${cmd.ry} ${cmd.xAxisRotation} ${if (cmd.largeArcFlag) 1 else 0} ${if (cmd.sweepFlag) 1 else 0} ${cmd.dx} ${cmd.dy}"
+                PathCommand.Close -> "Z"
+            }
+        )
+    }
+}
+
 private fun tokenizePathData(pathData: String): List<String> {
     val tokens = mutableListOf<String>()
     val current = StringBuilder()

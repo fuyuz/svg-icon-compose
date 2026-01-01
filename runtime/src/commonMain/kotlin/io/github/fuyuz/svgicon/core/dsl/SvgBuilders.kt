@@ -297,7 +297,8 @@ class PathBuilder {
 
 @SvgDslMarker
 class SvgBuilder {
-    private val elements = mutableListOf<SvgElement>()
+    @PublishedApi
+    internal val elements = mutableListOf<SvgElement>()
 
     // ============================================
     // Style Scope
@@ -416,6 +417,49 @@ class SvgBuilder {
         return styledElement
     }
 
+    /**
+     * Apply animation to an element using infix notation.
+     * The element is replaced with an animated version.
+     *
+     * Example:
+     * ```kotlin
+     * svg {
+     *     circle(12, 12, 10) animated { strokeDraw(dur = 1.seconds) }
+     *     path("M8 12l3 3 5-6") animated {
+     *         strokeDraw(dur = 500.milliseconds, delay = 1.seconds)
+     *     }
+     * }
+     * ```
+     */
+    inline infix fun <reified E : SvgElement> E.animated(block: AnimationBuilder<E>.() -> Unit): SvgAnimated {
+        // Remove the last added element (always the one just created)
+        elements.removeAt(elements.lastIndex)
+        val animations = AnimationBuilder(this).apply(block).build()
+        val animatedElement = SvgAnimated(this, animations)
+        elements.add(animatedElement)
+        return animatedElement
+    }
+
+    /**
+     * Apply predefined animations to an element using infix notation.
+     * The element is replaced with an animated version.
+     *
+     * Example:
+     * ```kotlin
+     * svg {
+     *     circle(12, 12, 10) with Animations.fadeIn
+     *     path("M8 12l3 3 5-6") with Animations.strokeDraw()
+     * }
+     * ```
+     */
+    infix fun SvgElement.with(animations: List<SvgAnimate>): SvgAnimated {
+        // Remove the last added element (always the one just created)
+        elements.removeAt(elements.lastIndex)
+        val animatedElement = SvgAnimated(this, animations)
+        elements.add(animatedElement)
+        return animatedElement
+    }
+
     // ============================================
     // Path
     // ============================================
@@ -428,9 +472,10 @@ class SvgBuilder {
     }
 
     /** Path from string with animation. */
-    fun path(d: String, block: AnimationBuilder.() -> Unit): SvgAnimated {
-        val animations = AnimationBuilder().apply(block).build()
-        val elem = SvgAnimated(SvgPath(d), animations)
+    inline fun path(d: String, block: AnimationBuilder<SvgPath>.() -> Unit): SvgAnimated {
+        val path = SvgPath(d)
+        val animations = AnimationBuilder(path).apply(block).build()
+        val elem = SvgAnimated(path, animations)
         elements.add(elem)
         return elem
     }
@@ -451,10 +496,11 @@ class SvgBuilder {
     }
 
     /** Type-safe path with animation builder. */
-    fun animatedPath(pathBlock: PathBuilder.() -> Unit, animBlock: AnimationBuilder.() -> Unit): SvgAnimated {
+    inline fun animatedPath(pathBlock: PathBuilder.() -> Unit, animBlock: AnimationBuilder<SvgPath>.() -> Unit): SvgAnimated {
         val commands = PathBuilder().apply(pathBlock).build()
-        val animations = AnimationBuilder().apply(animBlock).build()
-        val elem = SvgAnimated(SvgPath(commands = commands), animations)
+        val path = SvgPath(commands = commands)
+        val animations = AnimationBuilder(path).apply(animBlock).build()
+        val elem = SvgAnimated(path, animations)
         elements.add(elem)
         return elem
     }
@@ -469,9 +515,10 @@ class SvgBuilder {
         return elem
     }
 
-    fun circle(cx: Number, cy: Number, r: Number, block: AnimationBuilder.() -> Unit): SvgAnimated {
-        val animations = AnimationBuilder().apply(block).build()
-        val elem = SvgAnimated(SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat()), animations)
+    inline fun circle(cx: Number, cy: Number, r: Number, block: AnimationBuilder<SvgCircle>.() -> Unit): SvgAnimated {
+        val circle = SvgCircle(cx.toFloat(), cy.toFloat(), r.toFloat())
+        val animations = AnimationBuilder(circle).apply(block).build()
+        val elem = SvgAnimated(circle, animations)
         elements.add(elem)
         return elem
     }
@@ -492,9 +539,10 @@ class SvgBuilder {
         return elem
     }
 
-    fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number, block: AnimationBuilder.() -> Unit): SvgAnimated {
-        val animations = AnimationBuilder().apply(block).build()
-        val elem = SvgAnimated(SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat()), animations)
+    inline fun ellipse(cx: Number, cy: Number, rx: Number, ry: Number, block: AnimationBuilder<SvgEllipse>.() -> Unit): SvgAnimated {
+        val ellipse = SvgEllipse(cx.toFloat(), cy.toFloat(), rx.toFloat(), ry.toFloat())
+        val animations = AnimationBuilder(ellipse).apply(block).build()
+        val elem = SvgAnimated(ellipse, animations)
         elements.add(elem)
         return elem
     }
@@ -515,9 +563,10 @@ class SvgBuilder {
         return elem
     }
 
-    fun rect(x: Number, y: Number, width: Number, height: Number, rx: Number = 0, ry: Number = rx, block: AnimationBuilder.() -> Unit): SvgAnimated {
-        val animations = AnimationBuilder().apply(block).build()
-        val elem = SvgAnimated(SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat()), animations)
+    inline fun rect(x: Number, y: Number, width: Number, height: Number, rx: Number = 0, ry: Number = rx, block: AnimationBuilder<SvgRect>.() -> Unit): SvgAnimated {
+        val rect = SvgRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat(), rx.toFloat(), ry.toFloat())
+        val animations = AnimationBuilder(rect).apply(block).build()
+        val elem = SvgAnimated(rect, animations)
         elements.add(elem)
         return elem
     }
@@ -538,9 +587,10 @@ class SvgBuilder {
         return elem
     }
 
-    fun line(x1: Number, y1: Number, x2: Number, y2: Number, block: AnimationBuilder.() -> Unit): SvgAnimated {
-        val animations = AnimationBuilder().apply(block).build()
-        val elem = SvgAnimated(SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat()), animations)
+    inline fun line(x1: Number, y1: Number, x2: Number, y2: Number, block: AnimationBuilder<SvgLine>.() -> Unit): SvgAnimated {
+        val line = SvgLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat())
+        val animations = AnimationBuilder(line).apply(block).build()
+        val elem = SvgAnimated(line, animations)
         elements.add(elem)
         return elem
     }
@@ -585,14 +635,14 @@ class SvgBuilder {
         return elem
     }
 
-    fun text(
+    inline fun text(
         text: String,
         x: Number = 0,
         y: Number = 0,
         textAnchor: TextAnchor? = null,
         dominantBaseline: DominantBaseline? = null,
         fontSize: Float? = null,
-        block: AnimationBuilder.() -> Unit
+        block: AnimationBuilder<SvgText>.() -> Unit
     ): SvgAnimated {
         val textElement = SvgText(
             text = text,
@@ -602,7 +652,7 @@ class SvgBuilder {
             dominantBaseline = dominantBaseline,
             fontSize = fontSize
         )
-        val animations = AnimationBuilder().apply(block).build()
+        val animations = AnimationBuilder(textElement).apply(block).build()
         val elem = SvgAnimated(textElement, animations)
         elements.add(elem)
         return elem
@@ -627,17 +677,19 @@ class SvgBuilder {
         return elem
     }
 
-    fun polyline(vararg points: Pair<Number, Number>, block: AnimationBuilder.() -> Unit): SvgAnimated {
+    inline fun polyline(vararg points: Pair<Number, Number>, block: AnimationBuilder<SvgPolyline>.() -> Unit): SvgAnimated {
         val offsets = points.map { Offset(it.first.toFloat(), it.second.toFloat()) }
-        val animations = AnimationBuilder().apply(block).build()
-        val elem = SvgAnimated(SvgPolyline(offsets), animations)
+        val polyline = SvgPolyline(offsets)
+        val animations = AnimationBuilder(polyline).apply(block).build()
+        val elem = SvgAnimated(polyline, animations)
         elements.add(elem)
         return elem
     }
 
-    fun polyline(points: String, block: AnimationBuilder.() -> Unit): SvgAnimated {
-        val animations = AnimationBuilder().apply(block).build()
-        val elem = SvgAnimated(SvgPolyline(parsePointsString(points)), animations)
+    inline fun polyline(points: String, block: AnimationBuilder<SvgPolyline>.() -> Unit): SvgAnimated {
+        val polyline = SvgPolyline(parsePointsString(points))
+        val animations = AnimationBuilder(polyline).apply(block).build()
+        val elem = SvgAnimated(polyline, animations)
         elements.add(elem)
         return elem
     }
@@ -661,17 +713,19 @@ class SvgBuilder {
         return elem
     }
 
-    fun polygon(vararg points: Pair<Number, Number>, block: AnimationBuilder.() -> Unit): SvgAnimated {
+    inline fun polygon(vararg points: Pair<Number, Number>, block: AnimationBuilder<SvgPolygon>.() -> Unit): SvgAnimated {
         val offsets = points.map { Offset(it.first.toFloat(), it.second.toFloat()) }
-        val animations = AnimationBuilder().apply(block).build()
-        val elem = SvgAnimated(SvgPolygon(offsets), animations)
+        val polygon = SvgPolygon(offsets)
+        val animations = AnimationBuilder(polygon).apply(block).build()
+        val elem = SvgAnimated(polygon, animations)
         elements.add(elem)
         return elem
     }
 
-    fun polygon(points: String, block: AnimationBuilder.() -> Unit): SvgAnimated {
-        val animations = AnimationBuilder().apply(block).build()
-        val elem = SvgAnimated(SvgPolygon(parsePointsString(points)), animations)
+    inline fun polygon(points: String, block: AnimationBuilder<SvgPolygon>.() -> Unit): SvgAnimated {
+        val polygon = SvgPolygon(parsePointsString(points))
+        val animations = AnimationBuilder(polygon).apply(block).build()
+        val elem = SvgAnimated(polygon, animations)
         elements.add(elem)
         return elem
     }
@@ -898,8 +952,8 @@ class SvgBuilder {
         ))
     }
 
-    fun animated(element: SvgElement, block: AnimationBuilder.() -> Unit) {
-        val animations = AnimationBuilder().apply(block).build()
+    inline fun <reified E : SvgElement> animated(element: E, block: AnimationBuilder<E>.() -> Unit) {
+        val animations = AnimationBuilder(element).apply(block).build()
         elements.add(SvgAnimated(element, animations))
     }
 
@@ -907,7 +961,8 @@ class SvgBuilder {
     // Utilities
     // ============================================
 
-    private fun parsePointsString(points: String): List<Offset> {
+    @PublishedApi
+    internal fun parsePointsString(points: String): List<Offset> {
         val numbers = points.trim()
             .split(Regex("[\\s,]+"))
             .mapNotNull { it.toFloatOrNull() }
@@ -942,11 +997,17 @@ class GradientBuilder {
 }
 
 /**
- * Builder for animations.
+ * Builder for animations with phantom type for type-safe element-specific animations.
+ *
+ * @param E The element type being animated (phantom type for compile-time safety)
+ * @param element The element being animated
  */
 @SvgDslMarker
-class AnimationBuilder {
-    private val animations = mutableListOf<SvgAnimate>()
+class AnimationBuilder<E : SvgElement> @PublishedApi internal constructor(
+    @PublishedApi internal val element: E
+) {
+    @PublishedApi
+    internal val animations = mutableListOf<SvgAnimate>()
 
     fun strokeDraw(
         dur: Duration = DefaultAnimationDuration,
@@ -1367,6 +1428,7 @@ class AnimationBuilder {
         animations.add(SvgAnimate.Y2(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
     }
 
+    /** Path data animation with explicit from/to values. */
     fun d(
         from: String,
         to: String,
@@ -1396,6 +1458,95 @@ class AnimationBuilder {
     }
 
     fun build(): List<SvgAnimate> = animations.toList()
+}
+
+// ============================================
+// Type-Safe Animation Extensions
+// ============================================
+
+/**
+ * Path morphing animation using the current path data as the starting point.
+ * Only available for SvgPath elements.
+ *
+ * Example:
+ * ```kotlin
+ * path("M10 10 L20 20") animated { morphTo("M5 15 L25 15") }
+ * ```
+ */
+fun AnimationBuilder<SvgPath>.morphTo(
+    to: String,
+    dur: Duration = DefaultAnimationDuration,
+    delay: Duration = Duration.ZERO,
+    calcMode: CalcMode = CalcMode.LINEAR,
+    keySplines: KeySplines? = null,
+    iterations: Int = SvgAnimate.INFINITE,
+    direction: AnimationDirection = AnimationDirection.NORMAL,
+    fillMode: AnimationFillMode = AnimationFillMode.NONE
+) {
+    val from = element.commands.toPathString()
+    animations.add(SvgAnimate.D(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
+}
+
+/**
+ * Path morphing animation using path builder for the target path.
+ * Only available for SvgPath elements.
+ *
+ * Example:
+ * ```kotlin
+ * path("M10 10 L20 20") animated {
+ *     morphTo { moveTo(5f, 15f); lineTo(25f, 15f) }
+ * }
+ * ```
+ */
+inline fun AnimationBuilder<SvgPath>.morphTo(
+    dur: Duration = DefaultAnimationDuration,
+    delay: Duration = Duration.ZERO,
+    calcMode: CalcMode = CalcMode.LINEAR,
+    keySplines: KeySplines? = null,
+    iterations: Int = SvgAnimate.INFINITE,
+    direction: AnimationDirection = AnimationDirection.NORMAL,
+    fillMode: AnimationFillMode = AnimationFillMode.NONE,
+    pathBlock: PathBuilder.() -> Unit
+) {
+    val from = element.commands.toPathString()
+    val to = PathBuilder().apply(pathBlock).build().toPathString()
+    animations.add(SvgAnimate.D(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
+}
+
+/**
+ * Morph points animation using the current points as the starting point.
+ * Only available for SvgPolygon elements.
+ */
+@kotlin.jvm.JvmName("morphPointsToPolygon")
+fun AnimationBuilder<SvgPolygon>.morphPointsTo(
+    to: List<Offset>,
+    dur: Duration = DefaultAnimationDuration,
+    delay: Duration = Duration.ZERO,
+    calcMode: CalcMode = CalcMode.LINEAR,
+    keySplines: KeySplines? = null,
+    iterations: Int = SvgAnimate.INFINITE,
+    direction: AnimationDirection = AnimationDirection.NORMAL,
+    fillMode: AnimationFillMode = AnimationFillMode.NONE
+) {
+    animations.add(SvgAnimate.Points(element.points, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
+}
+
+/**
+ * Morph points animation using the current points as the starting point.
+ * Only available for SvgPolyline elements.
+ */
+@kotlin.jvm.JvmName("morphPointsToPolyline")
+fun AnimationBuilder<SvgPolyline>.morphPointsTo(
+    to: List<Offset>,
+    dur: Duration = DefaultAnimationDuration,
+    delay: Duration = Duration.ZERO,
+    calcMode: CalcMode = CalcMode.LINEAR,
+    keySplines: KeySplines? = null,
+    iterations: Int = SvgAnimate.INFINITE,
+    direction: AnimationDirection = AnimationDirection.NORMAL,
+    fillMode: AnimationFillMode = AnimationFillMode.NONE
+) {
+    animations.add(SvgAnimate.Points(element.points, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
 }
 
 // ============================================

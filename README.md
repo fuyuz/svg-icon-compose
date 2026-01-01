@@ -148,17 +148,117 @@ val checkIcon = svg {
     path("M20 6L9 17l-5-5")
 }
 
-// Icon with text
-val badgeIcon = svg(viewBox = ViewBox(0f, 0f, 48f, 24f)) {
-    rect(2, 2, 44, 20, rx = 4, fill = Color.Blue)
-    text("NEW", x = 24, y = 12, fontSize = 10f, fontWeight = "bold",
-         textAnchor = TextAnchor.MIDDLE, fill = Color.White)
+// Infix styled syntax
+val styledIcon = svg {
+    circle(12, 12, 10) styled { fill = Color.Blue.withAlpha(0.3f) }
+    path("M8 12l3 3 5-6") styled {
+        stroke = Color.Green
+        strokeWidth = 3f
+    }
 }
 
-// Animated icon
+// Shared styles with withStyle
+val multiElementIcon = svg {
+    withStyle(stroke = Color.Blue, strokeWidth = 2f, strokeLinecap = LineCap.ROUND) {
+        path("M12 4v4")
+        path("M12 16v4")
+        path("M4 12h4")
+        path("M16 12h4")
+    }
+}
+
+// Transform DSL with operators
+val transformedIcon = svg {
+    rect(4, 4, 8, 8) styled {
+        fill = SvgColors.Success
+        transform = rotate(45, 8 to 8) + scale(1.2)
+    }
+}
+
+// Color extensions
+val colorfulIcon = svg {
+    circle(8, 8, 5) styled { fill = "#3B82F6".toSvgColor() }
+    circle(16, 16, 5) styled { fill = SvgColors.Error.withAlpha(0.6f) }
+}
+
+// ViewBox convenience
+val customViewBox = svg(viewBox = "0 0 100 100".toViewBox()) {
+    circle(50, 50, 40)
+}
+```
+
+### Animated Icons with Presets
+
+```kotlin
+import io.github.fuyuz.svgicon.core.dsl.Animations
+
+// Using animation presets
+val fadeInIcon = svg {
+    circle(12, 12, 10) with Animations.fadeIn
+}
+
+// Custom animations with infix syntax
 val animatedCheck = svg {
-    animatedCircle(12, 12, 10, dur = 1.seconds)
-    animatedPath("M8 12l3 3 5-6", dur = 500.milliseconds, delay = 500.milliseconds)
+    circle(12, 12, 10) animated { strokeDraw(dur = 1.seconds) }
+    path("M8 12l3 3 5-6") animated {
+        strokeDraw(dur = 500.milliseconds, delay = 1.seconds)
+    }
+}
+
+// Available presets
+Animations.fadeIn          // Fade from transparent to opaque
+Animations.fadeOut         // Fade from opaque to transparent
+Animations.spin            // Continuous rotation
+Animations.pulse           // Scale up and down
+Animations.shake           // Rotate back and forth
+Animations.bounce          // Translate up and down
+Animations.scaleIn         // Scale from 0 to 1
+Animations.strokeDraw()    // Draw stroke progressively
+```
+
+### Path Morphing (Type-Safe)
+
+```kotlin
+// morphTo with string - only available for path elements (compile-time checked)
+val morphIcon = svg {
+    path("M10 10 L20 20") animated {
+        morphTo("M5 15 L25 15", dur = 500.milliseconds)
+    }
+}
+
+// morphTo with path builder - type-safe target path
+val morphBuilderIcon = svg {
+    path("M10 10 L20 20") animated {
+        morphTo(dur = 500.milliseconds) {
+            moveTo(5f, 15f)
+            lineTo(25f, 15f)
+        }
+    }
+}
+
+// morphPointsTo for polygon/polyline
+val morphPolygon = svg {
+    polygon(12 to 2, 22 to 22, 2 to 22) animated {
+        morphPointsTo(
+            to = listOf(Offset(6f, 12f), Offset(18f, 12f), Offset(12f, 22f)),
+            dur = 500.milliseconds
+        )
+    }
+}
+```
+
+### Symbol and Use Elements
+
+```kotlin
+val iconWithSymbol = svg {
+    defs {
+        symbol(id = "checkIcon") {
+            circle(12, 12, 10)
+            path("M8 12l3 3 5-6")
+        }
+    }
+    use(href = "#checkIcon", x = 0, y = 0)
+    use(href = "#checkIcon", x = 30, y = 0)
 }
 ```
 

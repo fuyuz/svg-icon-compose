@@ -379,4 +379,67 @@ class SvgDslTest {
         assertIs<Svg>(result)
         assertEquals(1, result.children.size)
     }
+
+    @Test
+    fun testMorphToAnimation() {
+        val result = svg {
+            path("M10 10 L20 20") animated {
+                morphTo("M5 15 L25 15", dur = 500.milliseconds)
+            }
+        }
+
+        assertEquals(1, result.children.size)
+        assertIs<SvgAnimated>(result.children[0])
+        val animated = result.children[0] as SvgAnimated
+        assertIs<SvgPath>(animated.element)
+        assertEquals(1, animated.animations.size)
+        assertIs<SvgAnimate.D>(animated.animations[0])
+        val morphAnim = animated.animations[0] as SvgAnimate.D
+        // Float formatting differs between platforms (10.0 vs 10)
+        assertTrue(morphAnim.from.contains("M") && morphAnim.from.contains("L"))
+        assertEquals("M5 15 L25 15", morphAnim.to)
+        assertEquals(500.milliseconds, morphAnim.dur)
+    }
+
+    @Test
+    fun testMorphToWithPathBuilder() {
+        val result = svg {
+            path("M10 10 L20 20") animated {
+                morphTo(dur = 500.milliseconds) {
+                    moveTo(5f, 15f)
+                    lineTo(25f, 15f)
+                }
+            }
+        }
+
+        assertEquals(1, result.children.size)
+        assertIs<SvgAnimated>(result.children[0])
+        val animated = result.children[0] as SvgAnimated
+        assertIs<SvgPath>(animated.element)
+        assertEquals(1, animated.animations.size)
+        assertIs<SvgAnimate.D>(animated.animations[0])
+        val morphAnim = animated.animations[0] as SvgAnimate.D
+        // Float formatting differs between platforms (10.0 vs 10)
+        assertTrue(morphAnim.from.contains("M") && morphAnim.from.contains("L"))
+        assertTrue(morphAnim.to.contains("M") && morphAnim.to.contains("L"))
+    }
+
+    @Test
+    fun testMorphPointsToPolygon() {
+        val result = svg {
+            polygon(12 to 2, 22 to 22, 2 to 22) animated {
+                morphPointsTo(
+                    to = listOf(Offset(6f, 12f), Offset(18f, 12f), Offset(12f, 22f)),
+                    dur = 500.milliseconds
+                )
+            }
+        }
+
+        assertEquals(1, result.children.size)
+        assertIs<SvgAnimated>(result.children[0])
+        val animated = result.children[0] as SvgAnimated
+        assertIs<SvgPolygon>(animated.element)
+        assertEquals(1, animated.animations.size)
+        assertIs<SvgAnimate.Points>(animated.animations[0])
+    }
 }
