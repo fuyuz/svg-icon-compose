@@ -18,10 +18,6 @@ kotlin {
     jvm("desktop")
 
     sourceSets {
-        val commonMain by getting {
-            kotlin.srcDir(layout.buildDirectory.dir("generated/compose/resourceGenerator/kotlin/svgicons"))
-        }
-
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)

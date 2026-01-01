@@ -39,8 +39,10 @@ class IconGenerator(
     private val paintOrderClass = ClassName("io.github.fuyuz.svgicon.core", "PaintOrder")
     private val vectorEffectClass = ClassName("io.github.fuyuz.svgicon.core", "VectorEffect")
     private val svgTransformClass = ClassName("io.github.fuyuz.svgicon.core", "SvgTransform")
+    private val viewBoxClass = ClassName("io.github.fuyuz.svgicon.core", "ViewBox")
     private val millisecondsProperty = MemberName("kotlin.time.Duration.Companion", "milliseconds")
     private val colorClass = ClassName("androidx.compose.ui.graphics", "Color")
+    private val offsetClass = ClassName("androidx.compose.ui.geometry", "Offset")
 
     fun generateIcons(svgDir: File, packageName: String, outputDir: File): List<String> {
         val iconNames = mutableListOf<String>()
@@ -149,11 +151,30 @@ class IconGenerator(
         builder.add("%T(\n", svgClass)
         builder.indent()
 
-        if (svg.width != 24) builder.add("width = %L,\n", svg.width)
-        if (svg.height != 24) builder.add("height = %L,\n", svg.height)
-        if (svg.viewBox != "0 0 24 24") builder.add("viewBox = %S,\n", svg.viewBox)
-        if (svg.fill != "none") builder.add("fill = %S,\n", svg.fill)
-        if (svg.stroke != "currentColor") builder.add("stroke = %S,\n", svg.stroke)
+        // Generate viewBox as ViewBox type
+        val viewBoxParts = svg.viewBox.split(" ", ",").mapNotNull { it.trim().toFloatOrNull() }
+        val isDefaultViewBox = viewBoxParts.size == 4 &&
+            viewBoxParts[0] == 0f && viewBoxParts[1] == 0f &&
+            viewBoxParts[2] == 24f && viewBoxParts[3] == 24f
+        if (!isDefaultViewBox) {
+            if (viewBoxParts.size == 4) {
+                builder.add("viewBox = %T(%Lf, %Lf, %Lf, %Lf),\n",
+                    viewBoxClass, viewBoxParts[0], viewBoxParts[1], viewBoxParts[2], viewBoxParts[3])
+            }
+        }
+
+        // Generate fill as Color type
+        if (svg.fill != "none") {
+            builder.add(generateSvgColorCodeBlock("fill", svg.fill))
+            builder.add(",\n")
+        }
+
+        // Generate stroke as Color type
+        if (svg.stroke != "currentColor") {
+            builder.add(generateSvgColorCodeBlock("stroke", svg.stroke))
+            builder.add(",\n")
+        }
+
         if (svg.strokeWidth != 2f) builder.add("strokeWidth = %Lf,\n", svg.strokeWidth)
         if (svg.strokeLinecap != LineCap.ROUND) {
             builder.add("strokeLinecap = %T.%L,\n", lineCapClass, svg.strokeLinecap.name)
@@ -174,6 +195,30 @@ class IconGenerator(
         builder.unindent()
         builder.add("\n)")
         return builder.build()
+    }
+
+    /**
+     * Generate color code block for Svg root element attributes.
+     * - "none" -> null
+     * - "currentColor" -> Color.Unspecified
+     * - "#RRGGBB" -> Color(0xFFRRGGBB)
+     */
+    private fun generateSvgColorCodeBlock(name: String, colorStr: String): CodeBlock {
+        return when {
+            colorStr == "none" -> CodeBlock.of("%L = null", name)
+            colorStr == "currentColor" -> CodeBlock.of("%L = %T.Unspecified", name, colorClass)
+            colorStr.startsWith("#") -> {
+                val hex = colorStr.removePrefix("#")
+                val colorValue = when (hex.length) {
+                    3 -> "FF${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}".uppercase()
+                    6 -> "FF${hex}".uppercase()
+                    8 -> hex.uppercase()
+                    else -> "FF000000"
+                }
+                CodeBlock.of("%L = %T(0x${colorValue})", name, colorClass)
+            }
+            else -> CodeBlock.of("%L = %T.Unspecified", name, colorClass)
+        }
     }
 
     private fun generateElementCodeBlock(element: SvgElement): CodeBlock {
@@ -246,7 +291,7 @@ class IconGenerator(
         val builder = CodeBlock.builder()
         builder.add("%T(listOf(", svgPolylineClass)
         polyline.points.forEachIndexed { index, (x, y) ->
-            builder.add("%Lf to %Lf", x, y)
+            builder.add("%T(%Lf, %Lf)", offsetClass, x, y)
             if (index < polyline.points.size - 1) builder.add(", ")
         }
         builder.add("))")
@@ -257,7 +302,7 @@ class IconGenerator(
         val builder = CodeBlock.builder()
         builder.add("%T(listOf(", svgPolygonClass)
         polygon.points.forEachIndexed { index, (x, y) ->
-            builder.add("%Lf to %Lf", x, y)
+            builder.add("%T(%Lf, %Lf)", offsetClass, x, y)
             if (index < polygon.points.size - 1) builder.add(", ")
         }
         builder.add("))")

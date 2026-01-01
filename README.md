@@ -104,23 +104,7 @@ src/commonMain/svgicons/
 
 ### 2. Configure code generation (optional)
 
-The plugin works with sensible defaults. Just apply the plugin and you're done:
-
-```kotlin
-plugins {
-    id("io.github.fuyuz.svgicon") version "0.1.0"
-}
-
-kotlin {
-    sourceSets {
-        commonMain {
-            kotlin.srcDir(layout.buildDirectory.dir("generated/compose/resourceGenerator/kotlin/svgicons"))
-        }
-    }
-}
-```
-
-For custom configuration:
+The plugin works with sensible defaults and automatically configures source sets. For custom configuration:
 
 ```kotlin
 import io.github.fuyuz.svgicon.gradle.IconVisibility
