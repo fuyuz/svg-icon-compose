@@ -887,6 +887,101 @@ fun App() {
                         Text("Circle (string)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 }
+
+                Text(
+                    "Inline CSS style attribute:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Inline style: fill color
+                    val inlineStyleFill = remember {
+                        parseSvg("""
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" style="fill:#3B82F6; stroke:#1E40AF; stroke-width:2"/>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = inlineStyleFill,
+                            contentDescription = "Inline Fill",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("style=\"fill:...\"", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Inline style: multiple properties
+                    val inlineStyleMultiple = remember {
+                        parseSvg("""
+                            <svg viewBox="0 0 24 24">
+                                <rect x="4" y="4" width="16" height="16" rx="2" style="fill:#22C55E; stroke:#166534; stroke-width:2; opacity:0.8"/>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = inlineStyleMultiple,
+                            contentDescription = "Multiple Styles",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("Multiple props", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Inline style: stroke-dasharray
+                    val inlineStyleDashed = remember {
+                        parseSvg("""
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="9" style="fill:none; stroke:#F59E0B; stroke-width:2; stroke-dasharray:4,2"/>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = inlineStyleDashed,
+                            contentDescription = "Dashed",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("stroke-dasharray", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // CSS overrides XML attribute
+                    val cssOverride = remember {
+                        parseSvg("""
+                            <svg viewBox="0 0 24 24">
+                                <path d="M20 6L9 17l-5-5" stroke="blue" style="stroke:#EF4444; stroke-width:3; stroke-linecap:round"/>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SvgIcon(
+                            svg = cssOverride,
+                            contentDescription = "CSS Override",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color.Unspecified
+                        )
+                        Text("CSS > XML", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                }
             }
         }
     }

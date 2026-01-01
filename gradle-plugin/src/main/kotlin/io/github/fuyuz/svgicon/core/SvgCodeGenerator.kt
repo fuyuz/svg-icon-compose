@@ -503,17 +503,53 @@ object SvgCodeGenerator {
     // Style Wrapping
     // ============================================
 
+    /**
+     * Parses CSS inline style string into a Map.
+     * Example: "fill:red; stroke:blue; stroke-width:2" -> {fill=red, stroke=blue, stroke-width=2}
+     */
+    private fun parseCssStyleAttribute(styleStr: String?): Map<String, String> {
+        if (styleStr.isNullOrBlank()) return emptyMap()
+
+        val cssProperties = mutableMapOf<String, String>()
+        val declarations = styleStr.split(";")
+
+        for (declaration in declarations) {
+            val colonIndex = declaration.indexOf(':')
+            if (colonIndex > 0) {
+                val property = declaration.substring(0, colonIndex).trim().lowercase()
+                val value = declaration.substring(colonIndex + 1).trim()
+                if (property.isNotEmpty() && value.isNotEmpty()) {
+                    cssProperties[property] = value
+                }
+            }
+        }
+
+        return cssProperties
+    }
+
     private fun wrapWithStyle(element: CodeBlock, attrs: Map<String, String>): CodeBlock {
+        // Parse inline style attribute if present and merge with XML attributes
+        // CSS style takes precedence over XML attributes
+        val cssStyles = parseCssStyleAttribute(attrs["style"])
+        val mergedAttrs = if (cssStyles.isNotEmpty()) {
+            attrs.toMutableMap().apply {
+                putAll(cssStyles)
+                remove("style")
+            }
+        } else {
+            attrs
+        }
+
         val styleParts = mutableListOf<CodeBlock>()
 
-        attrs["fill"]?.let { styleParts.add(generateColorCodeBlock("fill", it)) }
-        attrs["stroke"]?.let { styleParts.add(generateColorCodeBlock("stroke", it)) }
-        attrs["stroke-width"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeWidth = %Lf", it)) }
-        attrs["opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("opacity = %Lf", it)) }
-        attrs["fill-opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("fillOpacity = %Lf", it)) }
-        attrs["stroke-opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeOpacity = %Lf", it)) }
+        mergedAttrs["fill"]?.let { styleParts.add(generateColorCodeBlock("fill", it)) }
+        mergedAttrs["stroke"]?.let { styleParts.add(generateColorCodeBlock("stroke", it)) }
+        mergedAttrs["stroke-width"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeWidth = %Lf", it)) }
+        mergedAttrs["opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("opacity = %Lf", it)) }
+        mergedAttrs["fill-opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("fillOpacity = %Lf", it)) }
+        mergedAttrs["stroke-opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeOpacity = %Lf", it)) }
 
-        attrs["stroke-linecap"]?.lowercase()?.let { cap ->
+        mergedAttrs["stroke-linecap"]?.lowercase()?.let { cap ->
             val capName = when (cap) {
                 "butt" -> "BUTT"
                 "square" -> "SQUARE"
@@ -523,7 +559,7 @@ object SvgCodeGenerator {
             capName?.let { styleParts.add(CodeBlock.of("strokeLinecap = %T.%L", lineCapClass, it)) }
         }
 
-        attrs["stroke-linejoin"]?.lowercase()?.let { join ->
+        mergedAttrs["stroke-linejoin"]?.lowercase()?.let { join ->
             val joinName = when (join) {
                 "miter" -> "MITER"
                 "bevel" -> "BEVEL"
@@ -533,7 +569,7 @@ object SvgCodeGenerator {
             joinName?.let { styleParts.add(CodeBlock.of("strokeLinejoin = %T.%L", lineJoinClass, it)) }
         }
 
-        attrs["fill-rule"]?.lowercase()?.let { rule ->
+        mergedAttrs["fill-rule"]?.lowercase()?.let { rule ->
             val ruleName = when (rule) {
                 "evenodd" -> "EVENODD"
                 "nonzero" -> "NONZERO"
