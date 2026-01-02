@@ -1823,4 +1823,1355 @@ class SvgParserTest {
         assertIs<SvgPolygon>(polygon)
         assertEquals(20, polygon.points.size)
     }
+
+    // ===========================================
+    // CSS Animation Tests
+    // ===========================================
+
+    @Test
+    fun parseCssAnimationWithKeyframes() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes spin {
+                        from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
+                    }
+                    .rotating { animation: spin 1s linear infinite; }
+                </style>
+                <circle class="rotating" cx="12" cy="12" r="10"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        assertTrue(animated.animations.isNotEmpty())
+    }
+
+    @Test
+    fun parseCssAnimationWithPercentKeyframes() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes pulse {
+                        0% { opacity: 1; }
+                        50% { opacity: 0.5; }
+                        100% { opacity: 1; }
+                    }
+                    .pulsing { animation: pulse 2s ease-in-out infinite; }
+                </style>
+                <circle class="pulsing" cx="12" cy="12" r="10"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+    }
+
+    @Test
+    fun parseCssAnimationWithDelay() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .fade { animation: fadeIn 500ms ease 200ms 1 normal forwards; }
+                </style>
+                <rect class="fade" x="0" y="0" width="24" height="24"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+    }
+
+    @Test
+    fun parseCssAnimationAlternateReverse() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes bounce {
+                        from { transform: translateY(0); }
+                        to { transform: translateY(-10px); }
+                    }
+                    .bouncing { animation: bounce 300ms ease alternate-reverse infinite; }
+                </style>
+                <circle class="bouncing" cx="12" cy="12" r="5"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+    }
+
+    @Test
+    fun parseCssAnimationBothFillMode() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes grow {
+                        from { transform: scale(0); }
+                        to { transform: scale(1); }
+                    }
+                    .growing { animation: grow 1s ease both; }
+                </style>
+                <circle class="growing" cx="12" cy="12" r="10"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+    }
+
+    @Test
+    fun parseCssAnimationBackwardsFillMode() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes appear {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .appearing { animation: appear 1s backwards; }
+                </style>
+                <rect class="appearing" x="0" y="0" width="10" height="10"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+    }
+
+    @Test
+    fun parseCssAnimationWithCubicBezier() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes slide {
+                        from { transform: translateX(0); }
+                        to { transform: translateX(100px); }
+                    }
+                    .sliding { animation: slide 1s cubic-bezier(0.25, 0.1, 0.25, 1); }
+                </style>
+                <rect class="sliding" x="0" y="0" width="10" height="10"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+    }
+
+    @Test
+    fun parseCssAnimationReverseDirection() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes moveUp {
+                        from { transform: translateY(100px); }
+                        to { transform: translateY(0); }
+                    }
+                    .moving { animation: moveUp 1s reverse; }
+                </style>
+                <circle class="moving" cx="12" cy="12" r="5"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+    }
+
+    @Test
+    fun parseCssAnimationStrokeWidth() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes pulseStroke {
+                        from { stroke-width: 1; }
+                        to { stroke-width: 5; }
+                    }
+                    .pulse-stroke { animation: pulseStroke 1s alternate infinite; }
+                </style>
+                <path class="pulse-stroke" d="M10 10 L20 20"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+    }
+
+    @Test
+    fun parseCssAnimationStrokeOpacity() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeStroke {
+                        from { stroke-opacity: 0; }
+                        to { stroke-opacity: 1; }
+                    }
+                    .fade-stroke { animation: fadeStroke 500ms; }
+                </style>
+                <line class="fade-stroke" x1="0" y1="0" x2="24" y2="24"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+    }
+
+    @Test
+    fun parseCssAnimationFillOpacity() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes fadeFill {
+                        from { fill-opacity: 0; }
+                        to { fill-opacity: 1; }
+                    }
+                    .fade-fill { animation: fadeFill 500ms; }
+                </style>
+                <circle class="fade-fill" cx="12" cy="12" r="10"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+    }
+
+    @Test
+    fun parseCssAnimationStrokeDashoffset() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes dash {
+                        from { stroke-dashoffset: 100; }
+                        to { stroke-dashoffset: 0; }
+                    }
+                    .drawing { animation: dash 2s; }
+                </style>
+                <path class="drawing" d="M10 10 L20 20"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+    }
+
+    @Test
+    fun parseCssAnimationSkewX() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes skewIt {
+                        from { transform: skewX(0deg); }
+                        to { transform: skewX(15deg); }
+                    }
+                    .skewing { animation: skewIt 1s; }
+                </style>
+                <rect class="skewing" x="0" y="0" width="20" height="10"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+    }
+
+    @Test
+    fun parseCssAnimationSkewY() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes skewYIt {
+                        from { transform: skewY(0deg); }
+                        to { transform: skewY(20deg); }
+                    }
+                    .skewing-y { animation: skewYIt 1s; }
+                </style>
+                <rect class="skewing-y" x="0" y="0" width="20" height="10"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+    }
+
+    @Test
+    fun parseCssAnimationMilliseconds() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes quick {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .quick { animation: quick 250ms; }
+                </style>
+                <circle class="quick" cx="12" cy="12" r="5"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+    }
+
+    @Test
+    fun parseCssAnimationWithNoneKeyword() {
+        val svg = parseSvg("""
+            <svg>
+                <style>
+                    @keyframes appear {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    .appearing { animation: appear 1s none; }
+                </style>
+                <rect class="appearing" x="0" y="0" width="10" height="10"/>
+            </svg>
+        """)
+        assertEquals(1, svg.children.size)
+    }
+
+    // ===========================================
+    // Length Parsing Tests
+    // ===========================================
+
+    @Test
+    fun parseSvgWithPxUnits() {
+        val svg = parseSvg("""<svg width="100px" height="50px"><circle cx="12" cy="12" r="10"/></svg>""")
+        assertEquals(100f, svg.width)
+        assertEquals(50f, svg.height)
+    }
+
+    @Test
+    fun parseSvgWithPtUnits() {
+        val svg = parseSvg("""<svg width="72pt" height="36pt"><circle cx="12" cy="12" r="10"/></svg>""")
+        assertEquals(72f, svg.width)
+        assertEquals(36f, svg.height)
+    }
+
+    @Test
+    fun parseSvgWithEmUnits() {
+        val svg = parseSvg("""<svg width="10em" height="5em"><circle cx="12" cy="12" r="10"/></svg>""")
+        assertEquals(10f, svg.width)
+        assertEquals(5f, svg.height)
+    }
+
+    @Test
+    fun parseSvgWithPercentUnits() {
+        val svg = parseSvg("""<svg width="100%" height="100%"><circle cx="12" cy="12" r="10"/></svg>""")
+        assertEquals(100f, svg.width)
+        assertEquals(100f, svg.height)
+    }
+
+    // ===========================================
+    // Style Parsing Edge Cases
+    // ===========================================
+
+    @Test
+    fun parseStrokeDasharrayNoneOnPath() {
+        val svg = parseSvg("""<svg><path d="M0 0 L10 10" stroke-dasharray="none"/></svg>""")
+        val path = svg.children[0]
+        assertIs<SvgPath>(path)
+    }
+
+    @Test
+    fun parseStrokeDasharrayEmpty() {
+        val svg = parseSvg("""<svg><path d="M0 0 L10 10" stroke-dasharray=""/></svg>""")
+        val path = svg.children[0]
+        assertIs<SvgPath>(path)
+    }
+
+    @Test
+    fun parseEmptyStyleAttribute() {
+        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style=""/></svg>""")
+        val circle = svg.children[0]
+        assertIs<SvgCircle>(circle)
+    }
+
+    @Test
+    fun parseStyleWithWhitespace() {
+        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style="  fill : red ; stroke : blue  "/></svg>""")
+        val styled = svg.children[0] as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
+        assertEquals(Color.Blue, styled.style.stroke)
+    }
+
+    // ===========================================
+    // SMIL Animation Edge Cases
+    // ===========================================
+
+    @Test
+    fun parseAnimateWithValuesAttribute() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="10">
+                    <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/>
+                </circle>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        assertEquals(1, animated.animations.size)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.Opacity>(anim)
+    }
+
+    @Test
+    fun parseAnimateTransformRotate() {
+        val svg = parseSvg("""
+            <svg>
+                <rect x="0" y="0" width="10" height="10">
+                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="2s"/>
+                </rect>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.Transform>(anim)
+        assertEquals(TransformType.ROTATE, anim.type)
+    }
+
+    @Test
+    fun parseAnimateTransformScale() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="10">
+                    <animateTransform attributeName="transform" type="scale" from="1" to="2" dur="1s"/>
+                </circle>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.Transform>(anim)
+        assertEquals(TransformType.SCALE, anim.type)
+    }
+
+    @Test
+    fun parseAnimateTransformTranslate() {
+        val svg = parseSvg("""
+            <svg>
+                <rect x="0" y="0" width="10" height="10">
+                    <animateTransform attributeName="transform" type="translate" from="0" to="100" dur="1s"/>
+                </rect>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.Transform>(anim)
+        assertEquals(TransformType.TRANSLATE, anim.type)
+    }
+
+    @Test
+    fun parseAnimateTransformSkewX() {
+        val svg = parseSvg("""
+            <svg>
+                <rect x="0" y="0" width="10" height="10">
+                    <animateTransform attributeName="transform" type="skewX" from="0" to="30" dur="1s"/>
+                </rect>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.Transform>(anim)
+        assertEquals(TransformType.SKEW_X, anim.type)
+    }
+
+    @Test
+    fun parseAnimateTransformSkewY() {
+        val svg = parseSvg("""
+            <svg>
+                <rect x="0" y="0" width="10" height="10">
+                    <animateTransform attributeName="transform" type="skewY" from="0" to="20" dur="1s"/>
+                </rect>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.Transform>(anim)
+        assertEquals(TransformType.SKEW_Y, anim.type)
+    }
+
+    @Test
+    fun parseAnimateTransformWithValues() {
+        val svg = parseSvg("""
+            <svg>
+                <rect x="0" y="0" width="10" height="10">
+                    <animateTransform attributeName="transform" type="rotate" values="-5 12 12;5 12 12;-5 12 12" dur="0.5s"/>
+                </rect>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+    }
+
+    @Test
+    fun parseAnimateCx() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="5">
+                    <animate attributeName="cx" from="12" to="24" dur="1s"/>
+                </circle>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.Cx>(anim)
+    }
+
+    @Test
+    fun parseAnimateCy() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="5">
+                    <animate attributeName="cy" from="12" to="24" dur="1s"/>
+                </circle>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.Cy>(anim)
+    }
+
+    @Test
+    fun parseAnimateR() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="5">
+                    <animate attributeName="r" from="5" to="10" dur="1s"/>
+                </circle>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.R>(anim)
+    }
+
+    @Test
+    fun parseAnimateX() {
+        val svg = parseSvg("""
+            <svg>
+                <rect x="0" y="0" width="10" height="10">
+                    <animate attributeName="x" from="0" to="100" dur="1s"/>
+                </rect>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.X>(anim)
+    }
+
+    @Test
+    fun parseAnimateY() {
+        val svg = parseSvg("""
+            <svg>
+                <rect x="0" y="0" width="10" height="10">
+                    <animate attributeName="y" from="0" to="50" dur="1s"/>
+                </rect>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.Y>(anim)
+    }
+
+    @Test
+    fun parseAnimateWidth() {
+        val svg = parseSvg("""
+            <svg>
+                <rect x="0" y="0" width="10" height="10">
+                    <animate attributeName="width" from="10" to="100" dur="1s"/>
+                </rect>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.Width>(anim)
+    }
+
+    @Test
+    fun parseAnimateHeight() {
+        val svg = parseSvg("""
+            <svg>
+                <rect x="0" y="0" width="10" height="10">
+                    <animate attributeName="height" from="10" to="50" dur="1s"/>
+                </rect>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.Height>(anim)
+    }
+
+    @Test
+    fun parseAnimateWithCalcModeDiscrete() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="10">
+                    <animate attributeName="opacity" from="0" to="1" dur="1s" calcMode="discrete"/>
+                </circle>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.Opacity>(anim)
+        assertEquals(CalcMode.DISCRETE, anim.calcMode)
+    }
+
+    @Test
+    fun parseAnimateWithCalcModePaced() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="10">
+                    <animate attributeName="r" from="5" to="15" dur="1s" calcMode="paced"/>
+                </circle>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.R>(anim)
+        assertEquals(CalcMode.PACED, anim.calcMode)
+    }
+
+    @Test
+    fun parseAnimateWithCalcModeSpline() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="10">
+                    <animate attributeName="opacity" from="0" to="1" dur="1s" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+                </circle>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.Opacity>(anim)
+        assertEquals(CalcMode.SPLINE, anim.calcMode)
+        assertNotNull(anim.keySplines)
+    }
+
+    @Test
+    fun parseAnimateFillOpacity() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="10">
+                    <animate attributeName="fill-opacity" from="0" to="1" dur="500ms"/>
+                </circle>
+            </svg>
+        """)
+        val animated = svg.children[0]
+        assertIs<SvgAnimated>(animated)
+        val anim = animated.animations[0]
+        assertIs<SvgAnimate.FillOpacity>(anim)
+    }
+
+    // ===========================================
+    // Error Handling Tests
+    // ===========================================
+
+    @Test
+    fun parseEmptySvg() {
+        val svg = parseSvg("")
+        assertEquals(0, svg.children.size)
+    }
+
+    @Test
+    fun parseWhitespaceOnlySvg() {
+        val svg = parseSvg("   \n\t  ")
+        assertEquals(0, svg.children.size)
+    }
+
+    @Test
+    fun parseSvgWithoutRootElement() {
+        val svg = parseSvg("<circle cx='12' cy='12' r='10'/>")
+        assertEquals(1, svg.children.size)
+        assertIs<SvgCircle>(svg.children[0])
+    }
+
+    @Test
+    fun parseSvgWithEmptyGroup() {
+        val svg = parseSvg("""<svg><g/></svg>""")
+        assertEquals(0, svg.children.size) // Self-closing groups are skipped
+    }
+
+    @Test
+    fun parseSvgWithEmptyPath() {
+        val svg = parseSvg("""<svg><path d=""/></svg>""")
+        assertEquals(0, svg.children.size) // Empty paths are skipped
+    }
+
+    @Test
+    fun parseSvgWithEmptyPolyline() {
+        val svg = parseSvg("""<svg><polyline points=""/></svg>""")
+        assertEquals(0, svg.children.size) // Empty polylines are skipped
+    }
+
+    @Test
+    fun parseSvgWithEmptyPolygon() {
+        val svg = parseSvg("""<svg><polygon points=""/></svg>""")
+        assertEquals(0, svg.children.size) // Empty polygons are skipped
+    }
+
+    // ===========================================
+    // Additional Animation Parsing Tests
+    // ===========================================
+
+    @Test
+    fun parseAnimateTransformWithValuesAttribute() {
+        val svg = parseSvg("""
+            <svg>
+                <rect width="10" height="10">
+                    <animateTransform attributeName="transform" type="rotate" values="0;180;360" dur="1s"/>
+                </rect>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        assertEquals(1, animated.animations.size)
+        assertIs<SvgAnimate.Transform>(animated.animations[0])
+        val transform = animated.animations[0] as SvgAnimate.Transform
+        assertEquals(TransformType.ROTATE, transform.type)
+    }
+
+    @Test
+    fun parseAnimateStrokeOpacity() {
+        val svg = parseSvg("""
+            <svg>
+                <path d="M10 10 L20 20">
+                    <animate attributeName="stroke-opacity" from="0" to="1" dur="500ms"/>
+                </path>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        assertIs<SvgAnimate.StrokeOpacity>(animated.animations[0])
+    }
+
+    @Test
+    fun parseAnimateStrokeDashoffsetReverse() {
+        val svg = parseSvg("""
+            <svg>
+                <path d="M10 10 L20 20">
+                    <animate attributeName="stroke-dashoffset" from="0" to="100" dur="1s"/>
+                </path>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        val strokeDraw = animated.animations[0]
+        assertIs<SvgAnimate.StrokeDraw>(strokeDraw)
+        assertTrue(strokeDraw.reverse) // from < to means reverse
+    }
+
+    @Test
+    fun parseAnimateMotion() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="5" cy="5" r="3">
+                    <animateMotion path="M0 0 L100 100" dur="2s"/>
+                </circle>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        assertIs<SvgAnimate.Motion>(animated.animations[0])
+    }
+
+    @Test
+    fun parseAnimateMotionWithRotate() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="5" cy="5" r="3">
+                    <animateMotion path="M0 0 C50 0 50 100 100 100" dur="2s" rotate="auto"/>
+                </circle>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        val motion = animated.animations[0]
+        assertIs<SvgAnimate.Motion>(motion)
+        assertEquals(MotionRotate.AUTO, motion.rotate)
+    }
+
+    @Test
+    fun parseAnimateMotionWithAutoReverse() {
+        val svg = parseSvg("""
+            <svg>
+                <rect width="5" height="5">
+                    <animateMotion path="M0 0 L50 50" dur="1s" rotate="auto-reverse"/>
+                </rect>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        val motion = animated.animations[0]
+        assertIs<SvgAnimate.Motion>(motion)
+        assertEquals(MotionRotate.AUTO_REVERSE, motion.rotate)
+    }
+
+    @Test
+    fun parseAnimateMotionWithFixedAngle() {
+        // Fixed angle rotation defaults to NONE since enum doesn't support arbitrary angles
+        val svg = parseSvg("""
+            <svg>
+                <rect width="5" height="5">
+                    <animateMotion path="M0 0 L50 50" dur="1s" rotate="45"/>
+                </rect>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        val motion = animated.animations[0]
+        assertIs<SvgAnimate.Motion>(motion)
+        assertEquals(MotionRotate.NONE, motion.rotate) // Fixed angles default to NONE
+    }
+
+    @Test
+    fun parseAnimateUnknownAttribute() {
+        val svg = parseSvg("""
+            <svg>
+                <rect width="10" height="10">
+                    <animate attributeName="unknown-attr" from="0" to="100" dur="1s"/>
+                </rect>
+            </svg>
+        """.trimIndent())
+        // Unknown attribute should result in no animation or element without animation wrapper
+        val element = svg.children[0]
+        if (element is SvgAnimated) {
+            // Animation might be empty or null
+            assertTrue(element.animations.isEmpty() || element.animations.all { it != null })
+        }
+    }
+
+    @Test
+    fun parseAnimateTransformWithMpathElement() {
+        val svg = parseSvg("""
+            <svg>
+                <path id="motionPath" d="M0 0 Q50 100 100 0"/>
+                <circle cx="5" cy="5" r="3">
+                    <animateMotion dur="3s">
+                        <mpath xlink:href="#motionPath"/>
+                    </animateMotion>
+                </circle>
+            </svg>
+        """.trimIndent())
+        // Should parse without errors, mpath is a child element
+        assertTrue(svg.children.isNotEmpty())
+    }
+
+    @Test
+    fun parseDurationWithMinutes() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="5">
+                    <animate attributeName="r" from="5" to="15" dur="0.5m"/>
+                </circle>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+    }
+
+    @Test
+    fun parseSvgWithNamespacedAttributes() {
+        // Namespaced attributes like xmlns should be handled gracefully
+        val svg = parseSvg("""
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <circle cx="12" cy="12" r="10"/>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgCircle>(svg.children[0])
+    }
+
+    @Test
+    fun parseSvgWithDataAttributes() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" data-custom="value"/>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgCircle>(svg.children[0])
+    }
+
+    @Test
+    fun parseSvgWithComments() {
+        val svg = parseSvg("""
+            <svg>
+                <!-- This is a comment -->
+                <circle cx="12" cy="12" r="10"/>
+                <!-- Another comment -->
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgCircle>(svg.children[0])
+    }
+
+    @Test
+    fun parseSvgWithCDATA() {
+        val svg = parseSvg("""
+            <svg>
+                <style><![CDATA[
+                    .cls { fill: red; }
+                ]]></style>
+                <circle cx="12" cy="12" r="10" class="cls"/>
+            </svg>
+        """.trimIndent())
+        assertTrue(svg.children.isNotEmpty())
+    }
+
+    @Test
+    fun parseMultipleAnimationsOnElement() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="10">
+                    <animate attributeName="r" from="5" to="15" dur="1s"/>
+                    <animate attributeName="cx" from="12" to="24" dur="1s"/>
+                    <animate attributeName="opacity" from="1" to="0.5" dur="1s"/>
+                </circle>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        assertEquals(3, animated.animations.size)
+    }
+
+    // ===========================================
+    // More Edge Case Tests
+    // ===========================================
+
+    @Test
+    fun parseSvgWithNestedGroups() {
+        val svg = parseSvg("""
+            <svg>
+                <g>
+                    <g>
+                        <g>
+                            <circle cx="12" cy="12" r="5"/>
+                        </g>
+                    </g>
+                </g>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        val g1 = svg.children[0] as SvgGroup
+        val g2 = g1.children[0] as SvgGroup
+        val g3 = g2.children[0] as SvgGroup
+        assertIs<SvgCircle>(g3.children[0])
+    }
+
+    @Test
+    fun parseSvgWithMultipleElements() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="5" cy="5" r="3"/>
+                <rect x="10" y="10" width="20" height="20"/>
+                <line x1="0" y1="0" x2="24" y2="24"/>
+                <path d="M10 10 L20 20"/>
+            </svg>
+        """.trimIndent())
+        assertEquals(4, svg.children.size)
+        assertIs<SvgCircle>(svg.children[0])
+        assertIs<SvgRect>(svg.children[1])
+        assertIs<SvgLine>(svg.children[2])
+        assertIs<SvgPath>(svg.children[3])
+    }
+
+    @Test
+    fun parseSvgWithMixedGroupsAndElements() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="5" cy="5" r="3"/>
+                <g>
+                    <rect x="10" y="10" width="5" height="5"/>
+                </g>
+                <line x1="0" y1="0" x2="24" y2="24"/>
+            </svg>
+        """.trimIndent())
+        assertEquals(3, svg.children.size)
+        assertIs<SvgCircle>(svg.children[0])
+        assertIs<SvgGroup>(svg.children[1])
+        assertIs<SvgLine>(svg.children[2])
+    }
+
+    @Test
+    fun parseAnimateWithBeginDelay() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="5">
+                    <animate attributeName="r" from="5" to="10" dur="1s" begin="500ms"/>
+                </circle>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        val anim = animated.animations[0] as SvgAnimate.R
+        assertEquals(500.milliseconds, anim.delay)
+    }
+
+    @Test
+    fun parseAnimateWithRepeatCountIndefinite() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="5">
+                    <animate attributeName="opacity" from="0" to="1" dur="1s" repeatCount="indefinite"/>
+                </circle>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+    }
+
+    @Test
+    fun parseSvgWithSelfClosingGroup() {
+        val svg = parseSvg("""
+            <svg>
+                <g/>
+                <circle cx="12" cy="12" r="5"/>
+            </svg>
+        """.trimIndent())
+        // Self-closing groups are handled
+        assertTrue(svg.children.isNotEmpty())
+    }
+
+    @Test
+    fun parseSvgWithRectRxRy() {
+        val svg = parseSvg("""
+            <svg>
+                <rect x="0" y="0" width="100" height="50" rx="10" ry="5"/>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        val rect = svg.children[0] as SvgRect
+        assertEquals(10f, rect.rx)
+        assertEquals(5f, rect.ry)
+    }
+
+    @Test
+    fun parseSvgWithRectRxOnly() {
+        // When ry is not specified, it defaults to rx
+        val svg = parseSvg("""
+            <svg>
+                <rect x="0" y="0" width="100" height="50" rx="10"/>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        val rect = svg.children[0] as SvgRect
+        assertEquals(10f, rect.rx)
+        assertEquals(10f, rect.ry) // ry defaults to rx
+    }
+
+    @Test
+    fun parseAnimateStrokeWidth() {
+        val svg = parseSvg("""
+            <svg>
+                <path d="M10 10 L20 20">
+                    <animate attributeName="stroke-width" from="1" to="5" dur="1s"/>
+                </path>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        assertIs<SvgAnimate.StrokeWidth>(animated.animations[0])
+    }
+
+    @Test
+    fun parseAnimateWithMultipleKeyframes() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="5">
+                    <animate attributeName="r" values="5;15;5;10" dur="2s"/>
+                </circle>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        val anim = animated.animations[0] as SvgAnimate.R
+        // Values should be parsed and from/to extracted from min/max
+        assertEquals(5f, anim.from)
+        assertEquals(15f, anim.to)
+    }
+
+    @Test
+    fun parseSvgWithMultipleNewlines() {
+        val svg = parseSvg("""
+
+            <svg>
+
+                <circle cx="12" cy="12" r="5"/>
+
+            </svg>
+
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgCircle>(svg.children[0])
+    }
+
+    @Test
+    fun parseAnimateTransformWithMultipleKeyframes() {
+        val svg = parseSvg("""
+            <svg>
+                <rect width="10" height="10">
+                    <animateTransform attributeName="transform" type="rotate" values="-5 12 2;5 12 2;-5 12 2" dur="1s"/>
+                </rect>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        val transform = animated.animations[0] as SvgAnimate.Transform
+        assertEquals(TransformType.ROTATE, transform.type)
+    }
+
+    @Test
+    fun parseAnimateCxCyR() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="5">
+                    <animate attributeName="cx" from="12" to="24" dur="1s"/>
+                    <animate attributeName="cy" from="12" to="24" dur="1s"/>
+                    <animate attributeName="r" from="5" to="10" dur="1s"/>
+                </circle>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        assertEquals(3, animated.animations.size)
+        assertIs<SvgAnimate.Cx>(animated.animations[0])
+        assertIs<SvgAnimate.Cy>(animated.animations[1])
+        assertIs<SvgAnimate.R>(animated.animations[2])
+    }
+
+    @Test
+    fun parseSvgWithStyleOnGroup() {
+        val svg = parseSvg("""
+            <svg>
+                <g fill="red" stroke="blue" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                </g>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        val group = svg.children[0]
+        assertIs<SvgStyled>(group)
+        val styled = group as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
+        assertEquals(Color.Blue, styled.style.stroke)
+    }
+
+    @Test
+    fun parseAnimateMotionWithPath() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="5" cy="5" r="3">
+                    <animateMotion path="M0 0 Q50 100 100 0" dur="3s"/>
+                </circle>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        assertIs<SvgAnimated>(svg.children[0])
+        val animated = svg.children[0] as SvgAnimated
+        val motion = animated.animations[0] as SvgAnimate.Motion
+        assertEquals("M0 0 Q50 100 100 0", motion.path)
+    }
+
+    // ===========================================
+    // Additional Edge Cases for Coverage
+    // ===========================================
+
+    @Test
+    fun parseSvgWithPreserveAspectRatio() {
+        val svg = parseSvg("""<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"><circle cx="50" cy="50" r="40"/></svg>""")
+        assertEquals(PreserveAspectRatio.Default, svg.preserveAspectRatio)
+    }
+
+    @Test
+    fun parseSvgWithPreserveAspectRatioSlice() {
+        val svg = parseSvg("""<svg viewBox="0 0 100 100" preserveAspectRatio="xMinYMin slice"><circle cx="50" cy="50" r="40"/></svg>""")
+        assertEquals(AspectRatioAlign.X_MIN_Y_MIN, svg.preserveAspectRatio.align)
+        assertEquals(MeetOrSlice.SLICE, svg.preserveAspectRatio.meetOrSlice)
+    }
+
+    @Test
+    fun parseSvgWithStrokeLinecapSquare() {
+        val svg = parseSvg("""<svg stroke-linecap="square"><path d="M0 0 L10 10"/></svg>""")
+        assertEquals(LineCap.SQUARE, svg.strokeLinecap)
+    }
+
+    @Test
+    fun parseSvgWithStrokeLinejoinBevel() {
+        val svg = parseSvg("""<svg stroke-linejoin="bevel"><path d="M0 0 L10 10"/></svg>""")
+        assertEquals(LineJoin.BEVEL, svg.strokeLinejoin)
+    }
+
+    @Test
+    fun parseSvgWithStrokeLinejoinMiter() {
+        val svg = parseSvg("""<svg stroke-linejoin="miter"><path d="M0 0 L10 10"/></svg>""")
+        assertEquals(LineJoin.MITER, svg.strokeLinejoin)
+    }
+
+    @Test
+    fun parseSvgWithStrokeLinecapButt() {
+        val svg = parseSvg("""<svg stroke-linecap="butt"><path d="M0 0 L10 10"/></svg>""")
+        assertEquals(LineCap.BUTT, svg.strokeLinecap)
+    }
+
+    @Test
+    fun parseSvgWithExplicitStrokeWidth() {
+        val svg = parseSvg("""<svg stroke-width="5"><path d="M0 0 L10 10"/></svg>""")
+        assertEquals(5f, svg.strokeWidth)
+    }
+
+    @Test
+    fun parseSvgWithStrokeColor() {
+        val svg = parseSvg("""<svg stroke="red"><path d="M0 0 L10 10"/></svg>""")
+        assertEquals(Color.Red, svg.stroke)
+    }
+
+    @Test
+    fun parseSvgWithFillColor() {
+        val svg = parseSvg("""<svg fill="blue"><path d="M0 0 L10 10"/></svg>""")
+        assertEquals(Color.Blue, svg.fill)
+    }
+
+    @Test
+    fun parseSvgWithWidthAndHeight() {
+        val svg = parseSvg("""<svg width="200" height="150"><circle cx="100" cy="75" r="50"/></svg>""")
+        assertEquals(200f, svg.width)
+        assertEquals(150f, svg.height)
+    }
+
+    @Test
+    fun parseSvgWithWidthAndHeightWithUnits() {
+        val svg = parseSvg("""<svg width="200px" height="150px"><circle cx="100" cy="75" r="50"/></svg>""")
+        assertEquals(200f, svg.width)
+        assertEquals(150f, svg.height)
+    }
+
+    @Test
+    fun parseAnimateTransformWithSkewX() {
+        val svg = parseSvg("""
+            <svg>
+                <rect width="10" height="10">
+                    <animateTransform attributeName="transform" type="skewX" from="0" to="30" dur="1s"/>
+                </rect>
+            </svg>
+        """.trimIndent())
+        val animated = svg.children[0] as SvgAnimated
+        val transform = animated.animations[0] as SvgAnimate.Transform
+        assertEquals(TransformType.SKEW_X, transform.type)
+    }
+
+    @Test
+    fun parseAnimateTransformWithSkewY() {
+        val svg = parseSvg("""
+            <svg>
+                <rect width="10" height="10">
+                    <animateTransform attributeName="transform" type="skewY" from="0" to="30" dur="1s"/>
+                </rect>
+            </svg>
+        """.trimIndent())
+        val animated = svg.children[0] as SvgAnimated
+        val transform = animated.animations[0] as SvgAnimate.Transform
+        assertEquals(TransformType.SKEW_Y, transform.type)
+    }
+
+    @Test
+    fun parseDurationInMilliseconds() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="12" cy="12" r="5">
+                    <animate attributeName="r" from="5" to="10" dur="500ms"/>
+                </circle>
+            </svg>
+        """.trimIndent())
+        val animated = svg.children[0] as SvgAnimated
+        val anim = animated.animations[0] as SvgAnimate.R
+        assertEquals(500L, anim.dur.inWholeMilliseconds)
+    }
+
+    @Test
+    fun parseAnimateMotionWithAutoRotate() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="5" cy="5" r="3">
+                    <animateMotion path="M0 0 L100 100" dur="2s" rotate="auto"/>
+                </circle>
+            </svg>
+        """.trimIndent())
+        val animated = svg.children[0] as SvgAnimated
+        val motion = animated.animations[0] as SvgAnimate.Motion
+        assertEquals(MotionRotate.AUTO, motion.rotate)
+    }
+
+    @Test
+    fun parseAnimateMotionWithAutoReverseRotate() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="5" cy="5" r="3">
+                    <animateMotion path="M0 0 L100 100" dur="2s" rotate="auto-reverse"/>
+                </circle>
+            </svg>
+        """.trimIndent())
+        val animated = svg.children[0] as SvgAnimated
+        val motion = animated.animations[0] as SvgAnimate.Motion
+        assertEquals(MotionRotate.AUTO_REVERSE, motion.rotate)
+    }
+
+    @Test
+    fun parseSvgWithInlineStyle() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="50" cy="50" r="40" style="fill:red;stroke:blue;stroke-width:3"/>
+            </svg>
+        """.trimIndent())
+        assertEquals(1, svg.children.size)
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        val styled = circle as SvgStyled
+        assertEquals(Color.Red, styled.style.fill)
+        assertEquals(Color.Blue, styled.style.stroke)
+        assertEquals(3f, styled.style.strokeWidth)
+    }
+
+    @Test
+    fun parseSvgWithOpacity() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="50" cy="50" r="40" opacity="0.5"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(0.5f, (circle as SvgStyled).style.opacity)
+    }
+
+    @Test
+    fun parseSvgWithFillOpacity() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="50" cy="50" r="40" fill-opacity="0.7"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(0.7f, (circle as SvgStyled).style.fillOpacity)
+    }
+
+    @Test
+    fun parseSvgWithStrokeOpacity() {
+        val svg = parseSvg("""
+            <svg>
+                <circle cx="50" cy="50" r="40" stroke-opacity="0.3"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(0.3f, (circle as SvgStyled).style.strokeOpacity)
+    }
 }

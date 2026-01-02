@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.library)
     alias(libs.plugins.maven.publish)
+    alias(libs.plugins.kover)
 }
 
 kotlin {
@@ -77,6 +78,22 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+kover {
+    reports {
+        filters {
+            excludes {
+                // Exclude SvgIcon.kt composables - requires UI testing framework
+                classes(
+                    "io.github.fuyuz.svgicon.SvgIcon*",
+                    "io.github.fuyuz.svgicon.Animated*",
+                    "io.github.fuyuz.svgicon.PathRenderer*",
+                    "io.github.fuyuz.svgicon.ComposableSingletons*"
+                )
+            }
+        }
     }
 }
 
