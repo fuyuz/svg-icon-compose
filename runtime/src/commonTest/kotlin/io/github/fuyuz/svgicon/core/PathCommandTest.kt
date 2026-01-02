@@ -371,16 +371,19 @@ class PathCommandTest {
     // toPathString Tests
     // ===========================================
 
+    // Helper to normalize float formatting across platforms (JS uses "10" instead of "10.0")
+    private fun normalizePathString(s: String): String = s.replace(Regex("(\\d)\\.0(?=\\s|$)"), "$1")
+
     @Test
     fun toPathStringMoveTo() {
         val commands = listOf(PathCommand.MoveTo(10f, 20f))
-        assertEquals("M10.0 20.0", commands.toPathString())
+        assertEquals("M10 20", normalizePathString(commands.toPathString()))
     }
 
     @Test
     fun toPathStringMoveToRelative() {
         val commands = listOf(PathCommand.MoveToRelative(5f, 10f))
-        assertEquals("m5.0 10.0", commands.toPathString())
+        assertEquals("m5 10", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -389,7 +392,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.LineTo(30f, 40f)
         )
-        assertEquals("M0.0 0.0 L30.0 40.0", commands.toPathString())
+        assertEquals("M0 0 L30 40", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -398,7 +401,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.LineToRelative(15f, 25f)
         )
-        assertEquals("M0.0 0.0 l15.0 25.0", commands.toPathString())
+        assertEquals("M0 0 l15 25", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -407,7 +410,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.HorizontalLineTo(50f)
         )
-        assertEquals("M0.0 0.0 H50.0", commands.toPathString())
+        assertEquals("M0 0 H50", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -416,7 +419,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.HorizontalLineToRelative(25f)
         )
-        assertEquals("M0.0 0.0 h25.0", commands.toPathString())
+        assertEquals("M0 0 h25", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -425,7 +428,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.VerticalLineTo(60f)
         )
-        assertEquals("M0.0 0.0 V60.0", commands.toPathString())
+        assertEquals("M0 0 V60", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -434,7 +437,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.VerticalLineToRelative(30f)
         )
-        assertEquals("M0.0 0.0 v30.0", commands.toPathString())
+        assertEquals("M0 0 v30", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -443,7 +446,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.CubicTo(1f, 2f, 3f, 4f, 5f, 6f)
         )
-        assertEquals("M0.0 0.0 C1.0 2.0 3.0 4.0 5.0 6.0", commands.toPathString())
+        assertEquals("M0 0 C1 2 3 4 5 6", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -452,7 +455,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.CubicToRelative(1f, 2f, 3f, 4f, 5f, 6f)
         )
-        assertEquals("M0.0 0.0 c1.0 2.0 3.0 4.0 5.0 6.0", commands.toPathString())
+        assertEquals("M0 0 c1 2 3 4 5 6", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -461,7 +464,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.SmoothCubicTo(3f, 4f, 5f, 6f)
         )
-        assertEquals("M0.0 0.0 S3.0 4.0 5.0 6.0", commands.toPathString())
+        assertEquals("M0 0 S3 4 5 6", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -470,7 +473,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.SmoothCubicToRelative(3f, 4f, 5f, 6f)
         )
-        assertEquals("M0.0 0.0 s3.0 4.0 5.0 6.0", commands.toPathString())
+        assertEquals("M0 0 s3 4 5 6", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -479,7 +482,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.QuadTo(1f, 2f, 3f, 4f)
         )
-        assertEquals("M0.0 0.0 Q1.0 2.0 3.0 4.0", commands.toPathString())
+        assertEquals("M0 0 Q1 2 3 4", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -488,7 +491,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.QuadToRelative(1f, 2f, 3f, 4f)
         )
-        assertEquals("M0.0 0.0 q1.0 2.0 3.0 4.0", commands.toPathString())
+        assertEquals("M0 0 q1 2 3 4", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -497,7 +500,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.SmoothQuadTo(5f, 6f)
         )
-        assertEquals("M0.0 0.0 T5.0 6.0", commands.toPathString())
+        assertEquals("M0 0 T5 6", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -506,7 +509,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.SmoothQuadToRelative(5f, 6f)
         )
-        assertEquals("M0.0 0.0 t5.0 6.0", commands.toPathString())
+        assertEquals("M0 0 t5 6", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -515,7 +518,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.ArcTo(5f, 5f, 0f, true, false, 10f, 10f)
         )
-        assertEquals("M0.0 0.0 A5.0 5.0 0.0 1 0 10.0 10.0", commands.toPathString())
+        assertEquals("M0 0 A5 5 0 1 0 10 10", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -524,7 +527,7 @@ class PathCommandTest {
             PathCommand.MoveTo(0f, 0f),
             PathCommand.ArcToRelative(5f, 5f, 0f, false, true, 10f, 10f)
         )
-        assertEquals("M0.0 0.0 a5.0 5.0 0.0 0 1 10.0 10.0", commands.toPathString())
+        assertEquals("M0 0 a5 5 0 0 1 10 10", normalizePathString(commands.toPathString()))
     }
 
     @Test
@@ -534,7 +537,7 @@ class PathCommandTest {
             PathCommand.LineTo(10f, 10f),
             PathCommand.Close
         )
-        assertEquals("M0.0 0.0 L10.0 10.0 Z", commands.toPathString())
+        assertEquals("M0 0 L10 10 Z", normalizePathString(commands.toPathString()))
     }
 
     @Test

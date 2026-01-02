@@ -101,16 +101,19 @@ class ViewBoxTest {
     // ViewBox.toSvgString Tests
     // ===========================================
 
+    // Helper to normalize float formatting across platforms (JS uses "10" instead of "10.0")
+    private fun normalize(s: String): String = s.replace(Regex("(\\d)\\.0(?=\\s|$)"), "$1")
+
     @Test
     fun toSvgStringDefault() {
         val viewBox = ViewBox.Default
-        assertEquals("0.0 0.0 24.0 24.0", viewBox.toSvgString())
+        assertEquals("0 0 24 24", normalize(viewBox.toSvgString()))
     }
 
     @Test
     fun toSvgStringCustom() {
         val viewBox = ViewBox(10f, 20f, 100f, 50f)
-        assertEquals("10.0 20.0 100.0 50.0", viewBox.toSvgString())
+        assertEquals("10 20 100 50", normalize(viewBox.toSvgString()))
     }
 
     // ===========================================
