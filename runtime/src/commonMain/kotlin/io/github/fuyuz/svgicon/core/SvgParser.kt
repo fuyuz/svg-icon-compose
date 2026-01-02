@@ -59,6 +59,7 @@ internal object SvgXmlParser {
     private val attrPattern = Regex("""([\w-]+)=["']([^"']*)["']""")
     private val animatePattern = Regex("""<animate\s+([^>]*)/?>(</animate>)?""", RegexOption.IGNORE_CASE)
     private val animateTransformPattern = Regex("""<animateTransform\s+([^>]*)/?>(</animateTransform>)?""", RegexOption.IGNORE_CASE)
+    private val animateMotionPattern = Regex("""<animateMotion\s+([^>]*)/?>(</animateMotion>)?""", RegexOption.IGNORE_CASE)
     // Shared regex patterns to avoid repeated allocation
     private val separatorPattern = Regex("[,\\s]+")
     private val transformPattern = Regex("""(\w+)\s*\(([^)]*)\)""")
@@ -569,6 +570,15 @@ internal object SvgXmlParser {
             }
         }
 
+        // Parse <animateMotion> elements
+        animateMotionPattern.findAll(innerContent).forEach { match ->
+            val attrs = parseAttributes(match.groupValues[1])
+            val anim = parseAnimateMotionElement(attrs)
+            if (anim != null) {
+                animations.add(anim)
+            }
+        }
+
         return animations
     }
 
@@ -738,6 +748,30 @@ internal object SvgXmlParser {
         if (valueStr == null) return null
         val parts = valueStr.trim().split(separatorPattern).mapNotNull { it.toFloatOrNull() }
         return parts.firstOrNull()
+    }
+
+    /**
+     * Parse an <animateMotion> element.
+     */
+    private fun parseAnimateMotionElement(attrs: Map<String, String>): SvgAnimate? {
+        val path = attrs["path"] ?: return null
+        val dur = parseDuration(attrs["dur"] ?: "0s")
+        val delay = parseDuration(attrs["begin"] ?: "0s")
+
+        // Parse calcMode and keySplines for easing
+        val calcMode = parseCalcMode(attrs["calcMode"])
+        val keySplines = parseKeySplines(attrs["keySplines"])
+
+        // Parse rotate attribute
+        val rotateStr = attrs["rotate"]
+        val rotate = when (rotateStr?.lowercase()) {
+            "auto" -> MotionRotate.AUTO
+            "auto-reverse" -> MotionRotate.AUTO_REVERSE
+            null, "" -> MotionRotate.NONE
+            else -> MotionRotate.NONE // Fixed angle not supported in enum, default to NONE
+        }
+
+        return SvgAnimate.Motion(path, dur, delay, rotate, calcMode, keySplines)
     }
 
     /**
