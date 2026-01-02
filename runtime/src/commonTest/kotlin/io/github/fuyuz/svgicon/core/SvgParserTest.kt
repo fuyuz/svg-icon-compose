@@ -334,14 +334,14 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithPath() {
-        val svg = parseSvg("""<svg viewBox="0 0 24 24"><path d="M12 12"/></svg>""")
+        val svg = svg("""<svg viewBox="0 0 24 24"><path d="M12 12"/></svg>""")
         assertEquals(1, svg.children.size)
         assertIs<SvgPath>(svg.children[0])
     }
 
     @Test
     fun parseSvgWithCircle() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10"/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10"/></svg>""")
         assertEquals(1, svg.children.size)
         val circle = svg.children[0]
         assertIs<SvgCircle>(circle)
@@ -352,7 +352,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithEllipse() {
-        val svg = parseSvg("""<svg><ellipse cx="12" cy="12" rx="10" ry="5"/></svg>""")
+        val svg = svg("""<svg><ellipse cx="12" cy="12" rx="10" ry="5"/></svg>""")
         assertEquals(1, svg.children.size)
         val ellipse = svg.children[0]
         assertIs<SvgEllipse>(ellipse)
@@ -364,7 +364,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithRect() {
-        val svg = parseSvg("""<svg><rect x="2" y="3" width="20" height="18" rx="2" ry="2"/></svg>""")
+        val svg = svg("""<svg><rect x="2" y="3" width="20" height="18" rx="2" ry="2"/></svg>""")
         assertEquals(1, svg.children.size)
         val rect = svg.children[0]
         assertIs<SvgRect>(rect)
@@ -378,7 +378,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithLine() {
-        val svg = parseSvg("""<svg><line x1="0" y1="0" x2="24" y2="24"/></svg>""")
+        val svg = svg("""<svg><line x1="0" y1="0" x2="24" y2="24"/></svg>""")
         assertEquals(1, svg.children.size)
         val line = svg.children[0]
         assertIs<SvgLine>(line)
@@ -390,7 +390,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithPolyline() {
-        val svg = parseSvg("""<svg><polyline points="0,0 10,10 20,0"/></svg>""")
+        val svg = svg("""<svg><polyline points="0,0 10,10 20,0"/></svg>""")
         assertEquals(1, svg.children.size)
         val polyline = svg.children[0]
         assertIs<SvgPolyline>(polyline)
@@ -402,7 +402,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithPolygon() {
-        val svg = parseSvg("""<svg><polygon points="12,2 22,22 2,22"/></svg>""")
+        val svg = svg("""<svg><polygon points="12,2 22,22 2,22"/></svg>""")
         assertEquals(1, svg.children.size)
         val polygon = svg.children[0]
         assertIs<SvgPolygon>(polygon)
@@ -411,7 +411,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithGroup() {
-        val svg = parseSvg("""<svg><g><circle cx="12" cy="12" r="5"/><rect width="10" height="10"/></g></svg>""")
+        val svg = svg("""<svg><g><circle cx="12" cy="12" r="5"/><rect width="10" height="10"/></g></svg>""")
         assertEquals(1, svg.children.size)
         val group = svg.children[0]
         assertIs<SvgGroup>(group)
@@ -420,7 +420,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgAttributes() {
-        val svg = parseSvg("""<svg width="48" height="48" viewBox="0 0 48 48" fill="black" stroke="white" stroke-width="3" stroke-linecap="butt" stroke-linejoin="miter"></svg>""")
+        val svg = svg("""<svg width="48" height="48" viewBox="0 0 48 48" fill="black" stroke="white" stroke-width="3" stroke-linecap="butt" stroke-linejoin="miter"></svg>""")
         assertNotNull(svg.viewBox)
         assertEquals(48f, svg.viewBox!!.width)
         assertEquals(48f, svg.viewBox!!.height)
@@ -433,7 +433,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgDefaultAttributes() {
-        val svg = parseSvg("""<svg></svg>""")
+        val svg = svg("""<svg></svg>""")
         assertNull(svg.viewBox)  // viewBox is optional
         assertEquals(24f, svg.effectiveViewBox.width)  // effectiveViewBox provides default
         assertEquals(24f, svg.effectiveViewBox.height)
@@ -446,21 +446,21 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithXmlDeclaration() {
-        val svg = parseSvg("""<?xml version="1.0" encoding="UTF-8"?><svg><circle cx="12" cy="12" r="10"/></svg>""")
+        val svg = svg("""<?xml version="1.0" encoding="UTF-8"?><svg><circle cx="12" cy="12" r="10"/></svg>""")
         assertEquals(1, svg.children.size)
         assertIs<SvgCircle>(svg.children[0])
     }
 
     @Test
     fun parseSvgWithDoctype() {
-        val svg = parseSvg("""<!DOCTYPE svg><svg><circle cx="12" cy="12" r="10"/></svg>""")
+        val svg = svg("""<!DOCTYPE svg><svg><circle cx="12" cy="12" r="10"/></svg>""")
         assertEquals(1, svg.children.size)
         assertIs<SvgCircle>(svg.children[0])
     }
 
     @Test
     fun parseSvgMultipleElements() {
-        val svg = parseSvg("""<svg><path d="M12 12"/><circle cx="12" cy="12" r="5"/><rect width="10" height="10"/></svg>""")
+        val svg = svg("""<svg><path d="M12 12"/><circle cx="12" cy="12" r="5"/><rect width="10" height="10"/></svg>""")
         assertEquals(3, svg.children.size)
         assertIs<SvgPath>(svg.children[0])
         assertIs<SvgCircle>(svg.children[1])
@@ -469,7 +469,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgNestedGroups() {
-        val svg = parseSvg("""<svg><g><g><circle cx="12" cy="12" r="5"/></g></g></svg>""")
+        val svg = svg("""<svg><g><g><circle cx="12" cy="12" r="5"/></g></g></svg>""")
         assertEquals(1, svg.children.size)
         val outerGroup = svg.children[0]
         assertIs<SvgGroup>(outerGroup)
@@ -488,14 +488,14 @@ class SvgParserTest {
 
     @Test
     fun parseInlineStyleFill() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style="fill:red"/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" style="fill:red"/></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(Color.Red, styled.style.fill)
     }
 
     @Test
     fun parseInlineStyleMultipleProperties() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style="fill:red; stroke:blue; stroke-width:3"/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" style="fill:red; stroke:blue; stroke-width:3"/></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(Color.Red, styled.style.fill)
         assertEquals(Color.Blue, styled.style.stroke)
@@ -505,14 +505,14 @@ class SvgParserTest {
     @Test
     fun parseInlineStyleOverridesXmlAttribute() {
         // CSS style should take precedence over XML attributes
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" fill="blue" style="fill:red"/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" fill="blue" style="fill:red"/></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(Color.Red, styled.style.fill)
     }
 
     @Test
     fun parseInlineStyleWithWhitespace() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style="  fill : red ;  stroke : blue  "/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" style="  fill : red ;  stroke : blue  "/></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(Color.Red, styled.style.fill)
         assertEquals(Color.Blue, styled.style.stroke)
@@ -520,7 +520,7 @@ class SvgParserTest {
 
     @Test
     fun parseInlineStyleWithHexColor() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style="fill:#ff0000; stroke:#00ff00"/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" style="fill:#ff0000; stroke:#00ff00"/></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(Color.Red, styled.style.fill)
         assertEquals(Color.Green, styled.style.stroke)
@@ -529,7 +529,7 @@ class SvgParserTest {
     @Test
     fun parseInlineStyleMixedWithXmlAttributes() {
         // XML: stroke-width, CSS: fill and stroke
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" stroke-width="5" style="fill:red; stroke:blue"/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" stroke-width="5" style="fill:red; stroke:blue"/></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(Color.Red, styled.style.fill)
         assertEquals(Color.Blue, styled.style.stroke)
@@ -538,7 +538,7 @@ class SvgParserTest {
 
     @Test
     fun parseInlineStyleOpacity() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style="opacity:0.5; fill-opacity:0.8"/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" style="opacity:0.5; fill-opacity:0.8"/></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(0.5f, styled.style.opacity)
         assertEquals(0.8f, styled.style.fillOpacity)
@@ -546,7 +546,7 @@ class SvgParserTest {
 
     @Test
     fun parseInlineStyleLinecapLinejoin() {
-        val svg = parseSvg("""<svg><path d="M0 0" style="stroke-linecap:square; stroke-linejoin:bevel"/></svg>""")
+        val svg = svg("""<svg><path d="M0 0" style="stroke-linecap:square; stroke-linejoin:bevel"/></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(LineCap.SQUARE, styled.style.strokeLinecap)
         assertEquals(LineJoin.BEVEL, styled.style.strokeLinejoin)
@@ -558,7 +558,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetWithClassSelector() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>.red-fill { fill: red; }</style>
                 <circle cx="12" cy="12" r="10" class="red-fill"/>
@@ -570,7 +570,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetWithIdSelector() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>#my-circle { stroke: blue; stroke-width: 3; }</style>
                 <circle cx="12" cy="12" r="10" id="my-circle"/>
@@ -583,7 +583,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetWithTagSelector() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>circle { fill: green; }</style>
                 <circle cx="12" cy="12" r="10"/>
@@ -595,7 +595,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetWithUniversalSelector() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>* { opacity: 0.5; }</style>
                 <circle cx="12" cy="12" r="10"/>
@@ -607,7 +607,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetSpecificityIdOverridesClass() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     .my-class { fill: red; }
@@ -622,7 +622,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetSpecificityClassOverridesTag() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     circle { fill: red; }
@@ -637,7 +637,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetSpecificityTagOverridesUniversal() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     * { fill: red; }
@@ -652,7 +652,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetInlineStyleOverridesAll() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     #my-id { fill: red; }
@@ -667,7 +667,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetMultipleRulesSameElement() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     circle { stroke: red; }
@@ -683,7 +683,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetMultipleClasses() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     .red { fill: red; }
@@ -699,7 +699,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetMultipleElements() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     .styled { fill: red; }
@@ -717,7 +717,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetWithGroup() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     .group-style { opacity: 0.5; }
@@ -737,7 +737,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetNoMatchingSelector() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>.non-existent { fill: red; }</style>
                 <circle cx="12" cy="12" r="10"/>
@@ -749,7 +749,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetEmptyStyle() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style></style>
                 <circle cx="12" cy="12" r="10"/>
@@ -760,7 +760,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetWithMultipleStyleTags() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>.red { fill: red; }</style>
                 <style>.blue { stroke: blue; }</style>
@@ -774,7 +774,7 @@ class SvgParserTest {
 
     @Test
     fun parseStylesheetXmlAttributeMergesWithStylesheet() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>circle { fill: red; }</style>
                 <circle cx="12" cy="12" r="10" stroke-width="5"/>
@@ -791,7 +791,7 @@ class SvgParserTest {
 
     @Test
     fun parseKeyframesWithFromTo() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeIn {
@@ -814,7 +814,7 @@ class SvgParserTest {
 
     @Test
     fun parseKeyframesWithPercentages() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes pulse {
@@ -835,7 +835,7 @@ class SvgParserTest {
 
     @Test
     fun parseKeyframesRotateAnimation() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes spin {
@@ -859,7 +859,7 @@ class SvgParserTest {
 
     @Test
     fun parseKeyframesScaleAnimation() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes grow {
@@ -884,7 +884,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimationWithDelay() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeIn {
@@ -905,7 +905,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimationWithTimingFunction() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -923,7 +923,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimationWithStyleAndAnimation() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -942,7 +942,7 @@ class SvgParserTest {
 
     @Test
     fun parseKeyframesStrokeWidthAnimation() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes thicken {
@@ -964,7 +964,7 @@ class SvgParserTest {
 
     @Test
     fun parseNoMatchingKeyframes() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     .animated { animation: nonexistent 1s; }
@@ -979,7 +979,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimationWithInfiniteIterations() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes spin {
@@ -1001,7 +1001,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimationWithFiniteIterations() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeIn {
@@ -1023,7 +1023,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimationDefaultsToSingleIteration() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeIn {
@@ -1045,7 +1045,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimationWithDirectionAlternate() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeIn {
@@ -1066,7 +1066,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimationWithDirectionReverse() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeIn {
@@ -1087,7 +1087,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimationWithFillModeForwards() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeIn {
@@ -1108,7 +1108,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimationWithFillModeBoth() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeIn {
@@ -1129,7 +1129,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimationWithCubicBezier() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeIn {
@@ -1155,7 +1155,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimationWithCombinedProperties() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeIn {
@@ -1181,14 +1181,14 @@ class SvgParserTest {
 
     @Test
     fun parseElementWithFill() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" fill="red"/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" fill="red"/></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(Color.Red, styled.style.fill)
     }
 
     @Test
     fun parseElementWithStroke() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" stroke="blue" stroke-width="3"/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" stroke="blue" stroke-width="3"/></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(Color.Blue, styled.style.stroke)
         assertEquals(3f, styled.style.strokeWidth)
@@ -1196,7 +1196,7 @@ class SvgParserTest {
 
     @Test
     fun parseElementWithOpacity() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" opacity="0.5" fill-opacity="0.8" stroke-opacity="0.3"/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" opacity="0.5" fill-opacity="0.8" stroke-opacity="0.3"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         assertEquals(0.5f, styled.style.opacity)
@@ -1206,7 +1206,7 @@ class SvgParserTest {
 
     @Test
     fun parseElementWithStrokeLinecap() {
-        val svg = parseSvg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-linecap="square"/></svg>""")
+        val svg = svg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-linecap="square"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         assertEquals(LineCap.SQUARE, styled.style.strokeLinecap)
@@ -1214,7 +1214,7 @@ class SvgParserTest {
 
     @Test
     fun parseElementWithStrokeLinejoin() {
-        val svg = parseSvg("""<svg><path d="M0 0" stroke-linejoin="bevel"/></svg>""")
+        val svg = svg("""<svg><path d="M0 0" stroke-linejoin="bevel"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         assertEquals(LineJoin.BEVEL, styled.style.strokeLinejoin)
@@ -1222,7 +1222,7 @@ class SvgParserTest {
 
     @Test
     fun parseElementWithFillRule() {
-        val svg = parseSvg("""<svg><path d="M0 0" fill-rule="evenodd"/></svg>""")
+        val svg = svg("""<svg><path d="M0 0" fill-rule="evenodd"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         assertEquals(FillRule.EVENODD, styled.style.fillRule)
@@ -1230,7 +1230,7 @@ class SvgParserTest {
 
     @Test
     fun parseElementWithStrokeDasharray() {
-        val svg = parseSvg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-dasharray="5,3,2"/></svg>""")
+        val svg = svg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-dasharray="5,3,2"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         assertEquals(listOf(5f, 3f, 2f), styled.style.strokeDasharray)
@@ -1238,7 +1238,7 @@ class SvgParserTest {
 
     @Test
     fun parseElementWithStrokeDashoffset() {
-        val svg = parseSvg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-dashoffset="10"/></svg>""")
+        val svg = svg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-dashoffset="10"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         assertEquals(10f, styled.style.strokeDashoffset)
@@ -1246,7 +1246,7 @@ class SvgParserTest {
 
     @Test
     fun parseElementWithStrokeMiterlimit() {
-        val svg = parseSvg("""<svg><path d="M0 0" stroke-miterlimit="8"/></svg>""")
+        val svg = svg("""<svg><path d="M0 0" stroke-miterlimit="8"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         assertEquals(8f, styled.style.strokeMiterlimit)
@@ -1258,7 +1258,7 @@ class SvgParserTest {
 
     @Test
     fun parseTransformTranslate() {
-        val svg = parseSvg("""<svg><circle cx="0" cy="0" r="5" transform="translate(10, 20)"/></svg>""")
+        val svg = svg("""<svg><circle cx="0" cy="0" r="5" transform="translate(10, 20)"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         val transform = styled.style.transform
@@ -1269,7 +1269,7 @@ class SvgParserTest {
 
     @Test
     fun parseTransformTranslateXOnly() {
-        val svg = parseSvg("""<svg><circle cx="0" cy="0" r="5" transform="translate(10)"/></svg>""")
+        val svg = svg("""<svg><circle cx="0" cy="0" r="5" transform="translate(10)"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         val transform = styled.style.transform
@@ -1280,7 +1280,7 @@ class SvgParserTest {
 
     @Test
     fun parseTransformScale() {
-        val svg = parseSvg("""<svg><circle cx="0" cy="0" r="5" transform="scale(2, 3)"/></svg>""")
+        val svg = svg("""<svg><circle cx="0" cy="0" r="5" transform="scale(2, 3)"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         val transform = styled.style.transform
@@ -1291,7 +1291,7 @@ class SvgParserTest {
 
     @Test
     fun parseTransformScaleUniform() {
-        val svg = parseSvg("""<svg><circle cx="0" cy="0" r="5" transform="scale(2)"/></svg>""")
+        val svg = svg("""<svg><circle cx="0" cy="0" r="5" transform="scale(2)"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         val transform = styled.style.transform
@@ -1302,7 +1302,7 @@ class SvgParserTest {
 
     @Test
     fun parseTransformRotate() {
-        val svg = parseSvg("""<svg><circle cx="0" cy="0" r="5" transform="rotate(45)"/></svg>""")
+        val svg = svg("""<svg><circle cx="0" cy="0" r="5" transform="rotate(45)"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         val transform = styled.style.transform
@@ -1314,7 +1314,7 @@ class SvgParserTest {
 
     @Test
     fun parseTransformRotateWithCenter() {
-        val svg = parseSvg("""<svg><circle cx="0" cy="0" r="5" transform="rotate(45, 12, 12)"/></svg>""")
+        val svg = svg("""<svg><circle cx="0" cy="0" r="5" transform="rotate(45, 12, 12)"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         val transform = styled.style.transform
@@ -1326,7 +1326,7 @@ class SvgParserTest {
 
     @Test
     fun parseTransformSkewX() {
-        val svg = parseSvg("""<svg><circle cx="0" cy="0" r="5" transform="skewX(30)"/></svg>""")
+        val svg = svg("""<svg><circle cx="0" cy="0" r="5" transform="skewX(30)"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         val transform = styled.style.transform
@@ -1336,7 +1336,7 @@ class SvgParserTest {
 
     @Test
     fun parseTransformSkewY() {
-        val svg = parseSvg("""<svg><circle cx="0" cy="0" r="5" transform="skewY(30)"/></svg>""")
+        val svg = svg("""<svg><circle cx="0" cy="0" r="5" transform="skewY(30)"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         val transform = styled.style.transform
@@ -1346,7 +1346,7 @@ class SvgParserTest {
 
     @Test
     fun parseTransformMatrix() {
-        val svg = parseSvg("""<svg><circle cx="0" cy="0" r="5" transform="matrix(1, 0, 0, 1, 10, 20)"/></svg>""")
+        val svg = svg("""<svg><circle cx="0" cy="0" r="5" transform="matrix(1, 0, 0, 1, 10, 20)"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         val transform = styled.style.transform
@@ -1361,7 +1361,7 @@ class SvgParserTest {
 
     @Test
     fun parseTransformCombined() {
-        val svg = parseSvg("""<svg><circle cx="0" cy="0" r="5" transform="translate(10, 20) rotate(45)"/></svg>""")
+        val svg = svg("""<svg><circle cx="0" cy="0" r="5" transform="translate(10, 20) rotate(45)"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         val transform = styled.style.transform
@@ -1403,13 +1403,13 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithSelfClosingElements() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10"/><rect x="0" y="0" width="5" height="5"/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10"/><rect x="0" y="0" width="5" height="5"/></svg>""")
         assertEquals(2, svg.children.size)
     }
 
     @Test
     fun parseSvgWithWhitespace() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="10"/>
             </svg>
@@ -1419,7 +1419,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgIgnoresUnknownElements() {
-        val svg = parseSvg("""<svg><unknown/><circle cx="12" cy="12" r="10"/><foo bar="baz"/></svg>""")
+        val svg = svg("""<svg><unknown/><circle cx="12" cy="12" r="10"/><foo bar="baz"/></svg>""")
         assertEquals(1, svg.children.size)
         assertIs<SvgCircle>(svg.children[0])
     }
@@ -1427,13 +1427,13 @@ class SvgParserTest {
     @Test
     fun parseSvgWithoutRoot() {
         // When there's no SVG root, it should still parse elements
-        val svg = parseSvg("""<circle cx="12" cy="12" r="10"/>""")
+        val svg = svg("""<circle cx="12" cy="12" r="10"/>""")
         assertEquals(1, svg.children.size)
     }
 
     @Test
     fun parsePointsWithSpaceDelimiter() {
-        val svg = parseSvg("""<svg><polyline points="0 0 10 10 20 0"/></svg>""")
+        val svg = svg("""<svg><polyline points="0 0 10 10 20 0"/></svg>""")
         val polyline = svg.children[0]
         assertIs<SvgPolyline>(polyline)
         assertEquals(3, polyline.points.size)
@@ -1441,7 +1441,7 @@ class SvgParserTest {
 
     @Test
     fun parseRectWithDefaultRoundedCorners() {
-        val svg = parseSvg("""<svg><rect width="10" height="10" rx="2"/></svg>""")
+        val svg = svg("""<svg><rect width="10" height="10" rx="2"/></svg>""")
         val rect = svg.children[0]
         assertIs<SvgRect>(rect)
         assertEquals(2f, rect.rx)
@@ -1582,7 +1582,7 @@ class SvgParserTest {
 
     @Test
     fun parseGroupWithTransform() {
-        val svg = parseSvg("""<svg><g transform="translate(10, 10)"><circle cx="0" cy="0" r="5"/></g></svg>""")
+        val svg = svg("""<svg><g transform="translate(10, 10)"><circle cx="0" cy="0" r="5"/></g></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         val group = styled.element
@@ -1592,7 +1592,7 @@ class SvgParserTest {
 
     @Test
     fun parseGroupWithFill() {
-        val svg = parseSvg("""<svg><g fill="red"><circle cx="12" cy="12" r="5"/></g></svg>""")
+        val svg = svg("""<svg><g fill="red"><circle cx="12" cy="12" r="5"/></g></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(Color.Red, styled.style.fill)
     }
@@ -1607,7 +1607,7 @@ class SvgParserTest {
 
     @Test
     fun parseCircleWithDefaultValues() {
-        val svg = parseSvg("""<svg><circle r="10"/></svg>""")
+        val svg = svg("""<svg><circle r="10"/></svg>""")
         val circle = svg.children[0]
         assertIs<SvgCircle>(circle)
         assertEquals(0f, circle.cx)
@@ -1617,7 +1617,7 @@ class SvgParserTest {
 
     @Test
     fun parseRectWithDefaultValues() {
-        val svg = parseSvg("""<svg><rect width="20" height="15"/></svg>""")
+        val svg = svg("""<svg><rect width="20" height="15"/></svg>""")
         val rect = svg.children[0]
         assertIs<SvgRect>(rect)
         assertEquals(0f, rect.x)
@@ -1630,7 +1630,7 @@ class SvgParserTest {
 
     @Test
     fun parseLineWithDefaultValues() {
-        val svg = parseSvg("""<svg><line x2="10" y2="10"/></svg>""")
+        val svg = svg("""<svg><line x2="10" y2="10"/></svg>""")
         val line = svg.children[0]
         assertIs<SvgLine>(line)
         assertEquals(0f, line.x1)
@@ -1641,7 +1641,7 @@ class SvgParserTest {
 
     @Test
     fun parseEllipseWithDefaultValues() {
-        val svg = parseSvg("""<svg><ellipse rx="10" ry="5"/></svg>""")
+        val svg = svg("""<svg><ellipse rx="10" ry="5"/></svg>""")
         val ellipse = svg.children[0]
         assertIs<SvgEllipse>(ellipse)
         assertEquals(0f, ellipse.cx)
@@ -1650,7 +1650,7 @@ class SvgParserTest {
 
     @Test
     fun parseEmptyGroup() {
-        val svg = parseSvg("""<svg><g></g></svg>""")
+        val svg = svg("""<svg><g></g></svg>""")
         val group = svg.children[0]
         assertIs<SvgGroup>(group)
         assertEquals(0, group.children.size)
@@ -1658,7 +1658,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithWidthHeightPx() {
-        val svg = parseSvg("""<svg width="48px" height="48px" viewBox="0 0 48 48"></svg>""")
+        val svg = svg("""<svg width="48px" height="48px" viewBox="0 0 48 48"></svg>""")
         assertNotNull(svg.viewBox)
         assertEquals(48f, svg.viewBox!!.width)
         assertEquals(48f, svg.viewBox!!.height)
@@ -1666,25 +1666,25 @@ class SvgParserTest {
 
     @Test
     fun parseEmptyPolyline() {
-        val svg = parseSvg("""<svg><polyline points=""/></svg>""")
+        val svg = svg("""<svg><polyline points=""/></svg>""")
         assertEquals(0, svg.children.size) // Empty points should not create element
     }
 
     @Test
     fun parseEmptyPolygon() {
-        val svg = parseSvg("""<svg><polygon points=""/></svg>""")
+        val svg = svg("""<svg><polygon points=""/></svg>""")
         assertEquals(0, svg.children.size) // Empty points should not create element
     }
 
     @Test
     fun parseEmptyPathD() {
-        val svg = parseSvg("""<svg><path d=""/></svg>""")
+        val svg = svg("""<svg><path d=""/></svg>""")
         assertEquals(0, svg.children.size) // Empty path should not create element
     }
 
     @Test
     fun parseFillRuleNonzero() {
-        val svg = parseSvg("""<svg><path d="M0 0" fill-rule="nonzero"/></svg>""")
+        val svg = svg("""<svg><path d="M0 0" fill-rule="nonzero"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         assertEquals(FillRule.NONZERO, styled.style.fillRule)
@@ -1692,7 +1692,7 @@ class SvgParserTest {
 
     @Test
     fun parseStrokeLinecapButt() {
-        val svg = parseSvg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-linecap="butt"/></svg>""")
+        val svg = svg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-linecap="butt"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         assertEquals(LineCap.BUTT, styled.style.strokeLinecap)
@@ -1700,7 +1700,7 @@ class SvgParserTest {
 
     @Test
     fun parseStrokeLinecapRound() {
-        val svg = parseSvg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-linecap="round"/></svg>""")
+        val svg = svg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-linecap="round"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         assertEquals(LineCap.ROUND, styled.style.strokeLinecap)
@@ -1708,7 +1708,7 @@ class SvgParserTest {
 
     @Test
     fun parseStrokeLinejoinMiter() {
-        val svg = parseSvg("""<svg><path d="M0 0" stroke-linejoin="miter"/></svg>""")
+        val svg = svg("""<svg><path d="M0 0" stroke-linejoin="miter"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         assertEquals(LineJoin.MITER, styled.style.strokeLinejoin)
@@ -1716,7 +1716,7 @@ class SvgParserTest {
 
     @Test
     fun parseStrokeLinejoinRound() {
-        val svg = parseSvg("""<svg><path d="M0 0" stroke-linejoin="round"/></svg>""")
+        val svg = svg("""<svg><path d="M0 0" stroke-linejoin="round"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         assertEquals(LineJoin.ROUND, styled.style.strokeLinejoin)
@@ -1724,7 +1724,7 @@ class SvgParserTest {
 
     @Test
     fun parseStrokeDasharrayWithSpaces() {
-        val svg = parseSvg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-dasharray="5 3 2"/></svg>""")
+        val svg = svg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-dasharray="5 3 2"/></svg>""")
         val styled = svg.children[0]
         assertIs<SvgStyled>(styled)
         assertEquals(listOf(5f, 3f, 2f), styled.style.strokeDasharray)
@@ -1732,7 +1732,7 @@ class SvgParserTest {
 
     @Test
     fun parseStrokeDasharrayNone() {
-        val svg = parseSvg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-dasharray="none"/></svg>""")
+        val svg = svg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-dasharray="none"/></svg>""")
         // Should not have strokeDasharray when "none"
         val element = svg.children[0]
         assertIs<SvgLine>(element) // No style wrapper when dasharray is "none"
@@ -1740,14 +1740,14 @@ class SvgParserTest {
 
     @Test
     fun parseHexColorFill() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" fill="#ff0000"/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" fill="#ff0000"/></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(Color.Red, styled.style.fill)
     }
 
     @Test
     fun parseRgbColorFill() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" fill="rgb(255,0,0)"/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" fill="rgb(255,0,0)"/></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(Color.Red, styled.style.fill)
     }
@@ -1755,7 +1755,7 @@ class SvgParserTest {
     @Test
     fun parseComplexLucideIcon() {
         // Complete Lucide menu icon
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="4" x2="20" y1="12" y2="12"/>
                 <line x1="4" x2="20" y1="6" y2="6"/>
@@ -1769,7 +1769,7 @@ class SvgParserTest {
     @Test
     fun parseComplexLucideIconWithPath() {
         // Lucide home icon with path and polyline
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
                 <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -1780,7 +1780,7 @@ class SvgParserTest {
 
     @Test
     fun parseDeeplyNestedGroups() {
-        val svg = parseSvg("""<svg><g><g><g><g><circle cx="12" cy="12" r="5"/></g></g></g></g></svg>""")
+        val svg = svg("""<svg><g><g><g><g><circle cx="12" cy="12" r="5"/></g></g></g></g></svg>""")
         var current: SvgElement = svg.children[0]
         repeat(4) {
             assertIs<SvgGroup>(current)
@@ -1791,7 +1791,7 @@ class SvgParserTest {
 
     @Test
     fun parseMultipleGroupsAtSameLevel() {
-        val svg = parseSvg("""<svg><g><circle cx="5" cy="5" r="2"/></g><g><circle cx="15" cy="15" r="2"/></g></svg>""")
+        val svg = svg("""<svg><g><circle cx="5" cy="5" r="2"/></g><g><circle cx="15" cy="15" r="2"/></g></svg>""")
         assertEquals(2, svg.children.size)
         assertIs<SvgGroup>(svg.children[0])
         assertIs<SvgGroup>(svg.children[1])
@@ -1818,7 +1818,7 @@ class SvgParserTest {
     @Test
     fun parsePolygonWithManyPoints() {
         val points = (0 until 20).joinToString(" ") { "$it,${it * 2}" }
-        val svg = parseSvg("""<svg><polygon points="$points"/></svg>""")
+        val svg = svg("""<svg><polygon points="$points"/></svg>""")
         val polygon = svg.children[0]
         assertIs<SvgPolygon>(polygon)
         assertEquals(20, polygon.points.size)
@@ -1830,7 +1830,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationWithKeyframes() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes spin {
@@ -1850,7 +1850,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationWithPercentKeyframes() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes pulse {
@@ -1870,7 +1870,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationWithDelay() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeIn {
@@ -1888,7 +1888,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationAlternateReverse() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes bounce {
@@ -1906,7 +1906,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationBothFillMode() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes grow {
@@ -1923,7 +1923,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationBackwardsFillMode() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes appear {
@@ -1940,7 +1940,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationWithCubicBezier() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes slide {
@@ -1957,7 +1957,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationReverseDirection() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes moveUp {
@@ -1974,7 +1974,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationStrokeWidth() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes pulseStroke {
@@ -1993,7 +1993,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationStrokeOpacity() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeStroke {
@@ -2010,7 +2010,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationFillOpacity() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes fadeFill {
@@ -2027,7 +2027,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationStrokeDashoffset() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes dash {
@@ -2044,7 +2044,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationSkewX() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes skewIt {
@@ -2061,7 +2061,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationSkewY() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes skewYIt {
@@ -2078,7 +2078,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationMilliseconds() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes quick {
@@ -2095,7 +2095,7 @@ class SvgParserTest {
 
     @Test
     fun parseCssAnimationWithNoneKeyword() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style>
                     @keyframes appear {
@@ -2116,28 +2116,28 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithPxUnits() {
-        val svg = parseSvg("""<svg width="100px" height="50px"><circle cx="12" cy="12" r="10"/></svg>""")
+        val svg = svg("""<svg width="100px" height="50px"><circle cx="12" cy="12" r="10"/></svg>""")
         assertEquals(100f, svg.width)
         assertEquals(50f, svg.height)
     }
 
     @Test
     fun parseSvgWithPtUnits() {
-        val svg = parseSvg("""<svg width="72pt" height="36pt"><circle cx="12" cy="12" r="10"/></svg>""")
+        val svg = svg("""<svg width="72pt" height="36pt"><circle cx="12" cy="12" r="10"/></svg>""")
         assertEquals(72f, svg.width)
         assertEquals(36f, svg.height)
     }
 
     @Test
     fun parseSvgWithEmUnits() {
-        val svg = parseSvg("""<svg width="10em" height="5em"><circle cx="12" cy="12" r="10"/></svg>""")
+        val svg = svg("""<svg width="10em" height="5em"><circle cx="12" cy="12" r="10"/></svg>""")
         assertEquals(10f, svg.width)
         assertEquals(5f, svg.height)
     }
 
     @Test
     fun parseSvgWithPercentUnits() {
-        val svg = parseSvg("""<svg width="100%" height="100%"><circle cx="12" cy="12" r="10"/></svg>""")
+        val svg = svg("""<svg width="100%" height="100%"><circle cx="12" cy="12" r="10"/></svg>""")
         assertEquals(100f, svg.width)
         assertEquals(100f, svg.height)
     }
@@ -2148,28 +2148,28 @@ class SvgParserTest {
 
     @Test
     fun parseStrokeDasharrayNoneOnPath() {
-        val svg = parseSvg("""<svg><path d="M0 0 L10 10" stroke-dasharray="none"/></svg>""")
+        val svg = svg("""<svg><path d="M0 0 L10 10" stroke-dasharray="none"/></svg>""")
         val path = svg.children[0]
         assertIs<SvgPath>(path)
     }
 
     @Test
     fun parseStrokeDasharrayEmpty() {
-        val svg = parseSvg("""<svg><path d="M0 0 L10 10" stroke-dasharray=""/></svg>""")
+        val svg = svg("""<svg><path d="M0 0 L10 10" stroke-dasharray=""/></svg>""")
         val path = svg.children[0]
         assertIs<SvgPath>(path)
     }
 
     @Test
     fun parseEmptyStyleAttribute() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style=""/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" style=""/></svg>""")
         val circle = svg.children[0]
         assertIs<SvgCircle>(circle)
     }
 
     @Test
     fun parseStyleWithWhitespace() {
-        val svg = parseSvg("""<svg><circle cx="12" cy="12" r="10" style="  fill : red ; stroke : blue  "/></svg>""")
+        val svg = svg("""<svg><circle cx="12" cy="12" r="10" style="  fill : red ; stroke : blue  "/></svg>""")
         val styled = svg.children[0] as SvgStyled
         assertEquals(Color.Red, styled.style.fill)
         assertEquals(Color.Blue, styled.style.stroke)
@@ -2181,7 +2181,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateWithValuesAttribute() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="10">
                     <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/>
@@ -2197,7 +2197,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateTransformRotate() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect x="0" y="0" width="10" height="10">
                     <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="2s"/>
@@ -2213,7 +2213,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateTransformScale() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="10">
                     <animateTransform attributeName="transform" type="scale" from="1" to="2" dur="1s"/>
@@ -2229,7 +2229,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateTransformTranslate() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect x="0" y="0" width="10" height="10">
                     <animateTransform attributeName="transform" type="translate" from="0" to="100" dur="1s"/>
@@ -2245,7 +2245,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateTransformSkewX() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect x="0" y="0" width="10" height="10">
                     <animateTransform attributeName="transform" type="skewX" from="0" to="30" dur="1s"/>
@@ -2261,7 +2261,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateTransformSkewY() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect x="0" y="0" width="10" height="10">
                     <animateTransform attributeName="transform" type="skewY" from="0" to="20" dur="1s"/>
@@ -2277,7 +2277,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateTransformWithValues() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect x="0" y="0" width="10" height="10">
                     <animateTransform attributeName="transform" type="rotate" values="-5 12 12;5 12 12;-5 12 12" dur="0.5s"/>
@@ -2290,7 +2290,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateCx() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="5">
                     <animate attributeName="cx" from="12" to="24" dur="1s"/>
@@ -2305,7 +2305,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateCy() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="5">
                     <animate attributeName="cy" from="12" to="24" dur="1s"/>
@@ -2320,7 +2320,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateR() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="5">
                     <animate attributeName="r" from="5" to="10" dur="1s"/>
@@ -2335,7 +2335,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateX() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect x="0" y="0" width="10" height="10">
                     <animate attributeName="x" from="0" to="100" dur="1s"/>
@@ -2350,7 +2350,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateY() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect x="0" y="0" width="10" height="10">
                     <animate attributeName="y" from="0" to="50" dur="1s"/>
@@ -2365,7 +2365,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateWidth() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect x="0" y="0" width="10" height="10">
                     <animate attributeName="width" from="10" to="100" dur="1s"/>
@@ -2380,7 +2380,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateHeight() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect x="0" y="0" width="10" height="10">
                     <animate attributeName="height" from="10" to="50" dur="1s"/>
@@ -2395,7 +2395,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateWithCalcModeDiscrete() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="10">
                     <animate attributeName="opacity" from="0" to="1" dur="1s" calcMode="discrete"/>
@@ -2411,7 +2411,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateWithCalcModePaced() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="10">
                     <animate attributeName="r" from="5" to="15" dur="1s" calcMode="paced"/>
@@ -2427,7 +2427,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateWithCalcModeSpline() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="10">
                     <animate attributeName="opacity" from="0" to="1" dur="1s" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
@@ -2444,7 +2444,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateFillOpacity() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="10">
                     <animate attributeName="fill-opacity" from="0" to="1" dur="500ms"/>
@@ -2463,44 +2463,44 @@ class SvgParserTest {
 
     @Test
     fun parseEmptySvg() {
-        val svg = parseSvg("")
+        val svg = svg("")
         assertEquals(0, svg.children.size)
     }
 
     @Test
     fun parseWhitespaceOnlySvg() {
-        val svg = parseSvg("   \n\t  ")
+        val svg = svg("   \n\t  ")
         assertEquals(0, svg.children.size)
     }
 
     @Test
     fun parseSvgWithoutRootElement() {
-        val svg = parseSvg("<circle cx='12' cy='12' r='10'/>")
+        val svg = svg("<circle cx='12' cy='12' r='10'/>")
         assertEquals(1, svg.children.size)
         assertIs<SvgCircle>(svg.children[0])
     }
 
     @Test
     fun parseSvgWithEmptyGroup() {
-        val svg = parseSvg("""<svg><g/></svg>""")
+        val svg = svg("""<svg><g/></svg>""")
         assertEquals(0, svg.children.size) // Self-closing groups are skipped
     }
 
     @Test
     fun parseSvgWithEmptyPath() {
-        val svg = parseSvg("""<svg><path d=""/></svg>""")
+        val svg = svg("""<svg><path d=""/></svg>""")
         assertEquals(0, svg.children.size) // Empty paths are skipped
     }
 
     @Test
     fun parseSvgWithEmptyPolyline() {
-        val svg = parseSvg("""<svg><polyline points=""/></svg>""")
+        val svg = svg("""<svg><polyline points=""/></svg>""")
         assertEquals(0, svg.children.size) // Empty polylines are skipped
     }
 
     @Test
     fun parseSvgWithEmptyPolygon() {
-        val svg = parseSvg("""<svg><polygon points=""/></svg>""")
+        val svg = svg("""<svg><polygon points=""/></svg>""")
         assertEquals(0, svg.children.size) // Empty polygons are skipped
     }
 
@@ -2510,7 +2510,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateTransformWithValuesAttribute() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect width="10" height="10">
                     <animateTransform attributeName="transform" type="rotate" values="0;180;360" dur="1s"/>
@@ -2528,7 +2528,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateStrokeOpacity() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <path d="M10 10 L20 20">
                     <animate attributeName="stroke-opacity" from="0" to="1" dur="500ms"/>
@@ -2543,7 +2543,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateStrokeDashoffsetReverse() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <path d="M10 10 L20 20">
                     <animate attributeName="stroke-dashoffset" from="0" to="100" dur="1s"/>
@@ -2560,7 +2560,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateMotion() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="5" cy="5" r="3">
                     <animateMotion path="M0 0 L100 100" dur="2s"/>
@@ -2575,7 +2575,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateMotionWithRotate() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="5" cy="5" r="3">
                     <animateMotion path="M0 0 C50 0 50 100 100 100" dur="2s" rotate="auto"/>
@@ -2592,7 +2592,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateMotionWithAutoReverse() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect width="5" height="5">
                     <animateMotion path="M0 0 L50 50" dur="1s" rotate="auto-reverse"/>
@@ -2610,7 +2610,7 @@ class SvgParserTest {
     @Test
     fun parseAnimateMotionWithFixedAngle() {
         // Fixed angle rotation defaults to NONE since enum doesn't support arbitrary angles
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect width="5" height="5">
                     <animateMotion path="M0 0 L50 50" dur="1s" rotate="45"/>
@@ -2627,7 +2627,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateUnknownAttribute() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect width="10" height="10">
                     <animate attributeName="unknown-attr" from="0" to="100" dur="1s"/>
@@ -2644,7 +2644,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateTransformWithMpathElement() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <path id="motionPath" d="M0 0 Q50 100 100 0"/>
                 <circle cx="5" cy="5" r="3">
@@ -2660,7 +2660,7 @@ class SvgParserTest {
 
     @Test
     fun parseDurationWithMinutes() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="5">
                     <animate attributeName="r" from="5" to="15" dur="0.5m"/>
@@ -2674,7 +2674,7 @@ class SvgParserTest {
     @Test
     fun parseSvgWithNamespacedAttributes() {
         // Namespaced attributes like xmlns should be handled gracefully
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                 <circle cx="12" cy="12" r="10"/>
             </svg>
@@ -2685,7 +2685,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithDataAttributes() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="10" data-custom="value"/>
             </svg>
@@ -2696,7 +2696,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithComments() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <!-- This is a comment -->
                 <circle cx="12" cy="12" r="10"/>
@@ -2709,7 +2709,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithCDATA() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <style><![CDATA[
                     .cls { fill: red; }
@@ -2722,7 +2722,7 @@ class SvgParserTest {
 
     @Test
     fun parseMultipleAnimationsOnElement() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="10">
                     <animate attributeName="r" from="5" to="15" dur="1s"/>
@@ -2743,7 +2743,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithNestedGroups() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <g>
                     <g>
@@ -2763,7 +2763,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithMultipleElements() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="5" cy="5" r="3"/>
                 <rect x="10" y="10" width="20" height="20"/>
@@ -2780,7 +2780,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithMixedGroupsAndElements() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="5" cy="5" r="3"/>
                 <g>
@@ -2797,7 +2797,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateWithBeginDelay() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="5">
                     <animate attributeName="r" from="5" to="10" dur="1s" begin="500ms"/>
@@ -2813,7 +2813,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateWithRepeatCountIndefinite() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="5">
                     <animate attributeName="opacity" from="0" to="1" dur="1s" repeatCount="indefinite"/>
@@ -2826,7 +2826,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithSelfClosingGroup() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <g/>
                 <circle cx="12" cy="12" r="5"/>
@@ -2838,7 +2838,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithRectRxRy() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect x="0" y="0" width="100" height="50" rx="10" ry="5"/>
             </svg>
@@ -2852,7 +2852,7 @@ class SvgParserTest {
     @Test
     fun parseSvgWithRectRxOnly() {
         // When ry is not specified, it defaults to rx
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect x="0" y="0" width="100" height="50" rx="10"/>
             </svg>
@@ -2865,7 +2865,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateStrokeWidth() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <path d="M10 10 L20 20">
                     <animate attributeName="stroke-width" from="1" to="5" dur="1s"/>
@@ -2880,7 +2880,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateWithMultipleKeyframes() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="5">
                     <animate attributeName="r" values="5;15;5;10" dur="2s"/>
@@ -2898,7 +2898,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithMultipleNewlines() {
-        val svg = parseSvg("""
+        val svg = svg("""
 
             <svg>
 
@@ -2913,7 +2913,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateTransformWithMultipleKeyframes() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect width="10" height="10">
                     <animateTransform attributeName="transform" type="rotate" values="-5 12 2;5 12 2;-5 12 2" dur="1s"/>
@@ -2929,7 +2929,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateCxCyR() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="5">
                     <animate attributeName="cx" from="12" to="24" dur="1s"/>
@@ -2949,7 +2949,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithStyleOnGroup() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <g fill="red" stroke="blue" stroke-width="2">
                     <circle cx="12" cy="12" r="5"/>
@@ -2966,7 +2966,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateMotionWithPath() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="5" cy="5" r="3">
                     <animateMotion path="M0 0 Q50 100 100 0" dur="3s"/>
@@ -2986,76 +2986,76 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithPreserveAspectRatio() {
-        val svg = parseSvg("""<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"><circle cx="50" cy="50" r="40"/></svg>""")
+        val svg = svg("""<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"><circle cx="50" cy="50" r="40"/></svg>""")
         assertEquals(PreserveAspectRatio.Default, svg.preserveAspectRatio)
     }
 
     @Test
     fun parseSvgWithPreserveAspectRatioSlice() {
-        val svg = parseSvg("""<svg viewBox="0 0 100 100" preserveAspectRatio="xMinYMin slice"><circle cx="50" cy="50" r="40"/></svg>""")
+        val svg = svg("""<svg viewBox="0 0 100 100" preserveAspectRatio="xMinYMin slice"><circle cx="50" cy="50" r="40"/></svg>""")
         assertEquals(AspectRatioAlign.X_MIN_Y_MIN, svg.preserveAspectRatio.align)
         assertEquals(MeetOrSlice.SLICE, svg.preserveAspectRatio.meetOrSlice)
     }
 
     @Test
     fun parseSvgWithStrokeLinecapSquare() {
-        val svg = parseSvg("""<svg stroke-linecap="square"><path d="M0 0 L10 10"/></svg>""")
+        val svg = svg("""<svg stroke-linecap="square"><path d="M0 0 L10 10"/></svg>""")
         assertEquals(LineCap.SQUARE, svg.strokeLinecap)
     }
 
     @Test
     fun parseSvgWithStrokeLinejoinBevel() {
-        val svg = parseSvg("""<svg stroke-linejoin="bevel"><path d="M0 0 L10 10"/></svg>""")
+        val svg = svg("""<svg stroke-linejoin="bevel"><path d="M0 0 L10 10"/></svg>""")
         assertEquals(LineJoin.BEVEL, svg.strokeLinejoin)
     }
 
     @Test
     fun parseSvgWithStrokeLinejoinMiter() {
-        val svg = parseSvg("""<svg stroke-linejoin="miter"><path d="M0 0 L10 10"/></svg>""")
+        val svg = svg("""<svg stroke-linejoin="miter"><path d="M0 0 L10 10"/></svg>""")
         assertEquals(LineJoin.MITER, svg.strokeLinejoin)
     }
 
     @Test
     fun parseSvgWithStrokeLinecapButt() {
-        val svg = parseSvg("""<svg stroke-linecap="butt"><path d="M0 0 L10 10"/></svg>""")
+        val svg = svg("""<svg stroke-linecap="butt"><path d="M0 0 L10 10"/></svg>""")
         assertEquals(LineCap.BUTT, svg.strokeLinecap)
     }
 
     @Test
     fun parseSvgWithExplicitStrokeWidth() {
-        val svg = parseSvg("""<svg stroke-width="5"><path d="M0 0 L10 10"/></svg>""")
+        val svg = svg("""<svg stroke-width="5"><path d="M0 0 L10 10"/></svg>""")
         assertEquals(5f, svg.strokeWidth)
     }
 
     @Test
     fun parseSvgWithStrokeColor() {
-        val svg = parseSvg("""<svg stroke="red"><path d="M0 0 L10 10"/></svg>""")
+        val svg = svg("""<svg stroke="red"><path d="M0 0 L10 10"/></svg>""")
         assertEquals(Color.Red, svg.stroke)
     }
 
     @Test
     fun parseSvgWithFillColor() {
-        val svg = parseSvg("""<svg fill="blue"><path d="M0 0 L10 10"/></svg>""")
+        val svg = svg("""<svg fill="blue"><path d="M0 0 L10 10"/></svg>""")
         assertEquals(Color.Blue, svg.fill)
     }
 
     @Test
     fun parseSvgWithWidthAndHeight() {
-        val svg = parseSvg("""<svg width="200" height="150"><circle cx="100" cy="75" r="50"/></svg>""")
+        val svg = svg("""<svg width="200" height="150"><circle cx="100" cy="75" r="50"/></svg>""")
         assertEquals(200f, svg.width)
         assertEquals(150f, svg.height)
     }
 
     @Test
     fun parseSvgWithWidthAndHeightWithUnits() {
-        val svg = parseSvg("""<svg width="200px" height="150px"><circle cx="100" cy="75" r="50"/></svg>""")
+        val svg = svg("""<svg width="200px" height="150px"><circle cx="100" cy="75" r="50"/></svg>""")
         assertEquals(200f, svg.width)
         assertEquals(150f, svg.height)
     }
 
     @Test
     fun parseAnimateTransformWithSkewX() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect width="10" height="10">
                     <animateTransform attributeName="transform" type="skewX" from="0" to="30" dur="1s"/>
@@ -3069,7 +3069,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateTransformWithSkewY() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <rect width="10" height="10">
                     <animateTransform attributeName="transform" type="skewY" from="0" to="30" dur="1s"/>
@@ -3083,7 +3083,7 @@ class SvgParserTest {
 
     @Test
     fun parseDurationInMilliseconds() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="12" cy="12" r="5">
                     <animate attributeName="r" from="5" to="10" dur="500ms"/>
@@ -3097,7 +3097,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateMotionWithAutoRotate() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="5" cy="5" r="3">
                     <animateMotion path="M0 0 L100 100" dur="2s" rotate="auto"/>
@@ -3111,7 +3111,7 @@ class SvgParserTest {
 
     @Test
     fun parseAnimateMotionWithAutoReverseRotate() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="5" cy="5" r="3">
                     <animateMotion path="M0 0 L100 100" dur="2s" rotate="auto-reverse"/>
@@ -3125,7 +3125,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithInlineStyle() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="50" cy="50" r="40" style="fill:red;stroke:blue;stroke-width:3"/>
             </svg>
@@ -3141,7 +3141,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithOpacity() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="50" cy="50" r="40" opacity="0.5"/>
             </svg>
@@ -3153,7 +3153,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithFillOpacity() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="50" cy="50" r="40" fill-opacity="0.7"/>
             </svg>
@@ -3165,7 +3165,7 @@ class SvgParserTest {
 
     @Test
     fun parseSvgWithStrokeOpacity() {
-        val svg = parseSvg("""
+        val svg = svg("""
             <svg>
                 <circle cx="50" cy="50" r="40" stroke-opacity="0.3"/>
             </svg>

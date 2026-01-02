@@ -47,11 +47,11 @@ fun unsafeSvg(svg: String): ParsedSvg {
  * This is the preferred method for parsing SVG content as it returns the
  * complete Svg structure including all SVG root attributes.
  *
- * @param svg Raw SVG content string
+ * @param svgString Raw SVG content string
  * @return Svg object with parsed attributes and children
  */
-fun parseSvg(svg: String): Svg {
-    return SvgXmlParser.parseToSvg(svg)
+fun svg(svgString: String): Svg {
+    return SvgXmlParser.parseToSvg(svgString)
 }
 
 internal object SvgXmlParser {
