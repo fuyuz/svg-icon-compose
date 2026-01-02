@@ -281,16 +281,16 @@ fun AnimatedIcon() {
 
 ### Runtime SVG Parsing
 
-For dynamic SVG content, use `parseSvg` to parse SVG strings at runtime:
+For dynamic SVG content, use `svg` to parse SVG strings at runtime:
 
 ```kotlin
 import io.github.fuyuz.svgicon.SvgIcon
-import io.github.fuyuz.svgicon.core.parseSvg
+import io.github.fuyuz.svgicon.core.svg
 
 @Composable
 fun DynamicIcon() {
-    val svg = remember {
-        parseSvg("""
+    val icon = remember {
+        svg("""
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
             </svg>
@@ -298,7 +298,7 @@ fun DynamicIcon() {
     }
 
     SvgIcon(
-        svg = svg,
+        svg = icon,
         contentDescription = "Circle",
         tint = Color.Blue,
         size = 48.dp

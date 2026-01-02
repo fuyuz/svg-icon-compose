@@ -808,7 +808,7 @@ fun App() {
                 ) {
                     // Original (no transform)
                     val originalSvg = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="4" y="4" width="16" height="16" rx="2"/>
                             </svg>
@@ -829,7 +829,7 @@ fun App() {
 
                     // skewX transform
                     val skewXSvg = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <g transform="skewX(15)">
                                     <rect x="4" y="4" width="16" height="16" rx="2"/>
@@ -852,7 +852,7 @@ fun App() {
 
                     // skewY transform
                     val skewYSvg = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <g transform="skewY(15)">
                                     <rect x="4" y="4" width="16" height="16" rx="2"/>
@@ -875,7 +875,7 @@ fun App() {
 
                     // matrix transform (combined scale + skew)
                     val matrixSvg = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <g transform="matrix(1, 0.2, -0.2, 1, 0, 0)">
                                     <rect x="4" y="4" width="16" height="16" rx="2"/>
@@ -1275,7 +1275,7 @@ fun App() {
                 }
 
                 Text(
-                    "Runtime SVG parsing (parseSvg):",
+                    "Runtime SVG parsing (svg):",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
@@ -1286,7 +1286,7 @@ fun App() {
                 ) {
                     // Star icon parsed from SVG string
                     val starSvg = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                             </svg>
@@ -1307,7 +1307,7 @@ fun App() {
 
                     // Heart icon parsed from SVG string
                     val heartSvg = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
                             </svg>
@@ -1328,7 +1328,7 @@ fun App() {
 
                     // Circle icon parsed from SVG string
                     val circleSvg = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"/>
                             </svg>
@@ -1360,7 +1360,7 @@ fun App() {
                 ) {
                     // Inline style: fill color
                     val inlineStyleFill = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24">
                                 <circle cx="12" cy="12" r="10" style="fill:#3B82F6; stroke:#1E40AF; stroke-width:2"/>
                             </svg>
@@ -1381,7 +1381,7 @@ fun App() {
 
                     // Inline style: multiple properties
                     val inlineStyleMultiple = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24">
                                 <rect x="4" y="4" width="16" height="16" rx="2" style="fill:#22C55E; stroke:#166534; stroke-width:2; opacity:0.8"/>
                             </svg>
@@ -1402,7 +1402,7 @@ fun App() {
 
                     // Inline style: stroke-dasharray
                     val inlineStyleDashed = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24">
                                 <circle cx="12" cy="12" r="9" style="fill:none; stroke:#F59E0B; stroke-width:2; stroke-dasharray:4,2"/>
                             </svg>
@@ -1423,7 +1423,7 @@ fun App() {
 
                     // CSS overrides XML attribute
                     val cssOverride = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24">
                                 <path d="M20 6L9 17l-5-5" stroke="blue" style="stroke:#EF4444; stroke-width:3; stroke-linecap:round"/>
                             </svg>
@@ -1455,7 +1455,7 @@ fun App() {
                 ) {
                     // Class selector
                     val classSelector = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24">
                                 <style>.blue-fill { fill: #3B82F6; } .red-stroke { stroke: #EF4444; stroke-width: 2; }</style>
                                 <circle cx="12" cy="12" r="10" class="blue-fill red-stroke"/>
@@ -1477,7 +1477,7 @@ fun App() {
 
                     // ID selector
                     val idSelector = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24">
                                 <style>#my-rect { fill: #22C55E; stroke: #166534; stroke-width: 2; }</style>
                                 <rect x="4" y="4" width="16" height="16" rx="2" id="my-rect"/>
@@ -1499,7 +1499,7 @@ fun App() {
 
                     // Tag selector
                     val tagSelector = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24">
                                 <style>path { stroke: #F59E0B; stroke-width: 3; fill: none; }</style>
                                 <path d="M20 6L9 17l-5-5"/>
@@ -1521,7 +1521,7 @@ fun App() {
 
                     // Universal selector
                     val universalSelector = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24">
                                 <style>* { stroke: #8B5CF6; stroke-width: 2; fill: none; }</style>
                                 <circle cx="12" cy="12" r="8"/>
@@ -1555,7 +1555,7 @@ fun App() {
                 ) {
                     // Spin animation
                     val spinAnimation = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24">
                                 <style>
                                     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -1580,7 +1580,7 @@ fun App() {
 
                     // Fade animation
                     val fadeAnimation = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24">
                                 <style>
                                     @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
@@ -1605,7 +1605,7 @@ fun App() {
 
                     // Scale animation
                     val scaleAnimation = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24">
                                 <style>
                                     @keyframes grow { from { transform: scale(0.5); } to { transform: scale(1); } }
@@ -1630,7 +1630,7 @@ fun App() {
 
                     // Stroke width animation
                     val strokeAnimation = remember {
-                        parseSvg("""
+                        svg("""
                             <svg viewBox="0 0 24 24">
                                 <style>
                                     @keyframes pulse { from { stroke-width: 1; } to { stroke-width: 4; } }
