@@ -17,19 +17,19 @@ jobs:
         include:
           - target: jvm
             os: ubuntu-latest
-            tasks: ':runtime:compileKotlinDesktop :runtime:desktopTest :gradle-plugin:build'
+            tasks: ':parser-core:desktopJar :runtime:compileKotlinDesktop :runtime:desktopTest :gradle-plugin:build'
           - target: android
             os: ubuntu-latest
-            tasks: ':runtime:compileDebugKotlinAndroid :runtime:compileReleaseKotlinAndroid'
+            tasks: ':parser-core:compileKotlinDesktop :runtime:compileDebugKotlinAndroid :runtime:compileReleaseKotlinAndroid'
           - target: ios
             os: macos-latest
-            tasks: ':runtime:compileKotlinIosArm64 :runtime:compileKotlinIosX64 :runtime:compileKotlinIosSimulatorArm64 :runtime:linkDebugFrameworkIosArm64'
+            tasks: ':parser-core:compileKotlinIosArm64 :runtime:compileKotlinIosArm64 :runtime:compileKotlinIosX64 :runtime:compileKotlinIosSimulatorArm64 :runtime:linkDebugFrameworkIosArm64'
           - target: js
             os: ubuntu-latest
-            tasks: ':runtime:compileKotlinJs :runtime:jsTest'
+            tasks: ':parser-core:compileKotlinJs :runtime:compileKotlinJs :runtime:jsTest'
           - target: wasm
             os: ubuntu-latest
-            tasks: ':runtime:compileKotlinWasmJs :runtime:wasmJsTest'
+            tasks: ':parser-core:compileKotlinWasmJs :runtime:compileKotlinWasmJs :runtime:wasmJsTest'
 
     runs-on: ${{ matrix.os }}
     name: Build (${{ matrix.target }})
