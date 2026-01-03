@@ -1032,8 +1032,10 @@ private fun DrawScope.drawSvg(svg: Svg, tint: Color, strokeWidthOverride: Float?
         scale(scaleX, scaleY, pivot = Offset.Zero) {
             // Translate to handle viewBox minX/minY
             translate(-viewBox.minX, -viewBox.minY) {
-                svg.children.forEach { element ->
-                    drawSvgElement(drawingContext, element)
+                with(drawingContext) {
+                    svg.children.forEach { element ->
+                        drawSvgElement(element)
+                    }
                 }
             }
         }
@@ -1133,36 +1135,39 @@ private fun collectDefs(elements: List<SvgElement>, textMeasurer: TextMeasurer? 
 // Context Parameter Versions
 // ============================================
 
-private fun DrawScope.drawSvgElement(dc: SvgDrawingContext, element: SvgElement) {
+context(dc: SvgDrawingContext)
+private fun DrawScope.drawSvgElement(element: SvgElement) {
     when (element) {
-        is SvgPath -> drawSvgPath(dc, element)
-        is SvgCircle -> drawSvgCircle(dc, element)
-        is SvgEllipse -> drawSvgEllipse(dc, element)
-        is SvgRect -> drawSvgRect(dc, element)
-        is SvgLine -> drawSvgLine(dc, element)
-        is SvgPolyline -> drawSvgPolyline(dc, element)
-        is SvgPolygon -> drawSvgPolygon(dc, element)
+        is SvgPath -> drawSvgPath(element)
+        is SvgCircle -> drawSvgCircle(element)
+        is SvgEllipse -> drawSvgEllipse(element)
+        is SvgRect -> drawSvgRect(element)
+        is SvgLine -> drawSvgLine(element)
+        is SvgPolyline -> drawSvgPolyline(element)
+        is SvgPolygon -> drawSvgPolygon(element)
         is SvgGroup -> {
             val groupCtx = element.style?.let { applyStyle(dc.ctx, it) } ?: dc.ctx
-            val groupDc = dc.withCtx(groupCtx)
-            element.children.forEach { drawSvgElement(groupDc, it) }
+            with(dc.withCtx(groupCtx)) {
+                element.children.forEach { drawSvgElement(it) }
+            }
         }
-        is SvgAnimated -> drawSvgElement(dc, element.element)
-        is SvgStyled -> drawStyledElement(dc, element)
+        is SvgAnimated -> drawSvgElement(element.element)
+        is SvgStyled -> drawStyledElement(element)
         is SvgDefs -> {}
         is SvgClipPath -> {}
         is SvgMask -> {}
-        is SvgText -> drawSvgText(dc, element)
+        is SvgText -> drawSvgText(element)
         is SvgLinearGradient -> {}
         is SvgRadialGradient -> {}
         is SvgMarker -> {}
         is SvgPattern -> {}
         is SvgSymbol -> {}
-        is SvgUse -> drawSvgUse(dc, element)
+        is SvgUse -> drawSvgUse(element)
     }
 }
 
-private fun DrawScope.drawStyledElement(dc: SvgDrawingContext, styled: SvgStyled) {
+context(dc: SvgDrawingContext)
+private fun DrawScope.drawStyledElement(styled: SvgStyled) {
     val style = styled.style
     val newCtx = applyStyle(dc.ctx, style)
     val newDc = dc.withCtx(newCtx)
@@ -1173,10 +1178,10 @@ private fun DrawScope.drawStyledElement(dc: SvgDrawingContext, styled: SvgStyled
         val transform = style.transform
         if (transform != null) {
             withTransform(transform) {
-                drawSvgElement(newDc, styled.element)
+                with(newDc) { drawSvgElement(styled.element) }
             }
         } else {
-            drawSvgElement(newDc, styled.element)
+            with(newDc) { drawSvgElement(styled.element) }
         }
     }
 
@@ -1190,7 +1195,8 @@ private fun DrawScope.drawStyledElement(dc: SvgDrawingContext, styled: SvgStyled
     }
 }
 
-private fun DrawScope.drawSvgPath(dc: SvgDrawingContext, path: SvgPath) {
+context(dc: SvgDrawingContext)
+private fun DrawScope.drawSvgPath(path: SvgPath) {
     val composePath = path.toPath().apply { fillType = dc.fillRule }
     val effectiveStroke = dc.ctx.getEffectiveStroke()
 
@@ -1214,7 +1220,8 @@ private fun DrawScope.drawSvgPath(dc: SvgDrawingContext, path: SvgPath) {
     }
 }
 
-private fun DrawScope.drawSvgCircle(dc: SvgDrawingContext, circle: SvgCircle) {
+context(dc: SvgDrawingContext)
+private fun DrawScope.drawSvgCircle(circle: SvgCircle) {
     val effectiveStroke = dc.ctx.getEffectiveStroke()
     val center = Offset(circle.cx, circle.cy)
 
@@ -1238,7 +1245,8 @@ private fun DrawScope.drawSvgCircle(dc: SvgDrawingContext, circle: SvgCircle) {
     }
 }
 
-private fun DrawScope.drawSvgEllipse(dc: SvgDrawingContext, ellipse: SvgEllipse) {
+context(dc: SvgDrawingContext)
+private fun DrawScope.drawSvgEllipse(ellipse: SvgEllipse) {
     val effectiveStroke = dc.ctx.getEffectiveStroke()
     val center = Offset(ellipse.cx, ellipse.cy)
     val size = Size(ellipse.rx * 2, ellipse.ry * 2)
@@ -1264,7 +1272,8 @@ private fun DrawScope.drawSvgEllipse(dc: SvgDrawingContext, ellipse: SvgEllipse)
     }
 }
 
-private fun DrawScope.drawSvgRect(dc: SvgDrawingContext, rect: SvgRect) {
+context(dc: SvgDrawingContext)
+private fun DrawScope.drawSvgRect(rect: SvgRect) {
     val effectiveStroke = dc.ctx.getEffectiveStroke()
     val topLeft = Offset(rect.x, rect.y)
     val size = Size(rect.width, rect.height)
@@ -1305,7 +1314,8 @@ private fun DrawScope.drawSvgRect(dc: SvgDrawingContext, rect: SvgRect) {
     }
 }
 
-private fun DrawScope.drawSvgLine(dc: SvgDrawingContext, line: SvgLine) {
+context(dc: SvgDrawingContext)
+private fun DrawScope.drawSvgLine(line: SvgLine) {
     val effectiveStroke = dc.ctx.getEffectiveStroke()
     if (dc.hasStroke && effectiveStroke.width > 0) {
         drawLine(
@@ -1319,7 +1329,8 @@ private fun DrawScope.drawSvgLine(dc: SvgDrawingContext, line: SvgLine) {
     }
 }
 
-private fun DrawScope.drawSvgPolyline(dc: SvgDrawingContext, polyline: SvgPolyline) {
+context(dc: SvgDrawingContext)
+private fun DrawScope.drawSvgPolyline(polyline: SvgPolyline) {
     if (polyline.points.isEmpty()) return
     val effectiveStroke = dc.ctx.getEffectiveStroke()
 
@@ -1352,7 +1363,8 @@ private fun DrawScope.drawSvgPolyline(dc: SvgDrawingContext, polyline: SvgPolyli
     }
 }
 
-private fun DrawScope.drawSvgPolygon(dc: SvgDrawingContext, polygon: SvgPolygon) {
+context(dc: SvgDrawingContext)
+private fun DrawScope.drawSvgPolygon(polygon: SvgPolygon) {
     if (polygon.points.isEmpty()) return
     val effectiveStroke = dc.ctx.getEffectiveStroke()
 
@@ -1386,7 +1398,8 @@ private fun DrawScope.drawSvgPolygon(dc: SvgDrawingContext, polygon: SvgPolygon)
     }
 }
 
-private fun DrawScope.drawSvgText(dc: SvgDrawingContext, text: SvgText) {
+context(dc: SvgDrawingContext)
+private fun DrawScope.drawSvgText(text: SvgText) {
     val measurer = dc.textMeasurer ?: return
 
     val fontSize = text.fontSize ?: 16f
@@ -1428,13 +1441,14 @@ private fun DrawScope.drawSvgText(dc: SvgDrawingContext, text: SvgText) {
     )
 }
 
-private fun DrawScope.drawSvgUse(dc: SvgDrawingContext, use: SvgUse) {
+context(dc: SvgDrawingContext)
+private fun DrawScope.drawSvgUse(use: SvgUse) {
     val href = use.href.removePrefix("#")
     val symbol = dc.symbols[href] ?: return
 
     translate(use.x, use.y) {
         symbol.children.forEach { element ->
-            drawSvgElement(dc, element)
+            drawSvgElement(element)
         }
     }
 }
@@ -2863,7 +2877,7 @@ private fun DrawScope.drawAnimatedInnerElement(
         else -> {
             // Fallback: create SvgDrawingContext and delegate to static drawing
             val dc = SvgDrawingContext(ctx, registry)
-            drawSvgElement(dc, element)
+            with(dc) { drawSvgElement(element) }
         }
     }
 }
