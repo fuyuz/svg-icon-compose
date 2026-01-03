@@ -28,6 +28,7 @@ class IconGenerator(
     fun generateIcons(svgDir: File, packageName: String, outputDir: File): List<String> {
         val iconNames = mutableListOf<String>()
         val svgCodeBlocks = mutableMapOf<String, CodeBlock>()
+        val errors = mutableListOf<String>()
 
         svgDir.listFiles { file -> file.extension == "svg" }?.forEach { svgFile ->
             try {
@@ -38,8 +39,14 @@ class IconGenerator(
                 iconNames.add(iconName)
                 svgCodeBlocks[iconName] = svgCodeBlock
             } catch (e: Exception) {
-                System.err.println("Error processing ${svgFile.name}: ${e.message}")
+                errors.add("${svgFile.name}: ${e.message}")
             }
+        }
+
+        if (errors.isNotEmpty()) {
+            throw IllegalStateException(
+                "Failed to parse SVG files:\n${errors.joinToString("\n") { "  - $it" }}"
+            )
         }
 
         if (iconNames.isNotEmpty()) {
