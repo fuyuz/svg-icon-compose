@@ -825,8 +825,10 @@ class SvgBuildersTest {
     fun svgBuilderElementWithInfixAnimated() {
         val elements = SvgBuilder().apply {
             circle(12, 12, 10) animated {
-                strokeDraw(dur = 1.seconds)
-                opacity(from = 0f, to = 1f)
+                animate(dur = 1.seconds) {
+                    strokeDraw()
+                    opacity(from = 0f, to = 1f)
+                }
             }
         }.build()
         assertEquals(1, elements.size)
@@ -919,7 +921,9 @@ class SvgBuildersTest {
     fun animationBuilderStrokeDraw() {
         val path = SvgPath("M10 10 L20 20")
         val animations = AnimationBuilder(path).apply {
-            strokeDraw(dur = 1.seconds, delay = 200.milliseconds, reverse = true)
+            animate(dur = 1.seconds, delay = 200.milliseconds) {
+                strokeDraw(reverse = true)
+            }
         }.build()
         assertEquals(1, animations.size)
         val anim = animations[0]
@@ -933,7 +937,9 @@ class SvgBuildersTest {
     fun animationBuilderOpacity() {
         val circle = SvgCircle(12f, 12f, 10f)
         val animations = AnimationBuilder(circle).apply {
-            opacity(from = 0f, to = 1f, dur = 300.milliseconds)
+            animate(dur = 300.milliseconds) {
+                opacity(from = 0f, to = 1f)
+            }
         }.build()
         assertEquals(1, animations.size)
         assertIs<SvgAnimate.Opacity>(animations[0])
@@ -943,7 +949,9 @@ class SvgBuildersTest {
     fun animationBuilderTranslate() {
         val rect = SvgRect(0f, 0f, 10f, 10f)
         val animations = AnimationBuilder(rect).apply {
-            translate(from = 0f, to = 100f)
+            animate {
+                translate(from = 0f, to = 100f)
+            }
         }.build()
         assertEquals(1, animations.size)
         val anim = animations[0]
@@ -955,7 +963,9 @@ class SvgBuildersTest {
     fun animationBuilderTranslateX() {
         val rect = SvgRect(0f, 0f, 10f, 10f)
         val animations = AnimationBuilder(rect).apply {
-            translateX(from = 0f, to = 50f)
+            animate {
+                translateX(from = 0f, to = 50f)
+            }
         }.build()
         assertEquals(1, animations.size)
         val anim = animations[0] as SvgAnimate.Transform
@@ -966,7 +976,9 @@ class SvgBuildersTest {
     fun animationBuilderTranslateY() {
         val rect = SvgRect(0f, 0f, 10f, 10f)
         val animations = AnimationBuilder(rect).apply {
-            translateY(from = 0f, to = 50f)
+            animate {
+                translateY(from = 0f, to = 50f)
+            }
         }.build()
         assertEquals(1, animations.size)
         val anim = animations[0] as SvgAnimate.Transform
@@ -977,7 +989,9 @@ class SvgBuildersTest {
     fun animationBuilderScale() {
         val circle = SvgCircle(12f, 12f, 10f)
         val animations = AnimationBuilder(circle).apply {
-            scale(from = 1f, to = 2f)
+            animate {
+                scale(from = 1f, to = 2f)
+            }
         }.build()
         assertEquals(1, animations.size)
         val anim = animations[0] as SvgAnimate.Transform
@@ -988,7 +1002,9 @@ class SvgBuildersTest {
     fun animationBuilderScaleX() {
         val circle = SvgCircle(12f, 12f, 10f)
         val animations = AnimationBuilder(circle).apply {
-            scaleX(from = 1f, to = 1.5f)
+            animate {
+                scaleX(from = 1f, to = 1.5f)
+            }
         }.build()
         assertEquals(1, animations.size)
         val anim = animations[0] as SvgAnimate.Transform
@@ -999,7 +1015,9 @@ class SvgBuildersTest {
     fun animationBuilderScaleY() {
         val circle = SvgCircle(12f, 12f, 10f)
         val animations = AnimationBuilder(circle).apply {
-            scaleY(from = 1f, to = 1.5f)
+            animate {
+                scaleY(from = 1f, to = 1.5f)
+            }
         }.build()
         assertEquals(1, animations.size)
         val anim = animations[0] as SvgAnimate.Transform
@@ -1010,7 +1028,9 @@ class SvgBuildersTest {
     fun animationBuilderRotate() {
         val path = SvgPath("M10 10 L20 20")
         val animations = AnimationBuilder(path).apply {
-            rotate(from = 0f, to = 360f, dur = 2.seconds)
+            animate(dur = 2.seconds) {
+                rotate(from = 0f, to = 360f)
+            }
         }.build()
         assertEquals(1, animations.size)
         val anim = animations[0] as SvgAnimate.Transform
@@ -1023,7 +1043,9 @@ class SvgBuildersTest {
     fun animationBuilderSkewX() {
         val rect = SvgRect(0f, 0f, 10f, 10f)
         val animations = AnimationBuilder(rect).apply {
-            skewX(from = 0f, to = 15f)
+            animate {
+                skewX(from = 0f, to = 15f)
+            }
         }.build()
         assertEquals(1, animations.size)
         val anim = animations[0] as SvgAnimate.Transform
@@ -1034,7 +1056,9 @@ class SvgBuildersTest {
     fun animationBuilderSkewY() {
         val rect = SvgRect(0f, 0f, 10f, 10f)
         val animations = AnimationBuilder(rect).apply {
-            skewY(from = 0f, to = 20f)
+            animate {
+                skewY(from = 0f, to = 20f)
+            }
         }.build()
         assertEquals(1, animations.size)
         val anim = animations[0] as SvgAnimate.Transform
@@ -1045,7 +1069,9 @@ class SvgBuildersTest {
     fun animationBuilderMotion() {
         val circle = SvgCircle(5f, 5f, 3f)
         val animations = AnimationBuilder(circle).apply {
-            motion(path = "M0 0 C50 0 50 100 100 100", rotate = MotionRotate.AUTO)
+            animate {
+                motion(path = "M0 0 C50 0 50 100 100 100", rotate = MotionRotate.AUTO)
+            }
         }.build()
         assertEquals(1, animations.size)
         val anim = animations[0]
@@ -1057,7 +1083,9 @@ class SvgBuildersTest {
     fun animationBuilderStrokeWidth() {
         val path = SvgPath("M10 10 L20 20")
         val animations = AnimationBuilder(path).apply {
-            strokeWidth(from = 1f, to = 5f)
+            animate {
+                strokeWidth(from = 1f, to = 5f)
+            }
         }.build()
         assertEquals(1, animations.size)
         assertIs<SvgAnimate.StrokeWidth>(animations[0])
@@ -1067,7 +1095,9 @@ class SvgBuildersTest {
     fun animationBuilderStrokeOpacity() {
         val path = SvgPath("M10 10 L20 20")
         val animations = AnimationBuilder(path).apply {
-            strokeOpacity(from = 0f, to = 1f)
+            animate {
+                strokeOpacity(from = 0f, to = 1f)
+            }
         }.build()
         assertEquals(1, animations.size)
         assertIs<SvgAnimate.StrokeOpacity>(animations[0])
@@ -1077,7 +1107,9 @@ class SvgBuildersTest {
     fun animationBuilderStrokeDasharray() {
         val path = SvgPath("M10 10 L20 20")
         val animations = AnimationBuilder(path).apply {
-            strokeDasharray(from = listOf(5f, 5f), to = listOf(10f, 2f))
+            animate {
+                strokeDasharray(from = listOf(5f, 5f), to = listOf(10f, 2f))
+            }
         }.build()
         assertEquals(1, animations.size)
         assertIs<SvgAnimate.StrokeDasharray>(animations[0])
@@ -1087,7 +1119,9 @@ class SvgBuildersTest {
     fun animationBuilderStrokeDashoffset() {
         val path = SvgPath("M10 10 L20 20")
         val animations = AnimationBuilder(path).apply {
-            strokeDashoffset(from = 0f, to = 100f)
+            animate {
+                strokeDashoffset(from = 0f, to = 100f)
+            }
         }.build()
         assertEquals(1, animations.size)
         assertIs<SvgAnimate.StrokeDashoffset>(animations[0])
@@ -1097,7 +1131,9 @@ class SvgBuildersTest {
     fun animationBuilderFillOpacity() {
         val circle = SvgCircle(12f, 12f, 10f)
         val animations = AnimationBuilder(circle).apply {
-            fillOpacity(from = 0f, to = 1f)
+            animate {
+                fillOpacity(from = 0f, to = 1f)
+            }
         }.build()
         assertEquals(1, animations.size)
         assertIs<SvgAnimate.FillOpacity>(animations[0])
@@ -1107,9 +1143,11 @@ class SvgBuildersTest {
     fun animationBuilderGeometricProperties() {
         val circle = SvgCircle(12f, 12f, 10f)
         val animations = AnimationBuilder(circle).apply {
-            cx(from = 12f, to = 24f)
-            cy(from = 12f, to = 24f)
-            r(from = 10f, to = 20f)
+            animate {
+                cx(from = 12f, to = 24f)
+                cy(from = 12f, to = 24f)
+                r(from = 10f, to = 20f)
+            }
         }.build()
         assertEquals(3, animations.size)
         assertIs<SvgAnimate.Cx>(animations[0])
@@ -1121,8 +1159,10 @@ class SvgBuildersTest {
     fun animationBuilderEllipseProperties() {
         val ellipse = SvgEllipse(12f, 12f, 8f, 5f)
         val animations = AnimationBuilder(ellipse).apply {
-            rx(from = 8f, to = 12f)
-            ry(from = 5f, to = 8f)
+            animate {
+                rx(from = 8f, to = 12f)
+                ry(from = 5f, to = 8f)
+            }
         }.build()
         assertEquals(2, animations.size)
         assertIs<SvgAnimate.Rx>(animations[0])
@@ -1133,10 +1173,12 @@ class SvgBuildersTest {
     fun animationBuilderRectProperties() {
         val rect = SvgRect(0f, 0f, 10f, 10f)
         val animations = AnimationBuilder(rect).apply {
-            x(from = 0f, to = 10f)
-            y(from = 0f, to = 10f)
-            width(from = 10f, to = 20f)
-            height(from = 10f, to = 20f)
+            animate {
+                x(from = 0f, to = 10f)
+                y(from = 0f, to = 10f)
+                width(from = 10f, to = 20f)
+                height(from = 10f, to = 20f)
+            }
         }.build()
         assertEquals(4, animations.size)
         assertIs<SvgAnimate.X>(animations[0])
@@ -1149,10 +1191,12 @@ class SvgBuildersTest {
     fun animationBuilderLineProperties() {
         val line = SvgLine(0f, 0f, 24f, 24f)
         val animations = AnimationBuilder(line).apply {
-            x1(from = 0f, to = 5f)
-            y1(from = 0f, to = 5f)
-            x2(from = 24f, to = 30f)
-            y2(from = 24f, to = 30f)
+            animate {
+                x1(from = 0f, to = 5f)
+                y1(from = 0f, to = 5f)
+                x2(from = 24f, to = 30f)
+                y2(from = 24f, to = 30f)
+            }
         }.build()
         assertEquals(4, animations.size)
         assertIs<SvgAnimate.X1>(animations[0])
@@ -1165,7 +1209,9 @@ class SvgBuildersTest {
     fun animationBuilderPathD() {
         val path = SvgPath("M10 10 L20 20")
         val animations = AnimationBuilder(path).apply {
-            d(from = "M10 10 L20 20", to = "M5 15 L25 15")
+            animate {
+                d(from = "M10 10 L20 20", to = "M5 15 L25 15")
+            }
         }.build()
         assertEquals(1, animations.size)
         assertIs<SvgAnimate.D>(animations[0])
@@ -1175,10 +1221,12 @@ class SvgBuildersTest {
     fun animationBuilderPoints() {
         val polygon = SvgPolygon(listOf(Offset(0f, 0f), Offset(10f, 0f), Offset(5f, 10f)))
         val animations = AnimationBuilder(polygon).apply {
-            points(
-                from = listOf(Offset(0f, 0f), Offset(10f, 0f), Offset(5f, 10f)),
-                to = listOf(Offset(2f, 2f), Offset(12f, 2f), Offset(7f, 12f))
-            )
+            animate {
+                points(
+                    from = listOf(Offset(0f, 0f), Offset(10f, 0f), Offset(5f, 10f)),
+                    to = listOf(Offset(2f, 2f), Offset(12f, 2f), Offset(7f, 12f))
+                )
+            }
         }.build()
         assertEquals(1, animations.size)
         assertIs<SvgAnimate.Points>(animations[0])
@@ -1364,7 +1412,9 @@ class SvgBuildersTest {
     fun svgBuilderPathWithAnimationBlock() {
         val elements = SvgBuilder().apply {
             path("M10 10 L20 20") {
-                strokeDraw(dur = 1.seconds)
+                animate(dur = 1.seconds) {
+                    strokeDraw()
+                }
             }
         }.build()
         assertEquals(1, elements.size)
@@ -1383,8 +1433,10 @@ class SvgBuildersTest {
                     close()
                 },
                 animBlock = {
-                    strokeDraw(dur = 500.milliseconds)
-                    opacity(from = 0f, to = 1f)
+                    animate(dur = 500.milliseconds) {
+                        strokeDraw()
+                        opacity(from = 0f, to = 1f)
+                    }
                 }
             )
         }.build()
@@ -1398,7 +1450,9 @@ class SvgBuildersTest {
     fun svgBuilderCircleWithAnimationBlock() {
         val elements = SvgBuilder().apply {
             circle(12, 12, 10) {
-                r(from = 5f, to = 15f, dur = 1.seconds)
+                animate(dur = 1.seconds) {
+                    r(from = 5f, to = 15f)
+                }
             }
         }.build()
         assertEquals(1, elements.size)
@@ -1421,7 +1475,9 @@ class SvgBuildersTest {
     fun svgBuilderEllipseWithAnimationBlock() {
         val elements = SvgBuilder().apply {
             ellipse(12, 12, 8, 5) {
-                rx(from = 8f, to = 12f)
+                animate {
+                    rx(from = 8f, to = 12f)
+                }
             }
         }.build()
         assertEquals(1, elements.size)
@@ -1432,7 +1488,9 @@ class SvgBuildersTest {
     fun svgBuilderRectWithAnimationBlock() {
         val elements = SvgBuilder().apply {
             rect(0, 0, 20, 15) {
-                width(from = 20f, to = 30f)
+                animate {
+                    width(from = 20f, to = 30f)
+                }
             }
         }.build()
         assertEquals(1, elements.size)
@@ -1453,7 +1511,9 @@ class SvgBuildersTest {
     fun svgBuilderLineWithAnimationBlock() {
         val elements = SvgBuilder().apply {
             line(0, 0, 24, 24) {
-                x2(from = 24f, to = 48f)
+                animate {
+                    x2(from = 24f, to = 48f)
+                }
             }
         }.build()
         assertEquals(1, elements.size)
@@ -1474,7 +1534,9 @@ class SvgBuildersTest {
     fun svgBuilderTextWithAnimationBlock() {
         val elements = SvgBuilder().apply {
             text("Hello", x = 12, y = 12) {
-                opacity(from = 0f, to = 1f)
+                animate {
+                    opacity(from = 0f, to = 1f)
+                }
             }
         }.build()
         assertEquals(1, elements.size)
@@ -1485,7 +1547,9 @@ class SvgBuildersTest {
     fun svgBuilderPolylineWithAnimationBlock() {
         val elements = SvgBuilder().apply {
             polyline("5,12 12,5 19,12") {
-                strokeDraw(dur = 1.seconds)
+                animate(dur = 1.seconds) {
+                    strokeDraw()
+                }
             }
         }.build()
         assertEquals(1, elements.size)
@@ -1496,7 +1560,9 @@ class SvgBuildersTest {
     fun svgBuilderPolygonWithAnimationBlock() {
         val elements = SvgBuilder().apply {
             polygon("12,2 22,22 2,22") {
-                strokeDraw(dur = 1.seconds)
+                animate(dur = 1.seconds) {
+                    strokeDraw()
+                }
             }
         }.build()
         assertEquals(1, elements.size)
@@ -1713,16 +1779,17 @@ class SvgBuildersTest {
     fun animationBuilderWithAllAnimationOptions() {
         val path = SvgPath("M10 10 L20 20")
         val animations = AnimationBuilder(path).apply {
-            strokeDraw(
+            animate(
                 dur = 1.seconds,
                 delay = 200.milliseconds,
                 calcMode = CalcMode.SPLINE,
                 keySplines = KeySplines.EASE_IN_OUT,
                 iterations = 3,
                 direction = AnimationDirection.ALTERNATE,
-                fillMode = AnimationFillMode.FORWARDS,
-                reverse = true
-            )
+                fillMode = AnimationFillMode.FORWARDS
+            ) {
+                strokeDraw(reverse = true)
+            }
         }.build()
         assertEquals(1, animations.size)
         val anim = animations[0] as SvgAnimate.StrokeDraw

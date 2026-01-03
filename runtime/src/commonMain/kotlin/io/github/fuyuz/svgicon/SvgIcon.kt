@@ -951,6 +951,38 @@ private data class DefsRegistry(
 )
 
 /**
+ * Combined drawing context for SVG rendering.
+ * Wraps DrawContext and DefsRegistry to reduce parameter passing.
+ */
+private class SvgDrawingContext(
+    val ctx: DrawContext,
+    val registry: DefsRegistry
+) {
+    // Convenience accessors from DrawContext
+    val strokeColor: Color get() = ctx.strokeColor
+    val fillColor: Color? get() = ctx.fillColor
+    val stroke: Stroke get() = ctx.stroke
+    val opacity: Float get() = ctx.opacity
+    val fillRule: PathFillType get() = ctx.fillRule
+    val hasStroke: Boolean get() = ctx.hasStroke
+    val paintOrder: PaintOrder get() = ctx.paintOrder
+    val vectorEffect: VectorEffect get() = ctx.vectorEffect
+    val scaleFactor: Float get() = ctx.scaleFactor
+    val clipPathId: String? get() = ctx.clipPathId
+    val maskId: String? get() = ctx.maskId
+
+    // Convenience accessors from DefsRegistry
+    val clipPaths: Map<String, SvgClipPath> get() = registry.clipPaths
+    val masks: Map<String, SvgMask> get() = registry.masks
+    val symbols: Map<String, SvgSymbol> get() = registry.symbols
+    val markers: Map<String, SvgMarker> get() = registry.markers
+    val patterns: Map<String, SvgPattern> get() = registry.patterns
+    val textMeasurer: TextMeasurer? get() = registry.textMeasurer
+
+    fun withCtx(newCtx: DrawContext) = SvgDrawingContext(newCtx, registry)
+}
+
+/**
  * Draws an SVG onto the canvas.
  * Handles viewBox, viewport, and preserveAspectRatio correctly.
  */
@@ -993,13 +1025,15 @@ private fun DrawScope.drawSvg(svg: Svg, tint: Color, strokeWidthOverride: Float?
         scaleFactor = scaleX // Use scaleX for stroke scaling (assuming uniform scale for most cases)
     )
 
+    val drawingContext = SvgDrawingContext(context, registry)
+
     // Apply viewBox transformation: translate then scale
     translate(translateX, translateY) {
         scale(scaleX, scaleY, pivot = Offset.Zero) {
             // Translate to handle viewBox minX/minY
             translate(-viewBox.minX, -viewBox.minY) {
                 svg.children.forEach { element ->
-                    drawSvgElement(element, context, registry)
+                    drawSvgElement(drawingContext, element)
                 }
             }
         }
@@ -1095,62 +1129,313 @@ private fun collectDefs(elements: List<SvgElement>, textMeasurer: TextMeasurer? 
     return DefsRegistry(clipPaths, masks, symbols, markers, patterns, textMeasurer)
 }
 
-private fun DrawScope.drawSvgElement(element: SvgElement, ctx: DrawContext, registry: DefsRegistry = DefsRegistry()) {
+// ============================================
+// Context Parameter Versions
+// ============================================
+
+private fun DrawScope.drawSvgElement(dc: SvgDrawingContext, element: SvgElement) {
     when (element) {
-        is SvgPath -> drawSvgPath(element, ctx)
-        is SvgCircle -> drawSvgCircle(element, ctx)
-        is SvgEllipse -> drawSvgEllipse(element, ctx)
-        is SvgRect -> drawSvgRect(element, ctx)
-        is SvgLine -> drawSvgLine(element, ctx)
-        is SvgPolyline -> drawSvgPolyline(element, ctx)
-        is SvgPolygon -> drawSvgPolygon(element, ctx)
+        is SvgPath -> drawSvgPath(dc, element)
+        is SvgCircle -> drawSvgCircle(dc, element)
+        is SvgEllipse -> drawSvgEllipse(dc, element)
+        is SvgRect -> drawSvgRect(dc, element)
+        is SvgLine -> drawSvgLine(dc, element)
+        is SvgPolyline -> drawSvgPolyline(dc, element)
+        is SvgPolygon -> drawSvgPolygon(dc, element)
         is SvgGroup -> {
-            // Apply group style if present
-            val groupCtx = element.style?.let { applyStyle(ctx, it) } ?: ctx
-            element.children.forEach { drawSvgElement(it, groupCtx, registry) }
+            val groupCtx = element.style?.let { applyStyle(dc.ctx, it) } ?: dc.ctx
+            val groupDc = dc.withCtx(groupCtx)
+            element.children.forEach { drawSvgElement(groupDc, it) }
         }
-        is SvgAnimated -> drawSvgElement(element.element, ctx, registry)
-        is SvgStyled -> drawStyledElement(element, ctx, registry)
-        is SvgDefs -> {} // Defs are processed separately, not drawn
-        is SvgClipPath -> {} // ClipPaths are applied via style, not drawn directly
-        is SvgMask -> {} // Masks are applied via style, not drawn directly
-        is SvgText -> drawSvgText(element, ctx, registry.textMeasurer)
-        is SvgLinearGradient -> {} // Gradients are referenced, not drawn directly
-        is SvgRadialGradient -> {} // Gradients are referenced, not drawn directly
-        is SvgMarker -> {} // Markers are referenced, not drawn directly
-        is SvgPattern -> {} // Patterns are referenced, not drawn directly
-        is SvgSymbol -> {} // Symbols are referenced via use, not drawn directly
-        is SvgUse -> drawSvgUse(element, ctx, registry)
+        is SvgAnimated -> drawSvgElement(dc, element.element)
+        is SvgStyled -> drawStyledElement(dc, element)
+        is SvgDefs -> {}
+        is SvgClipPath -> {}
+        is SvgMask -> {}
+        is SvgText -> drawSvgText(dc, element)
+        is SvgLinearGradient -> {}
+        is SvgRadialGradient -> {}
+        is SvgMarker -> {}
+        is SvgPattern -> {}
+        is SvgSymbol -> {}
+        is SvgUse -> drawSvgUse(dc, element)
     }
 }
 
-private fun DrawScope.drawStyledElement(styled: SvgStyled, parentCtx: DrawContext, registry: DefsRegistry) {
+private fun DrawScope.drawStyledElement(dc: SvgDrawingContext, styled: SvgStyled) {
     val style = styled.style
-    val ctx = applyStyle(parentCtx, style)
+    val newCtx = applyStyle(dc.ctx, style)
+    val newDc = dc.withCtx(newCtx)
 
-    // Apply clip path if present
-    val clipPathId = ctx.clipPathId
-    val clipPath = clipPathId?.let { registry.clipPaths[it] }
+    val clipPath = newDc.clipPathId?.let { newDc.clipPaths[it] }
 
     val drawContent: DrawScope.() -> Unit = {
-        // Apply transform if present
         val transform = style.transform
         if (transform != null) {
             withTransform(transform) {
-                drawSvgElement(styled.element, ctx, registry)
+                drawSvgElement(newDc, styled.element)
             }
         } else {
-            drawSvgElement(styled.element, ctx, registry)
+            drawSvgElement(newDc, styled.element)
         }
     }
 
     if (clipPath != null) {
-        val path = buildClipPath(clipPath, ctx)
+        val path = buildClipPath(clipPath, newDc.ctx)
         clipPath(path, ClipOp.Intersect) {
             drawContent()
         }
     } else {
         drawContent()
+    }
+}
+
+private fun DrawScope.drawSvgPath(dc: SvgDrawingContext, path: SvgPath) {
+    val composePath = path.toPath().apply { fillType = dc.fillRule }
+    val effectiveStroke = dc.ctx.getEffectiveStroke()
+
+    when (dc.paintOrder) {
+        PaintOrder.FILL_STROKE -> {
+            dc.fillColor?.let { fill ->
+                drawPath(path = composePath, color = fill, style = Fill)
+            }
+            if (dc.hasStroke && effectiveStroke.width > 0) {
+                drawPath(path = composePath, color = dc.strokeColor, style = effectiveStroke)
+            }
+        }
+        PaintOrder.STROKE_FILL -> {
+            if (dc.hasStroke && effectiveStroke.width > 0) {
+                drawPath(path = composePath, color = dc.strokeColor, style = effectiveStroke)
+            }
+            dc.fillColor?.let { fill ->
+                drawPath(path = composePath, color = fill, style = Fill)
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawSvgCircle(dc: SvgDrawingContext, circle: SvgCircle) {
+    val effectiveStroke = dc.ctx.getEffectiveStroke()
+    val center = Offset(circle.cx, circle.cy)
+
+    when (dc.paintOrder) {
+        PaintOrder.FILL_STROKE -> {
+            dc.fillColor?.let { fill ->
+                drawCircle(color = fill, radius = circle.r, center = center, style = Fill)
+            }
+            if (dc.hasStroke && effectiveStroke.width > 0) {
+                drawCircle(color = dc.strokeColor, radius = circle.r, center = center, style = effectiveStroke)
+            }
+        }
+        PaintOrder.STROKE_FILL -> {
+            if (dc.hasStroke && effectiveStroke.width > 0) {
+                drawCircle(color = dc.strokeColor, radius = circle.r, center = center, style = effectiveStroke)
+            }
+            dc.fillColor?.let { fill ->
+                drawCircle(color = fill, radius = circle.r, center = center, style = Fill)
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawSvgEllipse(dc: SvgDrawingContext, ellipse: SvgEllipse) {
+    val effectiveStroke = dc.ctx.getEffectiveStroke()
+    val center = Offset(ellipse.cx, ellipse.cy)
+    val size = Size(ellipse.rx * 2, ellipse.ry * 2)
+    val topLeft = Offset(ellipse.cx - ellipse.rx, ellipse.cy - ellipse.ry)
+
+    when (dc.paintOrder) {
+        PaintOrder.FILL_STROKE -> {
+            dc.fillColor?.let { fill ->
+                drawOval(color = fill, topLeft = topLeft, size = size, style = Fill)
+            }
+            if (dc.hasStroke && effectiveStroke.width > 0) {
+                drawOval(color = dc.strokeColor, topLeft = topLeft, size = size, style = effectiveStroke)
+            }
+        }
+        PaintOrder.STROKE_FILL -> {
+            if (dc.hasStroke && effectiveStroke.width > 0) {
+                drawOval(color = dc.strokeColor, topLeft = topLeft, size = size, style = effectiveStroke)
+            }
+            dc.fillColor?.let { fill ->
+                drawOval(color = fill, topLeft = topLeft, size = size, style = Fill)
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawSvgRect(dc: SvgDrawingContext, rect: SvgRect) {
+    val effectiveStroke = dc.ctx.getEffectiveStroke()
+    val topLeft = Offset(rect.x, rect.y)
+    val size = Size(rect.width, rect.height)
+
+    when (dc.paintOrder) {
+        PaintOrder.FILL_STROKE -> {
+            dc.fillColor?.let { fill ->
+                if (rect.rx > 0f || rect.ry > 0f) {
+                    drawRoundRect(color = fill, topLeft = topLeft, size = size, cornerRadius = CornerRadius(rect.rx, rect.ry), style = Fill)
+                } else {
+                    drawRect(color = fill, topLeft = topLeft, size = size, style = Fill)
+                }
+            }
+            if (dc.hasStroke && effectiveStroke.width > 0) {
+                if (rect.rx > 0f || rect.ry > 0f) {
+                    drawRoundRect(color = dc.strokeColor, topLeft = topLeft, size = size, cornerRadius = CornerRadius(rect.rx, rect.ry), style = effectiveStroke)
+                } else {
+                    drawRect(color = dc.strokeColor, topLeft = topLeft, size = size, style = effectiveStroke)
+                }
+            }
+        }
+        PaintOrder.STROKE_FILL -> {
+            if (dc.hasStroke && effectiveStroke.width > 0) {
+                if (rect.rx > 0f || rect.ry > 0f) {
+                    drawRoundRect(color = dc.strokeColor, topLeft = topLeft, size = size, cornerRadius = CornerRadius(rect.rx, rect.ry), style = effectiveStroke)
+                } else {
+                    drawRect(color = dc.strokeColor, topLeft = topLeft, size = size, style = effectiveStroke)
+                }
+            }
+            dc.fillColor?.let { fill ->
+                if (rect.rx > 0f || rect.ry > 0f) {
+                    drawRoundRect(color = fill, topLeft = topLeft, size = size, cornerRadius = CornerRadius(rect.rx, rect.ry), style = Fill)
+                } else {
+                    drawRect(color = fill, topLeft = topLeft, size = size, style = Fill)
+                }
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawSvgLine(dc: SvgDrawingContext, line: SvgLine) {
+    val effectiveStroke = dc.ctx.getEffectiveStroke()
+    if (dc.hasStroke && effectiveStroke.width > 0) {
+        drawLine(
+            color = dc.strokeColor,
+            start = Offset(line.x1, line.y1),
+            end = Offset(line.x2, line.y2),
+            strokeWidth = effectiveStroke.width,
+            cap = effectiveStroke.cap,
+            pathEffect = effectiveStroke.pathEffect
+        )
+    }
+}
+
+private fun DrawScope.drawSvgPolyline(dc: SvgDrawingContext, polyline: SvgPolyline) {
+    if (polyline.points.isEmpty()) return
+    val effectiveStroke = dc.ctx.getEffectiveStroke()
+
+    val path = Path().apply {
+        val first = polyline.points.first()
+        moveTo(first.x, first.y)
+        for (i in 1 until polyline.points.size) {
+            val point = polyline.points[i]
+            lineTo(point.x, point.y)
+        }
+    }
+
+    when (dc.paintOrder) {
+        PaintOrder.FILL_STROKE -> {
+            dc.fillColor?.let { fill ->
+                drawPath(path = path, color = fill, style = Fill)
+            }
+            if (dc.hasStroke && effectiveStroke.width > 0) {
+                drawPath(path = path, color = dc.strokeColor, style = effectiveStroke)
+            }
+        }
+        PaintOrder.STROKE_FILL -> {
+            if (dc.hasStroke && effectiveStroke.width > 0) {
+                drawPath(path = path, color = dc.strokeColor, style = effectiveStroke)
+            }
+            dc.fillColor?.let { fill ->
+                drawPath(path = path, color = fill, style = Fill)
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawSvgPolygon(dc: SvgDrawingContext, polygon: SvgPolygon) {
+    if (polygon.points.isEmpty()) return
+    val effectiveStroke = dc.ctx.getEffectiveStroke()
+
+    val path = Path().apply {
+        val first = polygon.points.first()
+        moveTo(first.x, first.y)
+        for (i in 1 until polygon.points.size) {
+            val point = polygon.points[i]
+            lineTo(point.x, point.y)
+        }
+        close()
+    }
+
+    when (dc.paintOrder) {
+        PaintOrder.FILL_STROKE -> {
+            dc.fillColor?.let { fill ->
+                drawPath(path = path, color = fill, style = Fill)
+            }
+            if (dc.hasStroke && effectiveStroke.width > 0) {
+                drawPath(path = path, color = dc.strokeColor, style = effectiveStroke)
+            }
+        }
+        PaintOrder.STROKE_FILL -> {
+            if (dc.hasStroke && effectiveStroke.width > 0) {
+                drawPath(path = path, color = dc.strokeColor, style = effectiveStroke)
+            }
+            dc.fillColor?.let { fill ->
+                drawPath(path = path, color = fill, style = Fill)
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawSvgText(dc: SvgDrawingContext, text: SvgText) {
+    val measurer = dc.textMeasurer ?: return
+
+    val fontSize = text.fontSize ?: 16f
+    val fontWeight = when (text.fontWeight?.lowercase()) {
+        "bold", "700" -> FontWeight.Bold
+        "normal", "400" -> FontWeight.Normal
+        "light", "300" -> FontWeight.Light
+        else -> FontWeight.Normal
+    }
+
+    val style = TextStyle(
+        color = dc.fillColor ?: dc.strokeColor,
+        fontSize = fontSize.sp,
+        fontWeight = fontWeight,
+        fontFamily = text.fontFamily?.let { FontFamily.Default },
+        letterSpacing = (text.letterSpacing ?: 0f).sp
+    )
+
+    val textLayoutResult = measurer.measure(text.text, style)
+
+    val baseX = text.x + (text.dx ?: 0f)
+    val baseY = text.y + (text.dy ?: 0f)
+
+    val offsetX = when (text.textAnchor) {
+        TextAnchor.MIDDLE -> -textLayoutResult.size.width / 2f
+        TextAnchor.END -> -textLayoutResult.size.width.toFloat()
+        else -> 0f
+    }
+
+    val offsetY = when (text.dominantBaseline) {
+        DominantBaseline.MIDDLE, DominantBaseline.CENTRAL -> -textLayoutResult.size.height / 2f
+        DominantBaseline.HANGING -> 0f
+        else -> -textLayoutResult.size.height.toFloat()
+    }
+
+    drawText(
+        textLayoutResult = textLayoutResult,
+        topLeft = Offset(baseX + offsetX, baseY + offsetY)
+    )
+}
+
+private fun DrawScope.drawSvgUse(dc: SvgDrawingContext, use: SvgUse) {
+    val href = use.href.removePrefix("#")
+    val symbol = dc.symbols[href] ?: return
+
+    translate(use.x, use.y) {
+        symbol.children.forEach { element ->
+            drawSvgElement(dc, element)
+        }
     }
 }
 
@@ -1825,24 +2110,6 @@ private fun DrawScope.drawSvgText(text: SvgText, ctx: DrawContext, textMeasurer:
         textLayoutResult = textLayoutResult,
         topLeft = Offset(x, y)
     )
-}
-
-/**
- * Draws an SvgUse element by looking up the referenced symbol and rendering it.
- */
-private fun DrawScope.drawSvgUse(use: SvgUse, ctx: DrawContext, registry: DefsRegistry) {
-    // Extract ID from href (e.g., "#symbolId" -> "symbolId")
-    val refId = use.href.removePrefix("#")
-    val symbol = registry.symbols[refId] ?: return
-
-    // Apply translation for x, y positioning
-    translate(left = use.x, top = use.y) {
-        // If width/height are specified, we may need to scale
-        // For now, just render the symbol's children
-        symbol.children.forEach { child ->
-            drawSvgElement(child, ctx, registry)
-        }
-    }
 }
 
 // ============================================
@@ -2593,7 +2860,11 @@ private fun DrawScope.drawAnimatedInnerElement(
             element.children.forEach { drawAnimatedInnerElement(it, groupCtx, registry, pathCache, state) }
         }
         is SvgText -> drawSvgText(element, ctx, registry.textMeasurer)
-        else -> drawSvgElement(element, ctx, registry)
+        else -> {
+            // Fallback: create SvgDrawingContext and delegate to static drawing
+            val dc = SvgDrawingContext(ctx, registry)
+            drawSvgElement(dc, element)
+        }
     }
 }
 

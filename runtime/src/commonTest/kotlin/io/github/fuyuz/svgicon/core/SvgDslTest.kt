@@ -133,7 +133,9 @@ class SvgDslTest {
     fun testAnimatedPathDsl() {
         val result = svg {
             path("M10 10 L20 20") {
-                strokeDraw(dur = 300.milliseconds, delay = 100.milliseconds)
+                animate(dur = 300.milliseconds, delay = 100.milliseconds) {
+                    strokeDraw()
+                }
             }
         }
 
@@ -152,8 +154,12 @@ class SvgDslTest {
     fun testAnimatedCircleDsl() {
         val result = svg {
             circle(12, 12, 8) {
-                strokeDraw(dur = 500.milliseconds)
-                opacity(from = 0f, to = 1f, dur = 300.milliseconds)
+                animate(dur = 500.milliseconds) {
+                    strokeDraw()
+                }
+                animate(dur = 300.milliseconds) {
+                    opacity(from = 0f, to = 1f)
+                }
             }
         }
 
@@ -184,8 +190,12 @@ class SvgDslTest {
     fun testTransformAnimation() {
         val result = svg {
             circle(12, 12, 5) {
-                rotate(from = 0f, to = 360f, dur = 1000.milliseconds)
-                scale(from = 1f, to = 1.5f, dur = 500.milliseconds)
+                animate(dur = 1000.milliseconds) {
+                    rotate(from = 0f, to = 360f)
+                }
+                animate(dur = 500.milliseconds) {
+                    scale(from = 1f, to = 1.5f)
+                }
             }
         }
 
@@ -356,7 +366,9 @@ class SvgDslTest {
                     lineTo(20f, 20f)
                 },
                 animBlock = {
-                    strokeDraw(dur = 500.milliseconds)
+                    animate(dur = 500.milliseconds) {
+                        strokeDraw()
+                    }
                 }
             )
         }
