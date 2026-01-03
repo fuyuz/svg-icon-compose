@@ -258,11 +258,15 @@ private val DslBuilderIcon = svg {
 private val DslBuilderAnimatedIcon = svg {
     // Circle with stroke draw animation
     circle(12, 12, 10) {
-        strokeDraw(dur = 1.seconds)
+        animate(dur = 1.seconds) {
+            strokeDraw()
+        }
     }
     // Path with delayed stroke draw
     path("M8 12l3 3 5-6") {
-        strokeDraw(dur = 500.milliseconds, delay = 1.seconds)
+        animate(dur = 500.milliseconds, delay = 1.seconds) {
+            strokeDraw()
+        }
     }
 }
 
@@ -274,7 +278,9 @@ private val DslRotatingIcon = svg {
     circle(12, 12, 10)
     // Rotating inner element
     path("M12 6v6l4 2") {
-        rotate(from = 0f, to = 360f, dur = 2.seconds)
+        animate(dur = 2.seconds) {
+            rotate(from = 0f, to = 360f)
+        }
     }
 }
 

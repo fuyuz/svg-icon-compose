@@ -9,6 +9,68 @@ import kotlin.math.sin
 import kotlin.time.Duration
 
 /**
+ * Configuration for animation timing and easing.
+ * Used as context parameter to reduce boilerplate in animation builder methods.
+ *
+ * Example:
+ * ```kotlin
+ * with(AnimationConfig(dur = 1.seconds, delay = 500.milliseconds)) {
+ *     path("M8 12l3 3 5-6") animated {
+ *         strokeDraw()  // Uses config's dur and delay
+ *     }
+ * }
+ * ```
+ */
+data class AnimationConfig(
+    val dur: Duration = DefaultAnimationDuration,
+    val delay: Duration = Duration.ZERO,
+    val calcMode: CalcMode = CalcMode.LINEAR,
+    val keySplines: KeySplines? = null,
+    val iterations: Int = SvgAnimate.INFINITE,
+    val direction: AnimationDirection = AnimationDirection.NORMAL,
+    val fillMode: AnimationFillMode = AnimationFillMode.NONE
+)
+
+/**
+ * Default animation configuration with standard values.
+ */
+val DefaultAnimationConfig = AnimationConfig()
+
+/**
+ * DSL scope for applying animation configuration to a block.
+ *
+ * Example:
+ * ```kotlin
+ * svg {
+ *     path("M8 12l3 3 5-6") {
+ *         animate(dur = 1.seconds, delay = 500.milliseconds) {
+ *             strokeDraw()  // Uses config's dur and delay
+ *         }
+ *     }
+ *     circle(12, 12, 10) {
+ *         animate(dur = 1.seconds) {
+ *             opacity(0f, 1f)
+ *             scale(0f, 1f)
+ *         }
+ *     }
+ * }
+ * ```
+ */
+inline fun <R> animate(
+    dur: Duration = DefaultAnimationDuration,
+    delay: Duration = Duration.ZERO,
+    calcMode: CalcMode = CalcMode.LINEAR,
+    keySplines: KeySplines? = null,
+    iterations: Int = SvgAnimate.INFINITE,
+    direction: AnimationDirection = AnimationDirection.NORMAL,
+    fillMode: AnimationFillMode = AnimationFillMode.NONE,
+    block: context(AnimationConfig) () -> R
+): R {
+    val config = AnimationConfig(dur, delay, calcMode, keySplines, iterations, direction, fillMode)
+    return block(config)
+}
+
+/**
  * DSL marker for SVG builders.
  */
 @DslMarker
@@ -1009,455 +1071,171 @@ class AnimationBuilder<E : SvgElement> @PublishedApi internal constructor(
     @PublishedApi
     internal val animations = mutableListOf<SvgAnimate>()
 
-    fun strokeDraw(
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        reverse: Boolean = false,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.StrokeDraw(dur, delay, reverse, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun opacity(
-        from: Float = 0f,
-        to: Float = 1f,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Opacity(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun translate(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun translateX(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_X, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun translateY(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_Y, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun scale(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Transform(TransformType.SCALE, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun scaleX(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Transform(TransformType.SCALE_X, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun scaleY(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Transform(TransformType.SCALE_Y, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun rotate(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Transform(TransformType.ROTATE, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun skewX(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Transform(TransformType.SKEW_X, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun skewY(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Transform(TransformType.SKEW_Y, from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun motion(
-        path: String,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        rotate: MotionRotate = MotionRotate.NONE,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Motion(path, dur, delay, rotate, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun strokeWidth(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.StrokeWidth(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun strokeOpacity(
-        from: Float = 0f,
-        to: Float = 1f,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.StrokeOpacity(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun strokeDasharray(
-        from: List<Float>,
-        to: List<Float>,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.StrokeDasharray(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun strokeDashoffset(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.StrokeDashoffset(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun fillOpacity(
-        from: Float = 0f,
-        to: Float = 1f,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.FillOpacity(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun cx(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Cx(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun cy(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Cy(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun r(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.R(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun rx(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Rx(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun ry(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Ry(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun x(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.X(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun y(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Y(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun width(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Width(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun height(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Height(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun x1(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.X1(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun y1(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Y1(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun x2(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.X2(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun y2(
-        from: Float,
-        to: Float,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Y2(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    /** Path data animation with explicit from/to values. */
-    fun d(
-        from: String,
-        to: String,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.D(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
-    fun points(
-        from: List<Offset>,
-        to: List<Offset>,
-        dur: Duration = DefaultAnimationDuration,
-        delay: Duration = Duration.ZERO,
-        calcMode: CalcMode = CalcMode.LINEAR,
-        keySplines: KeySplines? = null,
-        iterations: Int = SvgAnimate.INFINITE,
-        direction: AnimationDirection = AnimationDirection.NORMAL,
-        fillMode: AnimationFillMode = AnimationFillMode.NONE
-    ) {
-        animations.add(SvgAnimate.Points(from, to, dur, delay, calcMode, keySplines, iterations, direction, fillMode))
-    }
-
     fun build(): List<SvgAnimate> = animations.toList()
+
+    // ============================================
+    // Animation Methods (require AnimationConfig context)
+    // ============================================
+
+    context(config: AnimationConfig)
+    fun strokeDraw(reverse: Boolean = false) {
+        animations.add(SvgAnimate.StrokeDraw(config.dur, config.delay, reverse, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun opacity(from: Float = 0f, to: Float = 1f) {
+        animations.add(SvgAnimate.Opacity(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun translate(from: Float, to: Float) {
+        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE, from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun translateX(from: Float, to: Float) {
+        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_X, from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun translateY(from: Float, to: Float) {
+        animations.add(SvgAnimate.Transform(TransformType.TRANSLATE_Y, from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun scale(from: Float, to: Float) {
+        animations.add(SvgAnimate.Transform(TransformType.SCALE, from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun scaleX(from: Float, to: Float) {
+        animations.add(SvgAnimate.Transform(TransformType.SCALE_X, from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun scaleY(from: Float, to: Float) {
+        animations.add(SvgAnimate.Transform(TransformType.SCALE_Y, from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun rotate(from: Float, to: Float) {
+        animations.add(SvgAnimate.Transform(TransformType.ROTATE, from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun skewX(from: Float, to: Float) {
+        animations.add(SvgAnimate.Transform(TransformType.SKEW_X, from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun skewY(from: Float, to: Float) {
+        animations.add(SvgAnimate.Transform(TransformType.SKEW_Y, from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun motion(path: String, rotate: MotionRotate = MotionRotate.NONE) {
+        animations.add(SvgAnimate.Motion(path, config.dur, config.delay, rotate, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun strokeWidth(from: Float, to: Float) {
+        animations.add(SvgAnimate.StrokeWidth(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun strokeOpacity(from: Float = 0f, to: Float = 1f) {
+        animations.add(SvgAnimate.StrokeOpacity(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun strokeDasharray(from: List<Float>, to: List<Float>) {
+        animations.add(SvgAnimate.StrokeDasharray(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun strokeDashoffset(from: Float, to: Float) {
+        animations.add(SvgAnimate.StrokeDashoffset(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun fillOpacity(from: Float = 0f, to: Float = 1f) {
+        animations.add(SvgAnimate.FillOpacity(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun cx(from: Float, to: Float) {
+        animations.add(SvgAnimate.Cx(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun cy(from: Float, to: Float) {
+        animations.add(SvgAnimate.Cy(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun r(from: Float, to: Float) {
+        animations.add(SvgAnimate.R(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun rx(from: Float, to: Float) {
+        animations.add(SvgAnimate.Rx(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun ry(from: Float, to: Float) {
+        animations.add(SvgAnimate.Ry(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun x(from: Float, to: Float) {
+        animations.add(SvgAnimate.X(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun y(from: Float, to: Float) {
+        animations.add(SvgAnimate.Y(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun width(from: Float, to: Float) {
+        animations.add(SvgAnimate.Width(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun height(from: Float, to: Float) {
+        animations.add(SvgAnimate.Height(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun x1(from: Float, to: Float) {
+        animations.add(SvgAnimate.X1(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun y1(from: Float, to: Float) {
+        animations.add(SvgAnimate.Y1(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun x2(from: Float, to: Float) {
+        animations.add(SvgAnimate.X2(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun y2(from: Float, to: Float) {
+        animations.add(SvgAnimate.Y2(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun d(from: String, to: String) {
+        animations.add(SvgAnimate.D(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
+
+    context(config: AnimationConfig)
+    fun points(from: List<Offset>, to: List<Offset>) {
+        animations.add(SvgAnimate.Points(from, to, config.dur, config.delay, config.calcMode, config.keySplines, config.iterations, config.direction, config.fillMode))
+    }
 }
 
 // ============================================
