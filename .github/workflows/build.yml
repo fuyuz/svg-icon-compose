@@ -17,19 +17,19 @@ jobs:
         include:
           - target: jvm
             os: ubuntu-latest
-            tasks: ':parser-core:desktopJar :runtime:compileKotlinDesktop :runtime:desktopTest :gradle-plugin:build'
+            tasks: ':runtime:compileKotlinDesktop :runtime:desktopTest :gradle-plugin:build'
           - target: android
             os: ubuntu-latest
-            tasks: ':parser-core:desktopJar :runtime:compileDebugKotlinAndroid :runtime:compileReleaseKotlinAndroid'
+            tasks: ':runtime:compileDebugKotlinAndroid :runtime:compileReleaseKotlinAndroid'
           - target: ios
             os: macos-latest
-            tasks: ':parser-core:desktopJar :runtime:compileKotlinIosArm64 :runtime:compileKotlinIosX64 :runtime:compileKotlinIosSimulatorArm64 :runtime:linkDebugFrameworkIosArm64'
+            tasks: ':runtime:compileKotlinIosArm64 :runtime:compileKotlinIosX64 :runtime:compileKotlinIosSimulatorArm64 :runtime:linkDebugFrameworkIosArm64'
           - target: js
             os: ubuntu-latest
-            tasks: ':parser-core:desktopJar :runtime:compileKotlinJs :runtime:jsTest'
+            tasks: ':runtime:compileKotlinJs :runtime:jsTest'
           - target: wasm
             os: ubuntu-latest
-            tasks: ':parser-core:desktopJar :runtime:compileKotlinWasmJs :runtime:wasmJsTest'
+            tasks: ':runtime:compileKotlinWasmJs :runtime:wasmJsTest'
 
     runs-on: ${{ matrix.os }}
     name: Build (${{ matrix.target }})
@@ -54,6 +54,9 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Build parser-core JAR (required by gradle-plugin)
+        run: ./gradlew :parser-core:desktopJar
 
       - name: Build
         run: ./gradlew ${{ matrix.tasks }}
