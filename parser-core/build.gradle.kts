@@ -8,6 +8,7 @@ plugins {
 }
 
 group = "io.github.fuyuz.svgicon"
+version = "0.1.0-SNAPSHOT"
 
 kotlin {
     jvm("desktop") {
