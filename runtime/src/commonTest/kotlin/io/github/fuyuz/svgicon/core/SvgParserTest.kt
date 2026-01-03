@@ -2542,7 +2542,7 @@ class SvgParserTest {
     }
 
     @Test
-    fun parseAnimateStrokeDashoffsetReverse() {
+    fun parseAnimateStrokeDashoffset() {
         val svg = svg("""
             <svg>
                 <path d="M10 10 L20 20">
@@ -2553,9 +2553,11 @@ class SvgParserTest {
         assertEquals(1, svg.children.size)
         assertIs<SvgAnimated>(svg.children[0])
         val animated = svg.children[0] as SvgAnimated
-        val strokeDraw = animated.animations[0]
-        assertIs<SvgAnimate.StrokeDraw>(strokeDraw)
-        assertTrue(strokeDraw.reverse) // from < to means reverse
+        val strokeDashoffset = animated.animations[0]
+        assertIs<SvgAnimate.StrokeDashoffset>(strokeDashoffset)
+        assertEquals(0f, strokeDashoffset.from)
+        assertEquals(100f, strokeDashoffset.to)
+        assertEquals(1000.milliseconds, strokeDashoffset.dur)
     }
 
     @Test

@@ -1284,6 +1284,112 @@ private fun applyStyle(parent: DrawContext, style: SvgStyle): DrawContext {
     )
 }
 
+/**
+ * Applies style while preserving animation state (fillOpacity, strokeOpacity, strokeDashoffset, etc.)
+ * from the animated context.
+ */
+private fun applyStylePreservingAnimation(
+    animatedCtx: DrawContext,
+    style: SvgStyle,
+    state: AnimatedElementState
+): DrawContext {
+    // Color handling:
+    // - null = inherit from parent
+    // - Color.Unspecified = currentColor (use parent's strokeColor as tint)
+    // - Color.Transparent = none (no color)
+    // - other Color = use that color
+
+    // Determine stroke color (base color without opacity)
+    val baseStrokeColor = when (val c = style.stroke) {
+        null -> animatedCtx.strokeColor
+        Color.Unspecified -> animatedCtx.strokeColor  // currentColor
+        else -> c
+    }
+    val hasStroke = style.stroke != Color.Transparent && (style.stroke != null || animatedCtx.hasStroke)
+
+    // Determine fill color (base color without opacity)
+    val baseFillColor = when (val c = style.fill) {
+        null -> animatedCtx.fillColor
+        Color.Unspecified -> animatedCtx.strokeColor  // currentColor
+        Color.Transparent -> null
+        else -> c
+    }
+
+    // Build stroke - use animation state for dashoffset if available
+    val strokeWidth = style.strokeWidth ?: animatedCtx.stroke.width
+    val strokeCap = style.strokeLinecap?.toCompose() ?: animatedCtx.stroke.cap
+    val strokeJoin = style.strokeLinejoin?.toCompose() ?: animatedCtx.stroke.join
+    val miterLimit = style.strokeMiterlimit ?: animatedCtx.stroke.miter
+    val pathEffect = buildPathEffectPreservingAnimation(style, animatedCtx.stroke.pathEffect, state)
+
+    val stroke = Stroke(
+        width = strokeWidth,
+        cap = strokeCap,
+        join = strokeJoin,
+        miter = miterLimit,
+        pathEffect = pathEffect
+    )
+
+    // Apply opacity - preserve animation state's fillOpacity and strokeOpacity
+    val baseOpacity = (style.opacity ?: 1f) * animatedCtx.opacity
+    val styleStrokeOpacity = style.strokeOpacity ?: 1f
+    val styleFillOpacity = style.fillOpacity ?: 1f
+
+    // Use animation state's opacity values (already interpolated) multiplied with style opacity
+    val effectiveStrokeOpacity = styleStrokeOpacity * state.strokeOpacity
+    val effectiveFillOpacity = styleFillOpacity * state.fillOpacity
+
+    // Final colors with all opacity applied
+    val strokeColor = baseStrokeColor.copy(alpha = baseStrokeColor.alpha * effectiveStrokeOpacity * baseOpacity * state.opacity)
+    val fillColor = baseFillColor?.copy(alpha = baseFillColor.alpha * effectiveFillOpacity * baseOpacity * state.opacity)
+
+    // Fill rule
+    val fillRule = style.fillRule?.toCompose() ?: animatedCtx.fillRule
+
+    // Paint order
+    val paintOrder = style.paintOrder ?: animatedCtx.paintOrder
+
+    // Vector effect
+    val vectorEffect = style.vectorEffect ?: animatedCtx.vectorEffect
+
+    // Clip path and mask references
+    val clipPathId = style.clipPathId ?: animatedCtx.clipPathId
+    val maskId = style.maskId ?: animatedCtx.maskId
+
+    return DrawContext(
+        strokeColor = strokeColor,
+        fillColor = fillColor,
+        stroke = stroke,
+        opacity = baseOpacity * state.opacity,
+        fillRule = fillRule,
+        hasStroke = hasStroke,
+        paintOrder = paintOrder,
+        vectorEffect = vectorEffect,
+        scaleFactor = animatedCtx.scaleFactor,
+        clipPathId = clipPathId,
+        maskId = maskId
+    )
+}
+
+private fun buildPathEffectPreservingAnimation(
+    style: SvgStyle,
+    parent: PathEffect?,
+    state: AnimatedElementState
+): PathEffect? {
+    val dashArray = state.strokeDasharray ?: style.strokeDasharray
+    if (dashArray != null && dashArray.isNotEmpty()) {
+        val intervals = if (dashArray.size % 2 == 0) {
+            dashArray.toFloatArray()
+        } else {
+            FloatArray(dashArray.size * 2) { i -> dashArray[i % dashArray.size] }
+        }
+        // Use animation state's dashoffset if available, otherwise use style's
+        val phase = state.strokeDashoffset ?: style.strokeDashoffset ?: 0f
+        return PathEffect.dashPathEffect(intervals, phase)
+    }
+    return parent
+}
+
 private fun buildPathEffect(style: SvgStyle, parent: PathEffect?): PathEffect? {
     val dashArray = style.strokeDasharray
     if (dashArray != null && dashArray.isNotEmpty()) {
@@ -2467,6 +2573,26 @@ private fun DrawScope.drawAnimatedInnerElement(
             )
             drawSvgLine(animatedLine, ctx)
         }
+        is SvgStyled -> {
+            // Apply SvgStyled's style on top of the animated context
+            val styledCtx = applyStylePreservingAnimation(ctx, element.style, state)
+            val transform = element.style.transform
+            if (transform != null) {
+                withTransform(transform) {
+                    drawAnimatedInnerElement(element.element, styledCtx, registry, pathCache, state)
+                }
+            } else {
+                drawAnimatedInnerElement(element.element, styledCtx, registry, pathCache, state)
+            }
+        }
+        is SvgPath -> drawSvgPath(element, ctx)
+        is SvgPolyline -> drawSvgPolyline(element, ctx)
+        is SvgPolygon -> drawSvgPolygon(element, ctx)
+        is SvgGroup -> {
+            val groupCtx = element.style?.let { applyStylePreservingAnimation(ctx, it, state) } ?: ctx
+            element.children.forEach { drawAnimatedInnerElement(it, groupCtx, registry, pathCache, state) }
+        }
+        is SvgText -> drawSvgText(element, ctx, registry.textMeasurer)
         else -> drawSvgElement(element, ctx, registry)
     }
 }
