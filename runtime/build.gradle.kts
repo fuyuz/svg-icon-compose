@@ -48,6 +48,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            api(project(":parser-core"))
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.ui)

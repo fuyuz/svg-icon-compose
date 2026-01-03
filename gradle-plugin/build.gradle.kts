@@ -3,6 +3,8 @@ import com.vanniktech.maven.publish.JavadocJar
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.compose.compiler)
     `java-gradle-plugin`
     alias(libs.plugins.maven.publish)
 }
@@ -12,11 +14,20 @@ group = "io.github.fuyuz.svgicon"
 dependencies {
     implementation(libs.kotlinpoet)
 
+    // Compose UI for Color and Offset types
+    implementation(compose.runtime)
+    implementation(compose.ui)
+
     // Gradle API
     compileOnly(gradleApi())
 
     // Kotlin Gradle Plugin API for KotlinCompilationTask
     compileOnly(libs.kotlin.gradle.plugin)
+
+    // Parser-core module for DSL types and SvgParser
+    // Implementation bundles parser-core into the plugin JAR
+    // Uses file dependency to avoid composite build issues with multiplatform
+    implementation(files("../parser-core/build/libs/parser-core-desktop-0.1.0-SNAPSHOT.jar"))
 
     // Test dependencies
     testImplementation(kotlin("test"))

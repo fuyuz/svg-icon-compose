@@ -16,5 +16,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "svg-icon-compose"
 
+include(":parser-core")
 include(":runtime")
 include(":sample")
