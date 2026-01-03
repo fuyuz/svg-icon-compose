@@ -56,7 +56,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build parser-core JAR (required by gradle-plugin)
-        run: ./gradlew :parser-core:desktopJar
+        working-directory: parser-core
+        run: ../gradlew desktopJar
 
       - name: Build
         run: ./gradlew ${{ matrix.tasks }}
