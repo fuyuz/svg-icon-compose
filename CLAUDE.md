@@ -83,3 +83,43 @@ Managed via `/gradle/libs.versions.toml`:
 - Compose Multiplatform 1.9.3
 - KSP for code generation
 - Android: minSdk 24, compileSdk 35
+
+## Changelog Management
+
+This project uses [Keep a Changelog](https://keepachangelog.com/) format.
+
+### Format
+
+```markdown
+# Changelog
+
+## [Unreleased]
+### Added
+- New features
+
+### Changed
+- Changes in existing functionality
+
+### Deprecated
+- Soon-to-be removed features
+
+### Removed
+- Removed features
+
+### Fixed
+- Bug fixes
+
+### Security
+- Vulnerability fixes
+
+## [X.Y.Z] - YYYY-MM-DD
+...
+```
+
+### Guidelines
+
+1. **Update on every PR** - Add entries to `[Unreleased]` section when merging features/fixes
+2. **Use past tense** - "Added support for..." not "Add support for..."
+3. **Link to PRs/issues** - Include references like `(#123)` when relevant
+4. **Group by type** - Use the standard categories (Added, Changed, Fixed, etc.)
+5. **Release process** - When releasing, move `[Unreleased]` entries to a new version section with date
