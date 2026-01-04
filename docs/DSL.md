@@ -422,10 +422,10 @@ SvgAnimate.Motion(
 
 ```kotlin
 AnimatedSvgIcon(
-    icon = myAnimatedIcon,
+    svg = myAnimatedIcon,
     contentDescription = "Animated icon",
     tint = Color.White,
-    size = 48.dp,
+    modifier = Modifier.size(48.dp),
     animate = true,              // Enable/disable animation
     iterations = Int.MAX_VALUE,  // Number of iterations (MAX_VALUE = infinite)
     onAnimationEnd = { }         // Callback when animation ends

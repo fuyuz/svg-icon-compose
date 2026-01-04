@@ -137,6 +137,7 @@ fun AnimatedSvgIcon(
     modifier: Modifier = Modifier,
     tint: Color = LocalContentColor.current,
     strokeWidth: Float? = null,
+    animationState: SvgIconAnimationState? = null,
     animate: Boolean = true,
     iterations: Int = Int.MAX_VALUE,
     onAnimationEnd: (() -> Unit)? = null
@@ -154,7 +155,7 @@ fun AnimatedSvgIcon(
     var timeInAnimation by remember { mutableFloatStateOf(0f) }
     var iteration by remember { mutableIntStateOf(0) }
 
-    if (animate && (iterations == Int.MAX_VALUE || iteration < iterations)) {
+    if (animationState == null && animate && (iterations == Int.MAX_VALUE || iteration < iterations)) {
         LaunchedEffect(svg, animate) {
             val startTime = withFrameMillis { it }
             while (iterations == Int.MAX_VALUE || iteration < iterations) {
@@ -174,15 +175,21 @@ fun AnimatedSvgIcon(
     }
 
     val progressMap = animations.associate { entry ->
-        val progress = remember(timeInAnimation, iteration) {
-            val fillProgress = getFillProgress(
-                timeInAnimation,
-                totalAnimationMs,
-                entry.animation.fillMode,
-                entry.animation.direction,
-                iteration
-            ) ?: 0f
-            mutableStateOf(fillProgress)
+        val progress = if (animationState != null) {
+            remember(animationState.progress) {
+                mutableStateOf(animationState.progress)
+            }
+        } else {
+            remember(timeInAnimation, iteration) {
+                val fillProgress = getFillProgress(
+                    timeInAnimation,
+                    totalAnimationMs,
+                    entry.animation.fillMode,
+                    entry.animation.direction,
+                    iteration
+                ) ?: 0f
+                mutableStateOf(fillProgress)
+            }
         }
         AnimationKey(entry.element, entry.animation) to progress
     }
