@@ -3,18 +3,23 @@ package io.github.fuyuz.svgicon.gradle
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.Incremental
+import org.gradle.work.InputChanges
 
 /**
  * Gradle task that generates Kotlin icon classes from SVG files.
  */
+@CacheableTask
 abstract class GenerateSvgIconsTask : DefaultTask() {
 
+    @get:Incremental
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val svgDir: DirectoryProperty
@@ -34,7 +39,7 @@ abstract class GenerateSvgIconsTask : DefaultTask() {
     }
 
     @TaskAction
-    fun generate() {
+    fun generate(inputChanges: InputChanges) {
         val svgDirectory = svgDir.get().asFile
         val outputDirectory = outputDir.get().asFile
         val pkg = packageName.get()
@@ -45,9 +50,21 @@ abstract class GenerateSvgIconsTask : DefaultTask() {
             return
         }
 
-        // Clean output directory
-        outputDirectory.deleteRecursively()
-        outputDirectory.mkdirs()
+        if (inputChanges.isIncremental) {
+            val changes = inputChanges.getFileChanges(svgDir)
+            val removedFiles = changes.filter { it.changeType == org.gradle.work.ChangeType.REMOVED }
+            removedFiles.forEach { change ->
+                val fileName = change.file.nameWithoutExtension
+                val generatedFile = outputDirectory.resolve(pkg.replace('.', '/')).resolve("${fileName.capitalize()}.kt")
+                if (generatedFile.exists()) {
+                    generatedFile.delete()
+                }
+            }
+        } else {
+            // Clean output directory for non-incremental build
+            outputDirectory.deleteRecursively()
+            outputDirectory.mkdirs()
+        }
 
         val svgFiles = svgDirectory.listFiles { file -> file.extension == "svg" } ?: emptyArray()
 

@@ -127,10 +127,10 @@ import your.package.generated.icons.Icons
 @Composable
 fun MyScreen() {
     SvgIcon(
-        icon = Icons.Check,
+        svg = Icons.Check,
         contentDescription = "Check",
         tint = Color.Green,
-        size = 24.dp
+        modifier = Modifier.size(24.dp)
     )
 }
 ```
@@ -301,7 +301,7 @@ fun DynamicIcon() {
         svg = icon,
         contentDescription = "Circle",
         tint = Color.Blue,
-        size = 48.dp
+        modifier = Modifier.size(48.dp)
     )
 }
 ```
