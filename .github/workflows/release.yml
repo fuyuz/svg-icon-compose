@@ -40,18 +40,16 @@ jobs:
           sed -i '' "s/version = \".*\"/version = \"$VERSION\"/" build.gradle.kts
           sed -i '' "s/version = \".*\"/version = \"$VERSION\"/" gradle-plugin/build.gradle.kts
 
-      - name: Build
-        run: ./gradlew build
-
       - name: Publish to Maven Central
         env:
+          GRADLE_OPTS: "-Xmx4g"
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          ./gradlew publishAllPublicationsToMavenCentralRepository
-          ./gradlew :gradle-plugin:publishAllPublicationsToMavenCentralRepository
+          ./gradlew publishAllPublicationsToMavenCentralRepository --no-daemon
+          ./gradlew :gradle-plugin:publishAllPublicationsToMavenCentralRepository --no-daemon
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
