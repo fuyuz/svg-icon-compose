@@ -65,6 +65,16 @@ enum class TransformType {
 }
 
 /**
+ * Additive mode for animateTransform (SVG SMIL spec).
+ */
+enum class AdditiveMode {
+    /** Overwrite previous transforms (default) */
+    REPLACE,
+    /** Add to previous transforms */
+    SUM
+}
+
+/**
  * Rotation mode for animateMotion.
  */
 enum class MotionRotate {
@@ -449,6 +459,11 @@ sealed interface SvgAnimate {
 
     /**
      * Transform animation (animateTransform).
+     *
+     * For translate type, use [fromY] and [toY] to specify Y values separately.
+     * If not specified, Y values default to 0.
+     *
+     * @param additive Additive mode (replace or sum). When sum, transforms accumulate.
      */
     data class Transform(
         val type: TransformType,
@@ -460,7 +475,13 @@ sealed interface SvgAnimate {
         override val keySplines: KeySplines? = null,
         override val iterations: Int = INFINITE,
         override val direction: AnimationDirection = AnimationDirection.NORMAL,
-        override val fillMode: AnimationFillMode = AnimationFillMode.NONE
+        override val fillMode: AnimationFillMode = AnimationFillMode.NONE,
+        /** Y value for translate (from). Only used when type is TRANSLATE. */
+        val fromY: Float = 0f,
+        /** Y value for translate (to). Only used when type is TRANSLATE. */
+        val toY: Float = 0f,
+        /** Additive mode for combining with other transforms. */
+        val additive: AdditiveMode = AdditiveMode.REPLACE
     ) : SvgAnimate
 
     // ============================================

@@ -440,6 +440,58 @@ private val DslSkewAnimIcon = Svg(
     )
 )
 
+/**
+ * Translate animation with separate X and Y values (Issue #30 fix test).
+ * Animates from (0, 0) to (5, -5) - diagonal movement.
+ */
+private val DslTranslateXYIcon = Svg(
+    children = listOf(
+        SvgAnimated(
+            element = SvgCircle(12f, 12f, 4f),
+            animations = listOf(
+                SvgAnimate.Transform(
+                    type = TransformType.TRANSLATE,
+                    from = 0f,
+                    to = 5f,
+                    fromY = 0f,
+                    toY = -5f,
+                    dur = 1.seconds
+                )
+            )
+        )
+    )
+)
+
+/**
+ * Additive transforms test (Issue #31 fix test).
+ * Both rotate and scale animate simultaneously with additive="sum".
+ */
+private val DslAdditiveTransformsIcon = Svg(
+    children = listOf(
+        SvgAnimated(
+            element = SvgRect(8f, 8f, 8f, 8f),
+            animations = listOf(
+                // Rotation with additive
+                SvgAnimate.Transform(
+                    type = TransformType.ROTATE,
+                    from = 0f,
+                    to = 360f,
+                    dur = 2.seconds,
+                    additive = AdditiveMode.SUM
+                ),
+                // Scale with additive
+                SvgAnimate.Transform(
+                    type = TransformType.SCALE,
+                    from = 0.5f,
+                    to = 1.5f,
+                    dur = 1.seconds,
+                    additive = AdditiveMode.SUM
+                )
+            )
+        )
+    )
+)
+
 fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
@@ -1278,6 +1330,34 @@ fun App() {
                         )
                         Text("SkewX", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
+
+                    // Translate X/Y animation (Issue #30 fix)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = DslTranslateXYIcon,
+                            contentDescription = "Translate XY",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF8B5CF6)
+                        )
+                        Text("Translate XY", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Additive transforms animation (Issue #31 fix)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = DslAdditiveTransformsIcon,
+                            contentDescription = "Additive Transforms",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFFEF4444)
+                        )
+                        Text("Additive", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
                 }
 
                 Text(
@@ -1546,6 +1626,89 @@ fun App() {
                             tint = Color.Unspecified
                         )
                         Text("*", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                }
+
+                Text(
+                    "animateTransform: translate XY & additive (Issue #30, #31):",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Translate with X and Y values (Issue #30)
+                    val translateXYSvg = remember {
+                        svg("""
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="4">
+                                    <animateTransform attributeName="transform" type="translate" from="0 0" to="6 -6" dur="1s" repeatCount="indefinite"/>
+                                </circle>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = translateXYSvg,
+                            contentDescription = "Translate XY",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF3B82F6)
+                        )
+                        Text("translate X,Y", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Additive transforms (Issue #31)
+                    val additiveSvg = remember {
+                        svg("""
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="8" y="8" width="8" height="8">
+                                    <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="2s" additive="sum" repeatCount="indefinite"/>
+                                    <animateTransform attributeName="transform" type="scale" from="0.8" to="1.2" dur="1s" additive="sum" repeatCount="indefinite"/>
+                                </rect>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = additiveSvg,
+                            contentDescription = "Additive",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF22C55E)
+                        )
+                        Text("additive=sum", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+
+                    // Combined: translate X,Y with additive
+                    // Expected: Triangle moves diagonally (right-up) while rotating
+                    val combinedSvg = remember {
+                        svg("""
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="12,8 16,16 8,16">
+                                    <animateTransform attributeName="transform" type="translate" from="0 0" to="4 -4" dur="1s" additive="sum" repeatCount="indefinite"/>
+                                    <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="1s" additive="sum" repeatCount="indefinite"/>
+                                </polygon>
+                            </svg>
+                        """.trimIndent())
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedSvgIcon(
+                            svg = combinedSvg,
+                            contentDescription = "Combined",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFFF59E0B)
+                        )
+                        Text("Move+Rotate", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 }
 

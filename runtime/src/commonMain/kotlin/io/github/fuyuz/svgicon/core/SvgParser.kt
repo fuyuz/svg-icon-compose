@@ -696,6 +696,12 @@ internal object SvgXmlParser {
         val calcMode = parseCalcMode(attrs["calcMode"])
         val keySplines = parseKeySplines(attrs["keySplines"])
 
+        // Parse additive attribute
+        val additive = when (attrs["additive"]?.lowercase()) {
+            "sum" -> AdditiveMode.SUM
+            else -> AdditiveMode.REPLACE
+        }
+
         // Parse from/to values
         val fromStr = attrs["from"]
         val toStr = attrs["to"]
@@ -712,16 +718,55 @@ internal object SvgXmlParser {
             else -> return null
         }
 
-        // Extract numeric values - for rotate, the first number is the angle
+        // For translate, we need both X and Y values
+        if (transformType == TransformType.TRANSLATE) {
+            val fromXY: Pair<Float, Float>?
+            val toXY: Pair<Float, Float>?
+
+            if (fromStr != null && toStr != null) {
+                fromXY = parseTransformValueXY(fromStr)
+                toXY = parseTransformValueXY(toStr)
+            } else if (valuesStr != null) {
+                // Parse first and last keyframe for translate
+                val keyframes = valuesStr.split(";").mapNotNull { parseTransformValueXY(it.trim()) }
+                if (keyframes.size >= 2) {
+                    fromXY = keyframes.first()
+                    toXY = keyframes.last()
+                } else {
+                    fromXY = keyframes.firstOrNull()
+                    toXY = keyframes.lastOrNull()
+                }
+            } else {
+                fromXY = fromStr?.let { parseTransformValueXY(it) }
+                toXY = toStr?.let { parseTransformValueXY(it) }
+            }
+
+            return if (fromXY != null && toXY != null) {
+                SvgAnimate.Transform(
+                    type = transformType,
+                    from = fromXY.first,
+                    to = toXY.first,
+                    dur = dur,
+                    delay = delay,
+                    calcMode = calcMode,
+                    keySplines = keySplines,
+                    fromY = fromXY.second,
+                    toY = toXY.second,
+                    additive = additive
+                )
+            } else null
+        }
+
+        // For other transform types, use single value parsing
         val from: Float?
         val to: Float?
 
         if (fromStr != null && toStr != null) {
-            from = parseTransformValue(fromStr, type)
-            to = parseTransformValue(toStr, type)
+            from = parseTransformValue(fromStr)
+            to = parseTransformValue(toStr)
         } else if (valuesStr != null) {
             // Parse all keyframe values and use min/max for oscillating animations
-            val keyframes = valuesStr.split(";").mapNotNull { parseTransformValue(it.trim(), type) }
+            val keyframes = valuesStr.split(";").mapNotNull { parseTransformValue(it.trim()) }
             if (keyframes.size >= 2) {
                 from = keyframes.minOrNull()
                 to = keyframes.maxOrNull()
@@ -730,22 +775,43 @@ internal object SvgXmlParser {
                 to = keyframes.lastOrNull()
             }
         } else {
-            from = parseTransformValue(fromStr, type)
-            to = parseTransformValue(toStr, type)
+            from = parseTransformValue(fromStr)
+            to = parseTransformValue(toStr)
         }
 
         return if (from != null && to != null) {
-            SvgAnimate.Transform(transformType, from, to, dur, delay, calcMode, keySplines)
+            SvgAnimate.Transform(
+                type = transformType,
+                from = from,
+                to = to,
+                dur = dur,
+                delay = delay,
+                calcMode = calcMode,
+                keySplines = keySplines,
+                additive = additive
+            )
         } else null
     }
 
     /**
-     * Parse a transform value string and extract the primary value.
+     * Parse a transform value string and extract the primary (first) value.
      */
-    private fun parseTransformValue(valueStr: String?, type: String): Float? {
+    private fun parseTransformValue(valueStr: String?): Float? {
         if (valueStr == null) return null
         val parts = valueStr.trim().split(separatorPattern).mapNotNull { it.toFloatOrNull() }
         return parts.firstOrNull()
+    }
+
+    /**
+     * Parse a transform value string and extract X and Y values.
+     * Returns Pair(x, y) where y defaults to 0 if not specified.
+     */
+    private fun parseTransformValueXY(valueStr: String): Pair<Float, Float>? {
+        val parts = valueStr.trim().split(separatorPattern).mapNotNull { it.toFloatOrNull() }
+        if (parts.isEmpty()) return null
+        val x = parts[0]
+        val y = parts.getOrElse(1) { 0f }
+        return Pair(x, y)
     }
 
     /**

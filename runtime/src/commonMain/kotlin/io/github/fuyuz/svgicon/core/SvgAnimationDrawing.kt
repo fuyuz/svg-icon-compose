@@ -233,16 +233,51 @@ private fun DrawScope.drawAnimatedElement(
         when (anim) {
             is SvgAnimate.Transform -> {
                 val value = anim.from + (anim.to - anim.from) * progress
+                val isAdditive = anim.additive == AdditiveMode.SUM
                 when (anim.type) {
-                    TransformType.ROTATE -> state.rotationAngle = value
-                    TransformType.SCALE -> { state.scaleX = value; state.scaleY = value }
-                    TransformType.SCALE_X -> state.scaleX = value
-                    TransformType.SCALE_Y -> state.scaleY = value
-                    TransformType.TRANSLATE -> { state.translateX = value; state.translateY = value }
-                    TransformType.TRANSLATE_X -> state.translateX = value
-                    TransformType.TRANSLATE_Y -> state.translateY = value
-                    TransformType.SKEW_X -> state.skewX = value
-                    TransformType.SKEW_Y -> state.skewY = value
+                    TransformType.ROTATE -> {
+                        state.rotationAngle = if (isAdditive) state.rotationAngle + value else value
+                    }
+                    TransformType.SCALE -> {
+                        if (isAdditive) {
+                            // For additive scale, multiply (scale of 1 is identity)
+                            state.scaleX *= value
+                            state.scaleY *= value
+                        } else {
+                            state.scaleX = value
+                            state.scaleY = value
+                        }
+                    }
+                    TransformType.SCALE_X -> {
+                        state.scaleX = if (isAdditive) state.scaleX * value else value
+                    }
+                    TransformType.SCALE_Y -> {
+                        state.scaleY = if (isAdditive) state.scaleY * value else value
+                    }
+                    TransformType.TRANSLATE -> {
+                        // Use separate X and Y values for translate
+                        val valueX = anim.from + (anim.to - anim.from) * progress
+                        val valueY = anim.fromY + (anim.toY - anim.fromY) * progress
+                        if (isAdditive) {
+                            state.translateX += valueX
+                            state.translateY += valueY
+                        } else {
+                            state.translateX = valueX
+                            state.translateY = valueY
+                        }
+                    }
+                    TransformType.TRANSLATE_X -> {
+                        state.translateX = if (isAdditive) state.translateX + value else value
+                    }
+                    TransformType.TRANSLATE_Y -> {
+                        state.translateY = if (isAdditive) state.translateY + value else value
+                    }
+                    TransformType.SKEW_X -> {
+                        state.skewX = if (isAdditive) state.skewX + value else value
+                    }
+                    TransformType.SKEW_Y -> {
+                        state.skewY = if (isAdditive) state.skewY + value else value
+                    }
                 }
             }
             is SvgAnimate.Opacity -> {
