@@ -76,6 +76,11 @@ object MyIcon : SvgIcon {
 - Default stroke width is 2dp
 - Use `@Preview` composables for visual testing
 
+## Development Guidelines
+
+- **Update tests when changing implementation** - Any changes to runtime or processor modules must include corresponding test updates
+- **Add sample icons for new features** - When adding new SVG element support or animation features, add a simple sample icon to `sample/src/commonMain/svgicons/` to demonstrate the functionality
+
 ## Dependencies
 
 Managed via `/gradle/libs.versions.toml`:
