@@ -1687,13 +1687,14 @@ fun App() {
                     }
 
                     // Combined: translate X,Y with additive
+                    // Expected: Triangle moves diagonally (right-up) while rotating
                     val combinedSvg = remember {
                         svg("""
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="3">
+                                <polygon points="12,8 16,16 8,16">
                                     <animateTransform attributeName="transform" type="translate" from="0 0" to="4 -4" dur="1s" additive="sum" repeatCount="indefinite"/>
-                                    <animateTransform attributeName="transform" type="rotate" from="0" to="180" dur="500ms" additive="sum" repeatCount="indefinite"/>
-                                </circle>
+                                    <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="1s" additive="sum" repeatCount="indefinite"/>
+                                </polygon>
                             </svg>
                         """.trimIndent())
                     }
@@ -1707,7 +1708,7 @@ fun App() {
                             modifier = Modifier.size(48.dp),
                             tint = Color(0xFFF59E0B)
                         )
-                        Text("Combined", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        Text("Move+Rotate", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 }
 
