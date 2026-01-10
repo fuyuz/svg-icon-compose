@@ -84,6 +84,12 @@ Managed via `/gradle/libs.versions.toml`:
 - KSP for code generation
 - Android: minSdk 24, compileSdk 35
 
+## Versioning
+
+Version is defined in two places (both must be updated together):
+- `gradle.properties` - VERSION_NAME for runtime module
+- `gradle-plugin/gradle.properties` - VERSION_NAME for gradle-plugin module
+
 ## Changelog Management
 
 This project uses [Keep a Changelog](https://keepachangelog.com/) format.
