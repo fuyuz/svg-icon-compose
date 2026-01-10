@@ -196,7 +196,7 @@ private fun DrawScope.drawStyledElement(
 }
 
 internal fun DrawScope.drawSvgPath(ctx: DrawContext, path: SvgPath) {
-    val composePath = path.commands.toPath()
+    val composePath = path.commands.toPath().apply { fillType = ctx.fillRule }
     drawSvgPath(ctx, composePath)
 }
 
@@ -229,6 +229,7 @@ internal fun DrawScope.drawSvgPolyline(ctx: DrawContext, polyline: SvgPolyline) 
         for (i in 1 until polyline.points.size) {
             lineTo(polyline.points[i].x, polyline.points[i].y)
         }
+        fillType = ctx.fillRule
     }
     drawSvgPath(ctx, path)
 }
