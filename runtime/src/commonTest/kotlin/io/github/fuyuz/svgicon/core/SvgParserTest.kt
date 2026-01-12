@@ -3583,4 +3583,241 @@ class SvgParserTest {
         assertEquals(Visibility.HIDDEN, (circle as SvgStyled).style.visibility)
         assertEquals(Display.BLOCK, circle.style.display)
     }
+
+    // ===========================================
+    // Vector Effect Parsing Tests
+    // ===========================================
+
+    @Test
+    fun parseVectorEffectNone() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" vector-effect="none"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(VectorEffect.NONE, (circle as SvgStyled).style.vectorEffect)
+    }
+
+    @Test
+    fun parseVectorEffectNonScalingStroke() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" vector-effect="non-scaling-stroke"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(VectorEffect.NON_SCALING_STROKE, (circle as SvgStyled).style.vectorEffect)
+    }
+
+    @Test
+    fun parseVectorEffectInStyleAttribute() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" style="vector-effect: non-scaling-stroke"/>
+            </svg>
+        """.trimIndent())
+        val path = svg.children[0]
+        assertIs<SvgStyled>(path)
+        assertEquals(VectorEffect.NON_SCALING_STROKE, (path as SvgStyled).style.vectorEffect)
+    }
+
+    @Test
+    fun parseVectorEffectInherit() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" vector-effect="inherit"/>
+            </svg>
+        """.trimIndent())
+        // vector-effect="inherit" should result in no style
+        val circle = svg.children[0]
+        assertIs<SvgCircle>(circle)
+    }
+
+    // ===========================================
+    // Clip Path Parsing Tests
+    // ===========================================
+
+    @Test
+    fun parseClipPathAttribute() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" clip-path="url(#myClip)"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals("myClip", (circle as SvgStyled).style.clipPathId)
+    }
+
+    @Test
+    fun parseClipPathInStyleAttribute() {
+        val svg = svg("""
+            <svg>
+                <rect x="0" y="0" width="20" height="20" style="clip-path: url(#rectClip)"/>
+            </svg>
+        """.trimIndent())
+        val rect = svg.children[0]
+        assertIs<SvgStyled>(rect)
+        assertEquals("rectClip", (rect as SvgStyled).style.clipPathId)
+    }
+
+    @Test
+    fun parseClipPathNone() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" clip-path="none"/>
+            </svg>
+        """.trimIndent())
+        // clip-path="none" should result in no clipPathId
+        val circle = svg.children[0]
+        assertIs<SvgCircle>(circle)
+    }
+
+    // ===========================================
+    // Mask Parsing Tests
+    // ===========================================
+
+    @Test
+    fun parseMaskAttribute() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" mask="url(#myMask)"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals("myMask", (circle as SvgStyled).style.maskId)
+    }
+
+    @Test
+    fun parseMaskInStyleAttribute() {
+        val svg = svg("""
+            <svg>
+                <rect x="0" y="0" width="20" height="20" style="mask: url(#rectMask)"/>
+            </svg>
+        """.trimIndent())
+        val rect = svg.children[0]
+        assertIs<SvgStyled>(rect)
+        assertEquals("rectMask", (rect as SvgStyled).style.maskId)
+    }
+
+    @Test
+    fun parseMaskNone() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" mask="none"/>
+            </svg>
+        """.trimIndent())
+        // mask="none" should result in no maskId
+        val circle = svg.children[0]
+        assertIs<SvgCircle>(circle)
+    }
+
+    // ===========================================
+    // Marker Parsing Tests
+    // ===========================================
+
+    @Test
+    fun parseMarkerStartAttribute() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" marker-start="url(#arrowStart)"/>
+            </svg>
+        """.trimIndent())
+        val path = svg.children[0]
+        assertIs<SvgStyled>(path)
+        assertEquals("arrowStart", (path as SvgStyled).style.markerStart)
+    }
+
+    @Test
+    fun parseMarkerMidAttribute() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10 L20 0" marker-mid="url(#arrowMid)"/>
+            </svg>
+        """.trimIndent())
+        val path = svg.children[0]
+        assertIs<SvgStyled>(path)
+        assertEquals("arrowMid", (path as SvgStyled).style.markerMid)
+    }
+
+    @Test
+    fun parseMarkerEndAttribute() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" marker-end="url(#arrowEnd)"/>
+            </svg>
+        """.trimIndent())
+        val path = svg.children[0]
+        assertIs<SvgStyled>(path)
+        assertEquals("arrowEnd", (path as SvgStyled).style.markerEnd)
+    }
+
+    @Test
+    fun parseAllMarkersInStyleAttribute() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10 L20 0" style="marker-start: url(#start); marker-mid: url(#mid); marker-end: url(#end)"/>
+            </svg>
+        """.trimIndent())
+        val path = svg.children[0]
+        assertIs<SvgStyled>(path)
+        val style = (path as SvgStyled).style
+        assertEquals("start", style.markerStart)
+        assertEquals("mid", style.markerMid)
+        assertEquals("end", style.markerEnd)
+    }
+
+    @Test
+    fun parseMarkerNone() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" marker-start="none" marker-end="none"/>
+            </svg>
+        """.trimIndent())
+        // marker="none" should result in no marker
+        val path = svg.children[0]
+        assertIs<SvgPath>(path)
+    }
+
+    // ===========================================
+    // Combined Style Attributes Tests
+    // ===========================================
+
+    @Test
+    fun parseMultipleNewStyleAttributes() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10"
+                      vector-effect="non-scaling-stroke"
+                      clip-path="url(#myClip)"
+                      mask="url(#myMask)"
+                      marker-start="url(#start)"
+                      marker-end="url(#end)"/>
+            </svg>
+        """.trimIndent())
+        val path = svg.children[0]
+        assertIs<SvgStyled>(path)
+        val style = (path as SvgStyled).style
+        assertEquals(VectorEffect.NON_SCALING_STROKE, style.vectorEffect)
+        assertEquals("myClip", style.clipPathId)
+        assertEquals("myMask", style.maskId)
+        assertEquals("start", style.markerStart)
+        assertEquals("end", style.markerEnd)
+    }
+
+    @Test
+    fun parseUrlReferenceWithSpaces() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" clip-path="url( #myClip )"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals("myClip", (circle as SvgStyled).style.clipPathId)
+    }
 }

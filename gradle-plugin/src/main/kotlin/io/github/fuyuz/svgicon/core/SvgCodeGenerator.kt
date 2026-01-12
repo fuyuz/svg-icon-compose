@@ -44,6 +44,7 @@ object SvgCodeGenerator {
     private val maskUnitsClass = ClassName(corePackage, "MaskUnits")
     private val visibilityClass = ClassName(corePackage, "Visibility")
     private val displayClass = ClassName(corePackage, "Display")
+    private val vectorEffectClass = ClassName(corePackage, "VectorEffect")
     private val svgTransformClass = ClassName(corePackage, "SvgTransform")
     private val viewBoxClass = ClassName(corePackage, "ViewBox")
     private val preserveAspectRatioClass = ClassName(corePackage, "PreserveAspectRatio")
@@ -989,6 +990,35 @@ object SvgCodeGenerator {
             dispName?.let { styleParts.add(CodeBlock.of("display = %T.%L", displayClass, it)) }
         }
 
+        mergedAttrs["vector-effect"]?.takeIf { it != "inherit" }?.lowercase()?.let { ve ->
+            val veName = when (ve) {
+                "none" -> "NONE"
+                "non-scaling-stroke" -> "NON_SCALING_STROKE"
+                else -> null
+            }
+            veName?.let { styleParts.add(CodeBlock.of("vectorEffect = %T.%L", vectorEffectClass, it)) }
+        }
+
+        parseUrlReference(mergedAttrs["clip-path"])?.let {
+            styleParts.add(CodeBlock.of("clipPathId = %S", it))
+        }
+
+        parseUrlReference(mergedAttrs["mask"])?.let {
+            styleParts.add(CodeBlock.of("maskId = %S", it))
+        }
+
+        parseUrlReference(mergedAttrs["marker-start"])?.let {
+            styleParts.add(CodeBlock.of("markerStart = %S", it))
+        }
+
+        parseUrlReference(mergedAttrs["marker-mid"])?.let {
+            styleParts.add(CodeBlock.of("markerMid = %S", it))
+        }
+
+        parseUrlReference(mergedAttrs["marker-end"])?.let {
+            styleParts.add(CodeBlock.of("markerEnd = %S", it))
+        }
+
         if (styleParts.isEmpty()) {
             return element
         }
@@ -1315,6 +1345,35 @@ object SvgCodeGenerator {
             dispName?.let { styleParts.add(CodeBlock.of("display = %T.%L", displayClass, it)) }
         }
 
+        mergedAttrs["vector-effect"]?.takeIf { it != "inherit" }?.lowercase()?.let { ve ->
+            val veName = when (ve) {
+                "none" -> "NONE"
+                "non-scaling-stroke" -> "NON_SCALING_STROKE"
+                else -> null
+            }
+            veName?.let { styleParts.add(CodeBlock.of("vectorEffect = %T.%L", vectorEffectClass, it)) }
+        }
+
+        parseUrlReference(mergedAttrs["clip-path"])?.let {
+            styleParts.add(CodeBlock.of("clipPathId = %S", it))
+        }
+
+        parseUrlReference(mergedAttrs["mask"])?.let {
+            styleParts.add(CodeBlock.of("maskId = %S", it))
+        }
+
+        parseUrlReference(mergedAttrs["marker-start"])?.let {
+            styleParts.add(CodeBlock.of("markerStart = %S", it))
+        }
+
+        parseUrlReference(mergedAttrs["marker-mid"])?.let {
+            styleParts.add(CodeBlock.of("markerMid = %S", it))
+        }
+
+        parseUrlReference(mergedAttrs["marker-end"])?.let {
+            styleParts.add(CodeBlock.of("markerEnd = %S", it))
+        }
+
         if (styleParts.isEmpty()) {
             return element
         }
@@ -1346,6 +1405,21 @@ object SvgCodeGenerator {
             trimmed.startsWith("fill") -> "FILL_STROKE"
             else -> null
         }
+    }
+
+    /**
+     * Parses a URL reference attribute like clip-path, mask, marker-*.
+     * Extracts the ID from "url(#id)" format.
+     * Returns the ID string, or null if the value is not a valid URL reference.
+     */
+    private fun parseUrlReference(value: String?): String? {
+        if (value == null) return null
+        val trimmed = value.trim()
+        if (trimmed == "inherit" || trimmed == "none") return null
+        // Match url(#id) format
+        val urlPattern = Regex("""url\s*\(\s*#([^)]+)\s*\)""", RegexOption.IGNORE_CASE)
+        val match = urlPattern.find(trimmed) ?: return null
+        return match.groupValues[1].trim()
     }
 
     // ============================================

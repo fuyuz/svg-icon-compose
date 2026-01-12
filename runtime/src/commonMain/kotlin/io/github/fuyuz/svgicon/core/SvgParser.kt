@@ -1471,13 +1471,34 @@ internal object SvgXmlParser {
             else -> null
         }
 
+        // Parse vector-effect attribute
+        val vectorEffectValue = mergedAttrs["vector-effect"]
+        val vectorEffect = if (isInherit(vectorEffectValue)) null else when (vectorEffectValue?.lowercase()) {
+            "none" -> VectorEffect.NONE
+            "non-scaling-stroke" -> VectorEffect.NON_SCALING_STROKE
+            else -> null
+        }
+
+        // Parse clip-path attribute (url(#id) format)
+        val clipPathId = parseUrlReference(mergedAttrs["clip-path"])
+
+        // Parse mask attribute (url(#id) format)
+        val maskId = parseUrlReference(mergedAttrs["mask"])
+
+        // Parse marker attributes (url(#id) format)
+        val markerStart = parseUrlReference(mergedAttrs["marker-start"])
+        val markerMid = parseUrlReference(mergedAttrs["marker-mid"])
+        val markerEnd = parseUrlReference(mergedAttrs["marker-end"])
+
         // Only create style if at least one attribute is present
         if (fill == null && fillOpacity == null && fillRule == null &&
             stroke == null && strokeWidth == null && strokeOpacity == null &&
             strokeLinecap == null && strokeLinejoin == null &&
             strokeDasharray == null && strokeDashoffset == null &&
             strokeMiterlimit == null && opacity == null && transform == null &&
-            paintOrder == null && visibility == null && display == null) {
+            paintOrder == null && visibility == null && display == null &&
+            vectorEffect == null && clipPathId == null && maskId == null &&
+            markerStart == null && markerMid == null && markerEnd == null) {
             return null
         }
 
@@ -1496,6 +1517,12 @@ internal object SvgXmlParser {
             opacity = opacity,
             transform = transform,
             paintOrder = paintOrder,
+            vectorEffect = vectorEffect,
+            clipPathId = clipPathId,
+            maskId = maskId,
+            markerStart = markerStart,
+            markerMid = markerMid,
+            markerEnd = markerEnd,
             visibility = visibility,
             display = display
         )
@@ -1516,6 +1543,21 @@ internal object SvgXmlParser {
             trimmed.startsWith("fill") -> PaintOrder.FILL_STROKE
             else -> null
         }
+    }
+
+    /**
+     * Parses a URL reference attribute like clip-path, mask, marker-*.
+     * Extracts the ID from "url(#id)" format.
+     * Returns the ID string, or null if the value is not a valid URL reference.
+     */
+    private fun parseUrlReference(value: String?): String? {
+        if (value == null) return null
+        val trimmed = value.trim()
+        if (trimmed == "inherit" || trimmed == "none") return null
+        // Match url(#id) format
+        val urlPattern = Regex("""url\s*\(\s*#([^)]+)\s*\)""", RegexOption.IGNORE_CASE)
+        val match = urlPattern.find(trimmed) ?: return null
+        return match.groupValues[1].trim()
     }
 
     private fun parseDashArray(dashStr: String): List<Float>? {

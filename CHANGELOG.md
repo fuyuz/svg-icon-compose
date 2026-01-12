@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Added `strokeMiterlimit` property to `Svg` class with default value of 4 per SVG spec (#35)
 - Added `visibility` attribute support (visible, hidden, collapse) (#59)
 - Added `display` attribute support (inline, block, none) (#59)
+- Added parsing support for style attributes: `clip-path`, `mask`, `marker-start`, `marker-mid`, `marker-end`, `vector-effect` (#39)
 
 ### Changed
 
