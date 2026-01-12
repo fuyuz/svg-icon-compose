@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Aligned animation default values with SVG/SMIL spec (#55):
+  - `dur` defaults to `indefinite` (Duration.INFINITE) instead of `500ms`
+  - `repeatCount` defaults to `1` (single iteration) instead of `indefinite` (-1)
+  - `animateMotion` `calcMode` defaults to `paced` instead of `linear`
 - Aligned default fill behavior with SVG spec: `fill` now defaults to `black` instead of `none` (#34)
 - Aligned default stroke properties with SVG spec (#35):
   - `stroke` defaults to `none` (null) instead of `currentColor`

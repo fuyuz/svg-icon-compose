@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- This demo shows SVG/SMIL spec-compliant animation defaults:
+       - dur: indefinite (runs forever when not specified)
+       - repeatCount: 1 (single iteration)
+       - animateMotion calcMode: paced (constant velocity)
+
+       Note: Since default repeatCount is 1, animations with explicit
+       dur will play once and stop. Use repeatCount="indefinite" for loops. -->
+
+  <!-- Circle with explicit 2s duration - plays once then holds (repeatCount=1 default) -->
+  <circle cx="12" cy="12" r="4">
+    <animate attributeName="r" from="4" to="8" dur="2s" fill="freeze"/>
+  </circle>
+
+  <!-- Moving dot with paced motion along path (animateMotion default calcMode=paced) -->
+  <circle cx="0" cy="0" r="2" fill="currentColor">
+    <animateMotion path="M4,12 C4,4 20,4 20,12 C20,20 4,20 4,12" dur="3s" repeatCount="indefinite"/>
+  </circle>
+</svg>
