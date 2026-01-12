@@ -153,16 +153,16 @@ object SvgCodeGenerator {
             }
         }
 
-        // fill
-        val fill = attrs["fill"] ?: "none"
-        if (fill != "none") {
+        // fill - only generate if explicitly specified and not "inherit"
+        val fill = attrs["fill"]
+        if (fill != null && fill != "inherit") {
             builder.add(generateColorCodeBlock("fill", fill))
             builder.add(",\n")
         }
 
-        // stroke
-        val stroke = attrs["stroke"] ?: "currentColor"
-        if (stroke != "currentColor") {
+        // stroke - only generate if explicitly specified and not "inherit"
+        val stroke = attrs["stroke"]
+        if (stroke != null && stroke != "inherit") {
             builder.add(generateColorCodeBlock("stroke", stroke))
             builder.add(",\n")
         }
@@ -921,14 +921,15 @@ object SvgCodeGenerator {
 
         val styleParts = mutableListOf<CodeBlock>()
 
-        mergedAttrs["fill"]?.let { styleParts.add(generateColorCodeBlock("fill", it)) }
-        mergedAttrs["stroke"]?.let { styleParts.add(generateColorCodeBlock("stroke", it)) }
-        mergedAttrs["stroke-width"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeWidth = %Lf", it)) }
-        mergedAttrs["opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("opacity = %Lf", it)) }
-        mergedAttrs["fill-opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("fillOpacity = %Lf", it)) }
-        mergedAttrs["stroke-opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeOpacity = %Lf", it)) }
+        // fill/stroke: skip "inherit" (use parent's value)
+        mergedAttrs["fill"]?.takeIf { it != "inherit" }?.let { styleParts.add(generateColorCodeBlock("fill", it)) }
+        mergedAttrs["stroke"]?.takeIf { it != "inherit" }?.let { styleParts.add(generateColorCodeBlock("stroke", it)) }
+        mergedAttrs["stroke-width"]?.takeIf { it != "inherit" }?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeWidth = %Lf", it)) }
+        mergedAttrs["opacity"]?.takeIf { it != "inherit" }?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("opacity = %Lf", it)) }
+        mergedAttrs["fill-opacity"]?.takeIf { it != "inherit" }?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("fillOpacity = %Lf", it)) }
+        mergedAttrs["stroke-opacity"]?.takeIf { it != "inherit" }?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeOpacity = %Lf", it)) }
 
-        mergedAttrs["stroke-linecap"]?.lowercase()?.let { cap ->
+        mergedAttrs["stroke-linecap"]?.takeIf { it != "inherit" }?.lowercase()?.let { cap ->
             val capName = when (cap) {
                 "butt" -> "BUTT"
                 "square" -> "SQUARE"
@@ -938,7 +939,7 @@ object SvgCodeGenerator {
             capName?.let { styleParts.add(CodeBlock.of("strokeLinecap = %T.%L", lineCapClass, it)) }
         }
 
-        mergedAttrs["stroke-linejoin"]?.lowercase()?.let { join ->
+        mergedAttrs["stroke-linejoin"]?.takeIf { it != "inherit" }?.lowercase()?.let { join ->
             val joinName = when (join) {
                 "miter" -> "MITER"
                 "bevel" -> "BEVEL"
@@ -948,7 +949,7 @@ object SvgCodeGenerator {
             joinName?.let { styleParts.add(CodeBlock.of("strokeLinejoin = %T.%L", lineJoinClass, it)) }
         }
 
-        mergedAttrs["fill-rule"]?.lowercase()?.let { rule ->
+        mergedAttrs["fill-rule"]?.takeIf { it != "inherit" }?.lowercase()?.let { rule ->
             val ruleName = when (rule) {
                 "evenodd" -> "EVENODD"
                 "nonzero" -> "NONZERO"
@@ -957,7 +958,7 @@ object SvgCodeGenerator {
             ruleName?.let { styleParts.add(CodeBlock.of("fillRule = %T.%L", fillRuleClass, it)) }
         }
 
-        mergedAttrs["paint-order"]?.let { paintOrder ->
+        mergedAttrs["paint-order"]?.takeIf { it != "inherit" }?.let { paintOrder ->
             val orderName = parsePaintOrder(paintOrder)
             orderName?.let { styleParts.add(CodeBlock.of("paintOrder = %T.%L", paintOrderClass, it)) }
         }
@@ -1226,14 +1227,15 @@ object SvgCodeGenerator {
     private fun wrapWithStyleFromMergedAttrs(element: CodeBlock, mergedAttrs: Map<String, String>): CodeBlock {
         val styleParts = mutableListOf<CodeBlock>()
 
-        mergedAttrs["fill"]?.let { styleParts.add(generateColorCodeBlock("fill", it)) }
-        mergedAttrs["stroke"]?.let { styleParts.add(generateColorCodeBlock("stroke", it)) }
-        mergedAttrs["stroke-width"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeWidth = %Lf", it)) }
-        mergedAttrs["opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("opacity = %Lf", it)) }
-        mergedAttrs["fill-opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("fillOpacity = %Lf", it)) }
-        mergedAttrs["stroke-opacity"]?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeOpacity = %Lf", it)) }
+        // fill/stroke: skip "inherit" (use parent's value)
+        mergedAttrs["fill"]?.takeIf { it != "inherit" }?.let { styleParts.add(generateColorCodeBlock("fill", it)) }
+        mergedAttrs["stroke"]?.takeIf { it != "inherit" }?.let { styleParts.add(generateColorCodeBlock("stroke", it)) }
+        mergedAttrs["stroke-width"]?.takeIf { it != "inherit" }?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeWidth = %Lf", it)) }
+        mergedAttrs["opacity"]?.takeIf { it != "inherit" }?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("opacity = %Lf", it)) }
+        mergedAttrs["fill-opacity"]?.takeIf { it != "inherit" }?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("fillOpacity = %Lf", it)) }
+        mergedAttrs["stroke-opacity"]?.takeIf { it != "inherit" }?.toFloatOrNull()?.let { styleParts.add(CodeBlock.of("strokeOpacity = %Lf", it)) }
 
-        mergedAttrs["stroke-linecap"]?.lowercase()?.let { cap ->
+        mergedAttrs["stroke-linecap"]?.takeIf { it != "inherit" }?.lowercase()?.let { cap ->
             val capName = when (cap) {
                 "butt" -> "BUTT"
                 "square" -> "SQUARE"
@@ -1243,7 +1245,7 @@ object SvgCodeGenerator {
             capName?.let { styleParts.add(CodeBlock.of("strokeLinecap = %T.%L", lineCapClass, it)) }
         }
 
-        mergedAttrs["stroke-linejoin"]?.lowercase()?.let { join ->
+        mergedAttrs["stroke-linejoin"]?.takeIf { it != "inherit" }?.lowercase()?.let { join ->
             val joinName = when (join) {
                 "miter" -> "MITER"
                 "bevel" -> "BEVEL"
@@ -1253,7 +1255,7 @@ object SvgCodeGenerator {
             joinName?.let { styleParts.add(CodeBlock.of("strokeLinejoin = %T.%L", lineJoinClass, it)) }
         }
 
-        mergedAttrs["fill-rule"]?.lowercase()?.let { rule ->
+        mergedAttrs["fill-rule"]?.takeIf { it != "inherit" }?.lowercase()?.let { rule ->
             val ruleName = when (rule) {
                 "evenodd" -> "EVENODD"
                 "nonzero" -> "NONZERO"
@@ -1262,7 +1264,7 @@ object SvgCodeGenerator {
             ruleName?.let { styleParts.add(CodeBlock.of("fillRule = %T.%L", fillRuleClass, it)) }
         }
 
-        mergedAttrs["paint-order"]?.let { paintOrder ->
+        mergedAttrs["paint-order"]?.takeIf { it != "inherit" }?.let { paintOrder ->
             val orderName = parsePaintOrder(paintOrder)
             orderName?.let { styleParts.add(CodeBlock.of("paintOrder = %T.%L", paintOrderClass, it)) }
         }
@@ -1813,7 +1815,8 @@ object SvgCodeGenerator {
     private fun generateColorCodeBlock(name: String, colorStr: String): CodeBlock {
         return when {
             colorStr == "currentColor" -> CodeBlock.of("%L = %T.Unspecified", name, colorClass)
-            colorStr == "none" -> CodeBlock.of("%L = null", name)
+            colorStr == "none" -> CodeBlock.of("%L = %T.Transparent", name, colorClass)
+            colorStr == "inherit" -> CodeBlock.of("%L = null", name)
             colorStr.startsWith("#") -> {
                 val hex = colorStr.removePrefix("#")
                 val colorValue = when (hex.length) {
@@ -1822,7 +1825,8 @@ object SvgCodeGenerator {
                     8 -> hex.uppercase()
                     else -> "FF000000"
                 }
-                CodeBlock.of("%L = %T(0x${colorValue}UL)", name, colorClass)
+                // Use Int constructor which properly interprets ARGB values
+                CodeBlock.of("%L = %T(0x${colorValue}.toInt())", name, colorClass)
             }
             else -> CodeBlock.of("%L = %T.Unspecified", name, colorClass)
         }

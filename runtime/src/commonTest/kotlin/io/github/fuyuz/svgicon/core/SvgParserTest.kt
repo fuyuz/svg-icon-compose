@@ -3240,4 +3240,204 @@ class SvgParserTest {
         assertIs<SvgStyled>(circle)
         assertEquals(PaintOrder.STROKE_FILL, (circle as SvgStyled).style.paintOrder)
     }
+
+    // ===========================================
+    // Inherit Keyword Tests
+    // ===========================================
+
+    @Test
+    fun parseFillInherit() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" fill="inherit"/>
+            </svg>
+        """.trimIndent())
+        // fill="inherit" should result in no SvgStyled wrapper (null fill = inherit from parent)
+        val circle = svg.children[0]
+        assertIs<SvgCircle>(circle)
+    }
+
+    @Test
+    fun parseStrokeInherit() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" stroke="inherit"/>
+            </svg>
+        """.trimIndent())
+        // stroke="inherit" should result in no SvgStyled wrapper (null stroke = inherit from parent)
+        val circle = svg.children[0]
+        assertIs<SvgCircle>(circle)
+    }
+
+    @Test
+    fun parseFillNone() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" fill="none"/>
+            </svg>
+        """.trimIndent())
+        // fill="none" should result in Transparent color
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(Color.Transparent, (circle as SvgStyled).style.fill)
+    }
+
+    @Test
+    fun parseStrokeNone() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" stroke="none"/>
+            </svg>
+        """.trimIndent())
+        // stroke="none" should result in Transparent color
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(Color.Transparent, (circle as SvgStyled).style.stroke)
+    }
+
+    @Test
+    fun parseOpacityInherit() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" opacity="inherit"/>
+            </svg>
+        """.trimIndent())
+        // opacity="inherit" should result in no style (null = inherit from parent)
+        val circle = svg.children[0]
+        assertIs<SvgCircle>(circle)
+    }
+
+    @Test
+    fun parseStrokeWidthInherit() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" stroke-width="inherit"/>
+            </svg>
+        """.trimIndent())
+        // stroke-width="inherit" should result in no style
+        val circle = svg.children[0]
+        assertIs<SvgCircle>(circle)
+    }
+
+    @Test
+    fun parseStrokeLinecapInherit() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" stroke-linecap="inherit"/>
+            </svg>
+        """.trimIndent())
+        // stroke-linecap="inherit" should result in no style
+        val path = svg.children[0]
+        assertIs<SvgPath>(path)
+    }
+
+    @Test
+    fun parseStrokeLinejoinInherit() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" stroke-linejoin="inherit"/>
+            </svg>
+        """.trimIndent())
+        // stroke-linejoin="inherit" should result in no style
+        val path = svg.children[0]
+        assertIs<SvgPath>(path)
+    }
+
+    @Test
+    fun parseFillRuleInherit() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10 L5 15 Z" fill-rule="inherit"/>
+            </svg>
+        """.trimIndent())
+        // fill-rule="inherit" should result in no style
+        val path = svg.children[0]
+        assertIs<SvgPath>(path)
+    }
+
+    @Test
+    fun parseStrokeDasharrayInherit() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" stroke-dasharray="inherit"/>
+            </svg>
+        """.trimIndent())
+        // stroke-dasharray="inherit" should result in no style
+        val path = svg.children[0]
+        assertIs<SvgPath>(path)
+    }
+
+    @Test
+    fun parseTransformInherit() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" transform="inherit"/>
+            </svg>
+        """.trimIndent())
+        // transform="inherit" should result in no style
+        val circle = svg.children[0]
+        assertIs<SvgCircle>(circle)
+    }
+
+    @Test
+    fun parsePaintOrderInherit() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" paint-order="inherit"/>
+            </svg>
+        """.trimIndent())
+        // paint-order="inherit" should result in no style
+        val circle = svg.children[0]
+        assertIs<SvgCircle>(circle)
+    }
+
+    @Test
+    fun parseInheritInStyleAttribute() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" style="fill: inherit; stroke: inherit"/>
+            </svg>
+        """.trimIndent())
+        // style with inherit values should result in no SvgStyled wrapper
+        val circle = svg.children[0]
+        assertIs<SvgCircle>(circle)
+    }
+
+    @Test
+    fun parseMixedInheritAndValues() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" fill="inherit" stroke="#ff0000"/>
+            </svg>
+        """.trimIndent())
+        // fill="inherit" means no fill style, but stroke should be applied
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertNull((circle as SvgStyled).style.fill)
+        assertEquals(Color.Red, circle.style.stroke)
+    }
+
+    @Test
+    fun parseFillNoneVsInherit() {
+        // Test that "none" and "inherit" are distinguished
+        val svgNone = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" fill="none"/>
+            </svg>
+        """.trimIndent())
+        val svgInherit = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" fill="inherit"/>
+            </svg>
+        """.trimIndent())
+
+        // fill="none" creates a style with Transparent
+        val circleNone = svgNone.children[0]
+        assertIs<SvgStyled>(circleNone)
+        assertEquals(Color.Transparent, (circleNone as SvgStyled).style.fill)
+
+        // fill="inherit" has no fill style (null = inherit)
+        val circleInherit = svgInherit.children[0]
+        assertIs<SvgCircle>(circleInherit)
+    }
 }

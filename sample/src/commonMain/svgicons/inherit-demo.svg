@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Group with red fill, children can inherit -->
+  <g fill="#ff6b6b">
+    <!-- Circle inherits fill from parent group -->
+    <circle cx="7" cy="7" r="4" fill="inherit"/>
+    <!-- Circle with explicit blue fill (overrides parent) -->
+    <circle cx="17" cy="7" r="4" fill="#4dabf7"/>
+  </g>
+
+  <!-- Group with blue stroke, children can inherit -->
+  <g stroke="#4dabf7" stroke-width="3">
+    <!-- Line inherits stroke from parent group -->
+    <line x1="3" y1="17" x2="10" y2="17" stroke="inherit"/>
+    <!-- Line with explicit green stroke (overrides parent) -->
+    <line x1="14" y1="17" x2="21" y2="17" stroke="#69db7c"/>
+  </g>
+</svg>

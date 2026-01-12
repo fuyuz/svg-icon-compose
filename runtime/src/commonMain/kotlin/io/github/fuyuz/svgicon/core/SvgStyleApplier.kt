@@ -1,6 +1,7 @@
 package io.github.fuyuz.svgicon.core
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
@@ -15,16 +16,17 @@ internal fun applyStyle(parent: DrawContext, style: SvgStyle): DrawContext {
     val strokeColor = when (val c = style.stroke) {
         null -> parent.strokeColor
         Color.Unspecified -> parent.strokeColor
+        Color.Transparent -> parent.strokeColor  // "none" for stroke means don't draw, handled by hasStroke
         else -> c
     }
     val hasStroke = style.stroke != Color.Transparent && (style.stroke != null || parent.hasStroke)
 
     val fillColor = when (val c = style.fill) {
-        null -> parent.fillColor
+        null -> parent.fillColor?.takeIf { it != Color.Transparent }  // inherit, but skip if parent is transparent
         Color.Unspecified -> parent.strokeColor
-        Color.Transparent -> null
+        Color.Transparent -> null  // "none" means don't fill
         else -> c
-    }
+    }?.takeIf { it != Color.Transparent }  // ensure we don't return Transparent as fillColor
 
     val strokeWidth = style.strokeWidth ?: parent.stroke.width
     val strokeCap = style.strokeLinecap?.toCompose() ?: parent.stroke.cap
@@ -50,9 +52,23 @@ internal fun applyStyle(parent: DrawContext, style: SvgStyle): DrawContext {
     val clipPathId = style.clipPathId ?: parent.clipPathId
     val maskId = style.maskId ?: parent.maskId
 
+    // Safely apply alpha to colors, handling special colors that can't be copied
+    val finalStrokeColor = if (strokeColor.isSpecified) {
+        strokeColor.copy(alpha = strokeColor.alpha * strokeOpacity * opacity)
+    } else {
+        strokeColor
+    }
+    val finalFillColor = fillColor?.let { color ->
+        if (color.isSpecified) {
+            color.copy(alpha = color.alpha * fillOpacity * opacity)
+        } else {
+            color
+        }
+    }
+
     return DrawContext(
-        strokeColor = strokeColor.copy(alpha = strokeColor.alpha * strokeOpacity * opacity),
-        fillColor = fillColor?.copy(alpha = fillColor.alpha * fillOpacity * opacity),
+        strokeColor = finalStrokeColor,
+        fillColor = finalFillColor,
         stroke = stroke,
         opacity = opacity,
         fillRule = fillRule,

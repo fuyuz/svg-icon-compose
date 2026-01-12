@@ -50,7 +50,13 @@ internal fun DrawScope.drawSvg(svg: Svg, tint: Color, strokeWidthOverride: Float
         join = svg.strokeLinejoin.toCompose()
     )
 
-    val fillColor = svg.fill?.let { if (it == Color.Unspecified) tint else it }
+    val fillColor = svg.fill?.let {
+        when (it) {
+            Color.Unspecified -> tint
+            Color.Transparent -> null  // "none" means don't fill
+            else -> it
+        }
+    }
     val strokeColor = svg.stroke?.let { if (it == Color.Unspecified) tint else it }
 
     val registry = collectDefs(svg.children, textMeasurer)
