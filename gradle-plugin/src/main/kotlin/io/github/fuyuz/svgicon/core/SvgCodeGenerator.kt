@@ -39,6 +39,7 @@ object SvgCodeGenerator {
     private val lineCapClass = ClassName(corePackage, "LineCap")
     private val lineJoinClass = ClassName(corePackage, "LineJoin")
     private val fillRuleClass = ClassName(corePackage, "FillRule")
+    private val paintOrderClass = ClassName(corePackage, "PaintOrder")
     private val clipPathUnitsClass = ClassName(corePackage, "ClipPathUnits")
     private val maskUnitsClass = ClassName(corePackage, "MaskUnits")
     private val svgTransformClass = ClassName(corePackage, "SvgTransform")
@@ -956,6 +957,11 @@ object SvgCodeGenerator {
             ruleName?.let { styleParts.add(CodeBlock.of("fillRule = %T.%L", fillRuleClass, it)) }
         }
 
+        mergedAttrs["paint-order"]?.let { paintOrder ->
+            val orderName = parsePaintOrder(paintOrder)
+            orderName?.let { styleParts.add(CodeBlock.of("paintOrder = %T.%L", paintOrderClass, it)) }
+        }
+
         if (styleParts.isEmpty()) {
             return element
         }
@@ -1256,6 +1262,11 @@ object SvgCodeGenerator {
             ruleName?.let { styleParts.add(CodeBlock.of("fillRule = %T.%L", fillRuleClass, it)) }
         }
 
+        mergedAttrs["paint-order"]?.let { paintOrder ->
+            val orderName = parsePaintOrder(paintOrder)
+            orderName?.let { styleParts.add(CodeBlock.of("paintOrder = %T.%L", paintOrderClass, it)) }
+        }
+
         if (styleParts.isEmpty()) {
             return element
         }
@@ -1273,6 +1284,20 @@ object SvgCodeGenerator {
         builder.unindent()
         builder.add("\n)")
         return builder.build()
+    }
+
+    /**
+     * Parses SVG paint-order attribute.
+     * Returns PaintOrder enum name or null.
+     */
+    private fun parsePaintOrder(value: String): String? {
+        val trimmed = value.trim().lowercase()
+        return when {
+            trimmed == "normal" -> "FILL_STROKE"
+            trimmed.startsWith("stroke") -> "STROKE_FILL"
+            trimmed.startsWith("fill") -> "FILL_STROKE"
+            else -> null
+        }
     }
 
     // ============================================

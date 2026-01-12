@@ -377,47 +377,111 @@ internal fun DrawContext.getEffectiveStroke(): Stroke {
 }
 
 internal fun DrawScope.drawSvgPath(ctx: DrawContext, path: Path) {
-    if (ctx.fillColor != null) {
-        drawPath(path, ctx.fillColor, style = Fill)
-    }
-    if (ctx.hasStroke) {
-        drawPath(path, ctx.strokeColor, style = ctx.getEffectiveStroke())
+    val effectiveStroke = ctx.getEffectiveStroke()
+    when (ctx.paintOrder) {
+        PaintOrder.FILL_STROKE -> {
+            if (ctx.fillColor != null) {
+                drawPath(path, ctx.fillColor, style = Fill)
+            }
+            if (ctx.hasStroke) {
+                drawPath(path, ctx.strokeColor, style = effectiveStroke)
+            }
+        }
+        PaintOrder.STROKE_FILL -> {
+            if (ctx.hasStroke) {
+                drawPath(path, ctx.strokeColor, style = effectiveStroke)
+            }
+            if (ctx.fillColor != null) {
+                drawPath(path, ctx.fillColor, style = Fill)
+            }
+        }
     }
 }
 
 internal fun DrawScope.drawSvgCircle(ctx: DrawContext, radius: Float, center: Offset) {
-    if (ctx.fillColor != null) {
-        drawCircle(ctx.fillColor, radius, center, style = Fill)
-    }
-    if (ctx.hasStroke) {
-        drawCircle(ctx.strokeColor, radius, center, style = ctx.getEffectiveStroke())
+    val effectiveStroke = ctx.getEffectiveStroke()
+    when (ctx.paintOrder) {
+        PaintOrder.FILL_STROKE -> {
+            if (ctx.fillColor != null) {
+                drawCircle(ctx.fillColor, radius, center, style = Fill)
+            }
+            if (ctx.hasStroke) {
+                drawCircle(ctx.strokeColor, radius, center, style = effectiveStroke)
+            }
+        }
+        PaintOrder.STROKE_FILL -> {
+            if (ctx.hasStroke) {
+                drawCircle(ctx.strokeColor, radius, center, style = effectiveStroke)
+            }
+            if (ctx.fillColor != null) {
+                drawCircle(ctx.fillColor, radius, center, style = Fill)
+            }
+        }
     }
 }
 
 internal fun DrawScope.drawSvgEllipse(ctx: DrawContext, topLeft: Offset, size: Size) {
-    if (ctx.fillColor != null) {
-        drawOval(ctx.fillColor, topLeft, size, style = Fill)
-    }
-    if (ctx.hasStroke) {
-        drawOval(ctx.strokeColor, topLeft, size, style = ctx.getEffectiveStroke())
+    val effectiveStroke = ctx.getEffectiveStroke()
+    when (ctx.paintOrder) {
+        PaintOrder.FILL_STROKE -> {
+            if (ctx.fillColor != null) {
+                drawOval(ctx.fillColor, topLeft, size, style = Fill)
+            }
+            if (ctx.hasStroke) {
+                drawOval(ctx.strokeColor, topLeft, size, style = effectiveStroke)
+            }
+        }
+        PaintOrder.STROKE_FILL -> {
+            if (ctx.hasStroke) {
+                drawOval(ctx.strokeColor, topLeft, size, style = effectiveStroke)
+            }
+            if (ctx.fillColor != null) {
+                drawOval(ctx.fillColor, topLeft, size, style = Fill)
+            }
+        }
     }
 }
 
 internal fun DrawScope.drawSvgRect(ctx: DrawContext, topLeft: Offset, size: Size, rx: Float, ry: Float) {
+    val effectiveStroke = ctx.getEffectiveStroke()
     if (rx == 0f && ry == 0f) {
-        if (ctx.fillColor != null) {
-            drawRect(ctx.fillColor, topLeft, size, style = Fill)
-        }
-        if (ctx.hasStroke) {
-            drawRect(ctx.strokeColor, topLeft, size, style = ctx.getEffectiveStroke())
+        when (ctx.paintOrder) {
+            PaintOrder.FILL_STROKE -> {
+                if (ctx.fillColor != null) {
+                    drawRect(ctx.fillColor, topLeft, size, style = Fill)
+                }
+                if (ctx.hasStroke) {
+                    drawRect(ctx.strokeColor, topLeft, size, style = effectiveStroke)
+                }
+            }
+            PaintOrder.STROKE_FILL -> {
+                if (ctx.hasStroke) {
+                    drawRect(ctx.strokeColor, topLeft, size, style = effectiveStroke)
+                }
+                if (ctx.fillColor != null) {
+                    drawRect(ctx.fillColor, topLeft, size, style = Fill)
+                }
+            }
         }
     } else {
         val cornerRadius = CornerRadius(rx, ry)
-        if (ctx.fillColor != null) {
-            drawRoundRect(ctx.fillColor, topLeft, size, cornerRadius, style = Fill)
-        }
-        if (ctx.hasStroke) {
-            drawRoundRect(ctx.strokeColor, topLeft, size, cornerRadius, style = ctx.getEffectiveStroke())
+        when (ctx.paintOrder) {
+            PaintOrder.FILL_STROKE -> {
+                if (ctx.fillColor != null) {
+                    drawRoundRect(ctx.fillColor, topLeft, size, cornerRadius, style = Fill)
+                }
+                if (ctx.hasStroke) {
+                    drawRoundRect(ctx.strokeColor, topLeft, size, cornerRadius, style = effectiveStroke)
+                }
+            }
+            PaintOrder.STROKE_FILL -> {
+                if (ctx.hasStroke) {
+                    drawRoundRect(ctx.strokeColor, topLeft, size, cornerRadius, style = effectiveStroke)
+                }
+                if (ctx.fillColor != null) {
+                    drawRoundRect(ctx.fillColor, topLeft, size, cornerRadius, style = Fill)
+                }
+            }
         }
     }
 }

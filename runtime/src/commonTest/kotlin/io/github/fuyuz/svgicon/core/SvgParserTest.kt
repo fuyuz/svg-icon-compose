@@ -3176,4 +3176,68 @@ class SvgParserTest {
         assertIs<SvgStyled>(circle)
         assertEquals(0.3f, (circle as SvgStyled).style.strokeOpacity)
     }
+
+    // ===========================================
+    // Paint Order Tests
+    // ===========================================
+
+    @Test
+    fun parsePaintOrderStroke() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" paint-order="stroke"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(PaintOrder.STROKE_FILL, (circle as SvgStyled).style.paintOrder)
+    }
+
+    @Test
+    fun parsePaintOrderStrokeFill() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" paint-order="stroke fill"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(PaintOrder.STROKE_FILL, (circle as SvgStyled).style.paintOrder)
+    }
+
+    @Test
+    fun parsePaintOrderFillStroke() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" paint-order="fill stroke"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(PaintOrder.FILL_STROKE, (circle as SvgStyled).style.paintOrder)
+    }
+
+    @Test
+    fun parsePaintOrderNormal() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" paint-order="normal"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(PaintOrder.FILL_STROKE, (circle as SvgStyled).style.paintOrder)
+    }
+
+    @Test
+    fun parsePaintOrderInStyleAttribute() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" style="paint-order: stroke"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(PaintOrder.STROKE_FILL, (circle as SvgStyled).style.paintOrder)
+    }
 }

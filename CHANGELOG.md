@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Implemented `paint-order` attribute support for controlling fill/stroke drawing order (#40)
+
 ### Fixed
 
 - Applied fill-rule to static path rendering to match animated rendering behavior (#47)
