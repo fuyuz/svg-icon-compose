@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Applied fill-rule to static path rendering to match animated rendering behavior (#47)
+- Fixed stroke-dasharray odd-length handling to repeat array per SVG spec (#48)
 
 ## [0.1.1] - 2026-01-10
 
