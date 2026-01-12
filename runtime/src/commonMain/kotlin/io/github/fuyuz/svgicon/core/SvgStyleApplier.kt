@@ -71,10 +71,23 @@ internal fun buildPathEffect(style: SvgStyle, parent: PathEffect?): PathEffect? 
         if (dashArray.isEmpty()) {
             null
         } else {
-            PathEffect.dashPathEffect(dashArray.toFloatArray(), style.strokeDashoffset ?: 0f)
+            val intervals = normalizeDashArray(dashArray)
+            PathEffect.dashPathEffect(intervals, style.strokeDashoffset ?: 0f)
         }
     } else {
         parent
+    }
+}
+
+/**
+ * Normalizes a dash array according to SVG spec.
+ * If the array has an odd number of values, it is repeated to make it even.
+ */
+internal fun normalizeDashArray(dashArray: List<Float>): FloatArray {
+    return if (dashArray.size % 2 == 0) {
+        dashArray.toFloatArray()
+    } else {
+        FloatArray(dashArray.size * 2) { i -> dashArray[i % dashArray.size] }
     }
 }
 

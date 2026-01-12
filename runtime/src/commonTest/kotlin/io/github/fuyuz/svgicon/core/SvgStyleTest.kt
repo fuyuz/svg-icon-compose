@@ -287,4 +287,38 @@ class SvgStyleTest {
         val t = SvgTransform.Combined(transforms)
         assertEquals(2, t.transforms.size)
     }
+
+    // ===========================================
+    // normalizeDashArray Tests
+    // ===========================================
+
+    @Test
+    fun normalizeDashArrayEvenLength() {
+        val result = normalizeDashArray(listOf(5f, 3f))
+        assertEquals(2, result.size)
+        assertEquals(5f, result[0])
+        assertEquals(3f, result[1])
+    }
+
+    @Test
+    fun normalizeDashArrayOddLengthRepeats() {
+        // SVG spec: odd-length arrays are repeated to make them even
+        val result = normalizeDashArray(listOf(5f, 3f, 2f))
+        assertEquals(6, result.size)
+        assertEquals(5f, result[0])
+        assertEquals(3f, result[1])
+        assertEquals(2f, result[2])
+        assertEquals(5f, result[3])
+        assertEquals(3f, result[4])
+        assertEquals(2f, result[5])
+    }
+
+    @Test
+    fun normalizeDashArraySingleValue() {
+        // Single value becomes [5, 5]
+        val result = normalizeDashArray(listOf(5f))
+        assertEquals(2, result.size)
+        assertEquals(5f, result[0])
+        assertEquals(5f, result[1])
+    }
 }
