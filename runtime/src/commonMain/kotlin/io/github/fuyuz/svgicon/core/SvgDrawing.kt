@@ -168,6 +168,7 @@ internal fun DrawScope.drawSvgElement(
             element.children.forEach { drawSvgElement(drawingCtx, it) }
         }
         is SvgStyled -> drawStyledElement(context, element)
+        is SvgAnimated -> drawSvgElement(context, element.element) // Draw inner element for static rendering
         is SvgText -> drawSvgText(context.ctx, element, context.registry.textMeasurer)
         is SvgUse -> drawSvgUse(context, element)
         else -> {} // Defs, etc. are handled separately
