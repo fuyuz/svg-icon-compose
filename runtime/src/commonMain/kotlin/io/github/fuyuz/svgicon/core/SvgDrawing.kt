@@ -181,17 +181,27 @@ private fun DrawScope.drawStyledElement(
     val newCtx = applyStyle(context.ctx, styled.style)
     val drawingCtx = context.withCtx(newCtx)
 
-    fun draw() {
-        drawSvgElement(drawingCtx, styled.element)
+    val clipPathId = newCtx.clipPathId
+    val clipPathDef = clipPathId?.let { context.registry.clipPaths[it] }
+
+    val drawContent: DrawScope.() -> Unit = {
+        val transform = styled.style.transform
+        if (transform != null) {
+            withTransform(transform) {
+                drawSvgElement(drawingCtx, styled.element)
+            }
+        } else {
+            drawSvgElement(drawingCtx, styled.element)
+        }
     }
 
-    val transform = styled.style.transform
-    if (transform != null) {
-        withTransform(transform) {
-            draw()
+    if (clipPathDef != null) {
+        val path = buildClipPath(clipPathDef, newCtx)
+        clipPath(path, ClipOp.Intersect) {
+            drawContent()
         }
     } else {
-        draw()
+        drawContent()
     }
 }
 
