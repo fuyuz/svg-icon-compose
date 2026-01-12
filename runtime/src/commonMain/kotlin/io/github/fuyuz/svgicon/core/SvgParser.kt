@@ -757,6 +757,51 @@ internal object SvgXmlParser {
             } else null
         }
 
+        // For rotate, we need angle and optional center point (cx, cy)
+        if (transformType == TransformType.ROTATE) {
+            val fromRotate: Triple<Float, Float?, Float?>?
+            val toRotate: Triple<Float, Float?, Float?>?
+
+            if (fromStr != null && toStr != null) {
+                fromRotate = parseRotateValue(fromStr)
+                toRotate = parseRotateValue(toStr)
+            } else if (valuesStr != null) {
+                // Parse all keyframe values for oscillating animations
+                val keyframes = valuesStr.split(";").mapNotNull { parseRotateValue(it.trim()) }
+                if (keyframes.size >= 2) {
+                    // Use min/max angles for oscillating, keep center from first keyframe
+                    val angles = keyframes.map { it.first }
+                    val minAngle = angles.minOrNull() ?: return null
+                    val maxAngle = angles.maxOrNull() ?: return null
+                    val cx = keyframes.first().second
+                    val cy = keyframes.first().third
+                    fromRotate = Triple(minAngle, cx, cy)
+                    toRotate = Triple(maxAngle, cx, cy)
+                } else {
+                    fromRotate = keyframes.firstOrNull()
+                    toRotate = keyframes.lastOrNull()
+                }
+            } else {
+                fromRotate = fromStr?.let { parseRotateValue(it) }
+                toRotate = toStr?.let { parseRotateValue(it) }
+            }
+
+            return if (fromRotate != null && toRotate != null) {
+                SvgAnimate.Transform(
+                    type = transformType,
+                    from = fromRotate.first,
+                    to = toRotate.first,
+                    dur = dur,
+                    delay = delay,
+                    calcMode = calcMode,
+                    keySplines = keySplines,
+                    additive = additive,
+                    cx = fromRotate.second,
+                    cy = fromRotate.third
+                )
+            } else null
+        }
+
         // For other transform types, use single value parsing
         val from: Float?
         val to: Float?
@@ -812,6 +857,20 @@ internal object SvgXmlParser {
         val x = parts[0]
         val y = parts.getOrElse(1) { 0f }
         return Pair(x, y)
+    }
+
+    /**
+     * Parse a rotate value string and extract angle, cx, cy.
+     * Format: "angle" or "angle cx cy"
+     * Returns Triple(angle, cx, cy) where cx and cy are null if not specified.
+     */
+    private fun parseRotateValue(valueStr: String): Triple<Float, Float?, Float?>? {
+        val parts = valueStr.trim().split(separatorPattern).mapNotNull { it.toFloatOrNull() }
+        if (parts.isEmpty()) return null
+        val angle = parts[0]
+        val cx = parts.getOrNull(1)
+        val cy = parts.getOrNull(2)
+        return Triple(angle, cx, cy)
     }
 
     /**

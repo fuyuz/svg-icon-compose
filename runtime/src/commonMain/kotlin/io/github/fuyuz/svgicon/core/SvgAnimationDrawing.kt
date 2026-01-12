@@ -237,6 +237,9 @@ private fun DrawScope.drawAnimatedElement(
                 when (anim.type) {
                     TransformType.ROTATE -> {
                         state.rotationAngle = if (isAdditive) state.rotationAngle + value else value
+                        // Set rotation center if specified in animation
+                        if (anim.cx != null) state.rotateCx = anim.cx
+                        if (anim.cy != null) state.rotateCy = anim.cy
                     }
                     TransformType.SCALE -> {
                         if (isAdditive) {
@@ -452,6 +455,13 @@ private fun DrawScope.withAnimatedTransform(
     pivot: Offset,
     block: DrawScope.() -> Unit
 ) {
+    // Use animation-specified rotation center if available, otherwise use element pivot
+    val rotatePivot = if (state.rotateCx != null && state.rotateCy != null) {
+        Offset(state.rotateCx!!, state.rotateCy!!)
+    } else {
+        pivot
+    }
+
     translate(state.translateX, state.translateY) {
         // Apply skew if needed
         if (state.skewX != 0f || state.skewY != 0f) {
@@ -467,14 +477,14 @@ private fun DrawScope.withAnimatedTransform(
             }
             withTransform({ transform(skewMatrix) }) {
                 scale(state.scaleX, state.scaleY, pivot = pivot) {
-                    rotate(state.rotationAngle, pivot = pivot) {
+                    rotate(state.rotationAngle, pivot = rotatePivot) {
                         block()
                     }
                 }
             }
         } else {
             scale(state.scaleX, state.scaleY, pivot = pivot) {
-                rotate(state.rotationAngle, pivot = pivot) {
+                rotate(state.rotationAngle, pivot = rotatePivot) {
                     block()
                 }
             }
