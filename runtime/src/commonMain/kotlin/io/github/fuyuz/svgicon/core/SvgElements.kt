@@ -22,15 +22,24 @@ sealed interface SvgElement
  * - If only viewBox is specified, viewBox dimensions are used
  * - preserveAspectRatio controls how viewBox maps to viewport
  *
+ * Default values follow SVG2 specification:
+ * - fill: black
+ * - stroke: none (null)
+ * - stroke-width: 1
+ * - stroke-linecap: butt
+ * - stroke-linejoin: miter
+ * - stroke-miterlimit: 4
+ *
  * @param width Viewport width (null = use viewBox width)
  * @param height Viewport height (null = use viewBox height)
  * @param viewBox ViewBox defining the coordinate system (default: 24x24)
  * @param preserveAspectRatio How to scale/align viewBox within viewport
- * @param fill Default fill color (default: null = no fill)
- * @param stroke Default stroke color (default: Unspecified = uses tint color)
- * @param strokeWidth Default stroke width (default: 2)
- * @param strokeLinecap Default stroke linecap (default: Round)
- * @param strokeLinejoin Default stroke linejoin (default: Round)
+ * @param fill Default fill color (default: Black per SVG spec)
+ * @param stroke Default stroke color (default: null = none per SVG spec)
+ * @param strokeWidth Default stroke width (default: 1 per SVG spec)
+ * @param strokeLinecap Default stroke linecap (default: Butt per SVG spec)
+ * @param strokeLinejoin Default stroke linejoin (default: Miter per SVG spec)
+ * @param strokeMiterlimit Default miter limit (default: 4 per SVG spec)
  * @param children Child SVG elements
  */
 data class Svg(
@@ -38,11 +47,12 @@ data class Svg(
     val height: Float? = null,
     val viewBox: ViewBox? = null,
     val preserveAspectRatio: PreserveAspectRatio = PreserveAspectRatio.Default,
-    val fill: Color? = null,
-    val stroke: Color? = Color.Unspecified,
-    val strokeWidth: Float = 2f,
-    val strokeLinecap: LineCap = LineCap.ROUND,
-    val strokeLinejoin: LineJoin = LineJoin.ROUND,
+    val fill: Color? = Color.Black,
+    val stroke: Color? = null,
+    val strokeWidth: Float = 1f,
+    val strokeLinecap: LineCap = LineCap.BUTT,
+    val strokeLinejoin: LineJoin = LineJoin.MITER,
+    val strokeMiterlimit: Float = 4f,
     val children: List<SvgElement> = emptyList()
 ) {
     /**

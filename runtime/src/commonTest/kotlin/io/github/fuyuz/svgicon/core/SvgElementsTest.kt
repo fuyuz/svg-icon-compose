@@ -20,11 +20,13 @@ class SvgElementsTest {
         assertNull(svg.height)
         assertNull(svg.viewBox)
         assertEquals(PreserveAspectRatio.Default, svg.preserveAspectRatio)
-        assertNull(svg.fill)
-        assertEquals(Color.Unspecified, svg.stroke)
-        assertEquals(2f, svg.strokeWidth)
-        assertEquals(LineCap.ROUND, svg.strokeLinecap)
-        assertEquals(LineJoin.ROUND, svg.strokeLinejoin)
+        // SVG spec defaults
+        assertEquals(Color.Black, svg.fill)  // SVG spec: fill default is black
+        assertNull(svg.stroke)  // SVG spec: stroke default is none
+        assertEquals(1f, svg.strokeWidth)  // SVG spec: stroke-width default is 1
+        assertEquals(LineCap.BUTT, svg.strokeLinecap)  // SVG spec: stroke-linecap default is butt
+        assertEquals(LineJoin.MITER, svg.strokeLinejoin)  // SVG spec: stroke-linejoin default is miter
+        assertEquals(4f, svg.strokeMiterlimit)  // SVG spec: stroke-miterlimit default is 4
         assertEquals(emptyList(), svg.children)
     }
 

@@ -437,11 +437,13 @@ class SvgParserTest {
         assertNull(svg.viewBox)  // viewBox is optional
         assertEquals(24f, svg.effectiveViewBox.width)  // effectiveViewBox provides default
         assertEquals(24f, svg.effectiveViewBox.height)
-        assertNull(svg.fill)  // none = null
-        assertEquals(Color.Unspecified, svg.stroke)  // currentColor = Unspecified
-        assertEquals(2f, svg.strokeWidth)
-        assertEquals(LineCap.ROUND, svg.strokeLinecap)
-        assertEquals(LineJoin.ROUND, svg.strokeLinejoin)
+        // SVG spec defaults
+        assertEquals(Color.Black, svg.fill)  // SVG spec: fill default is black
+        assertNull(svg.stroke)  // SVG spec: stroke default is none
+        assertEquals(1f, svg.strokeWidth)  // SVG spec: stroke-width default is 1
+        assertEquals(LineCap.BUTT, svg.strokeLinecap)  // SVG spec: stroke-linecap default is butt
+        assertEquals(LineJoin.MITER, svg.strokeLinejoin)  // SVG spec: stroke-linejoin default is miter
+        assertEquals(4f, svg.strokeMiterlimit)  // SVG spec: stroke-miterlimit default is 4
     }
 
     @Test
