@@ -1392,6 +1392,21 @@ internal object SvgXmlParser {
         return cssProperties
     }
 
+    /**
+     * Checks if a value is the "inherit" keyword.
+     */
+    private fun isInherit(value: String?): Boolean {
+        return value?.trim()?.lowercase() == "inherit"
+    }
+
+    /**
+     * Parses a float value, returning null if the value is "inherit" or invalid.
+     */
+    private fun parseFloatOrInherit(value: String?): Float? {
+        if (value == null || isInherit(value)) return null
+        return value.toFloatOrNull()
+    }
+
     private fun parseStyle(attrs: Map<String, String>): SvgStyle? {
         // Parse inline style attribute if present and merge with XML attributes
         // CSS style takes precedence over XML attributes
@@ -1406,32 +1421,37 @@ internal object SvgXmlParser {
         }
 
         val fill = parseColorAttribute(mergedAttrs["fill"])
-        val fillOpacity = mergedAttrs["fill-opacity"]?.toFloatOrNull()
-        val fillRule = when (mergedAttrs["fill-rule"]?.lowercase()) {
+        val fillOpacity = parseFloatOrInherit(mergedAttrs["fill-opacity"])
+        val fillRuleValue = mergedAttrs["fill-rule"]
+        val fillRule = if (isInherit(fillRuleValue)) null else when (fillRuleValue?.lowercase()) {
             "evenodd" -> FillRule.EVENODD
             "nonzero" -> FillRule.NONZERO
             else -> null
         }
         val stroke = parseColorAttribute(mergedAttrs["stroke"])
-        val strokeWidth = mergedAttrs["stroke-width"]?.toFloatOrNull()
-        val strokeOpacity = mergedAttrs["stroke-opacity"]?.toFloatOrNull()
-        val strokeLinecap = when (mergedAttrs["stroke-linecap"]?.lowercase()) {
+        val strokeWidth = parseFloatOrInherit(mergedAttrs["stroke-width"])
+        val strokeOpacity = parseFloatOrInherit(mergedAttrs["stroke-opacity"])
+        val strokeLinecapValue = mergedAttrs["stroke-linecap"]
+        val strokeLinecap = if (isInherit(strokeLinecapValue)) null else when (strokeLinecapValue?.lowercase()) {
             "butt" -> LineCap.BUTT
             "round" -> LineCap.ROUND
             "square" -> LineCap.SQUARE
             else -> null
         }
-        val strokeLinejoin = when (mergedAttrs["stroke-linejoin"]?.lowercase()) {
+        val strokeLinejoinValue = mergedAttrs["stroke-linejoin"]
+        val strokeLinejoin = if (isInherit(strokeLinejoinValue)) null else when (strokeLinejoinValue?.lowercase()) {
             "miter" -> LineJoin.MITER
             "round" -> LineJoin.ROUND
             "bevel" -> LineJoin.BEVEL
             else -> null
         }
-        val strokeDasharray = mergedAttrs["stroke-dasharray"]?.let { parseDashArray(it) }
-        val strokeDashoffset = mergedAttrs["stroke-dashoffset"]?.toFloatOrNull()
-        val strokeMiterlimit = mergedAttrs["stroke-miterlimit"]?.toFloatOrNull()
-        val opacity = mergedAttrs["opacity"]?.toFloatOrNull()
-        val transform = mergedAttrs["transform"]?.let { parseTransform(it) }
+        val strokeDasharrayValue = mergedAttrs["stroke-dasharray"]
+        val strokeDasharray = if (isInherit(strokeDasharrayValue)) null else strokeDasharrayValue?.let { parseDashArray(it) }
+        val strokeDashoffset = parseFloatOrInherit(mergedAttrs["stroke-dashoffset"])
+        val strokeMiterlimit = parseFloatOrInherit(mergedAttrs["stroke-miterlimit"])
+        val opacity = parseFloatOrInherit(mergedAttrs["opacity"])
+        val transformValue = mergedAttrs["transform"]
+        val transform = if (isInherit(transformValue)) null else transformValue?.let { parseTransform(it) }
         val paintOrder = parsePaintOrder(mergedAttrs["paint-order"])
 
         // Only create style if at least one attribute is present
@@ -1464,13 +1484,14 @@ internal object SvgXmlParser {
 
     /**
      * Parses SVG paint-order attribute.
-     * Supported values: "normal", "stroke", "fill", "stroke fill", "fill stroke"
+     * Supported values: "normal", "stroke", "fill", "stroke fill", "fill stroke", "inherit"
      * When stroke comes first, returns STROKE_FILL; otherwise FILL_STROKE (default).
      */
     private fun parsePaintOrder(value: String?): PaintOrder? {
         if (value == null) return null
         val trimmed = value.trim().lowercase()
         return when {
+            trimmed == "inherit" -> null
             trimmed == "normal" -> PaintOrder.FILL_STROKE
             trimmed.startsWith("stroke") -> PaintOrder.STROKE_FILL
             trimmed.startsWith("fill") -> PaintOrder.FILL_STROKE
@@ -1564,7 +1585,8 @@ internal object SvgXmlParser {
      * Parses SVG color attribute string to Compose Color.
      *
      * - null input -> null (inherit from parent)
-     * - "none" -> null (no color)
+     * - "inherit" -> null (explicitly inherit from parent)
+     * - "none" -> Color.Transparent (no color)
      * - "currentColor" -> Color.Unspecified (use tint)
      * - "#rgb" / "#rrggbb" / "#rrggbbaa" -> parsed Color
      * - "rgb(r,g,b)" / "rgba(r,g,b,a)" -> parsed Color
@@ -1575,7 +1597,8 @@ internal object SvgXmlParser {
         val trimmed = colorStr.trim().lowercase()
 
         return when {
-            trimmed == "none" -> null
+            trimmed == "inherit" -> null
+            trimmed == "none" -> Color.Transparent
             trimmed == "currentcolor" -> Color.Unspecified
             trimmed.startsWith("#") -> parseHexColor(trimmed)
             trimmed.startsWith("rgb") -> parseRgbColor(trimmed)

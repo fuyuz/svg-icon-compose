@@ -10,9 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - Implemented `paint-order` attribute support for controlling fill/stroke drawing order (#40)
+- Added support for `inherit` keyword in style attributes (fill, stroke, opacity, stroke-width, etc.) (#61)
 
 ### Fixed
 
+- Fixed `fill="none"` and `stroke="none"` being treated the same as inherit; now correctly results in no painting (#61)
+- Fixed generated color code using incorrect Color constructor (ULong instead of Int) (#61)
 - Applied fill-rule to static path rendering to match animated rendering behavior (#47)
 - Fixed stroke-dasharray odd-length handling to repeat array per SVG spec (#48)
 - Applied clip-path to static rendering to match animated rendering behavior (#36)
