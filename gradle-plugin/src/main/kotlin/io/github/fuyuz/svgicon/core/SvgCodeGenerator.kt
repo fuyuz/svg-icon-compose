@@ -167,31 +167,35 @@ object SvgCodeGenerator {
             builder.add(",\n")
         }
 
-        // strokeWidth
-        val strokeWidth = attrs["stroke-width"]?.toFloatOrNull() ?: 2f
-        if (strokeWidth != 2f) builder.add("strokeWidth = %Lf,\n", strokeWidth)
+        // strokeWidth - SVG spec default is 1
+        val strokeWidth = attrs["stroke-width"]?.toFloatOrNull() ?: 1f
+        if (strokeWidth != 1f) builder.add("strokeWidth = %Lf,\n", strokeWidth)
 
-        // strokeLinecap
+        // strokeLinecap - SVG spec default is butt
         val linecap = attrs["stroke-linecap"]?.lowercase()
-        if (linecap != null && linecap != "round") {
+        if (linecap != null && linecap != "butt") {
             val capName = when (linecap) {
-                "butt" -> "BUTT"
+                "round" -> "ROUND"
                 "square" -> "SQUARE"
-                else -> "ROUND"
+                else -> "BUTT"
             }
             builder.add("strokeLinecap = %T.%L,\n", lineCapClass, capName)
         }
 
-        // strokeLinejoin
+        // strokeLinejoin - SVG spec default is miter
         val linejoin = attrs["stroke-linejoin"]?.lowercase()
-        if (linejoin != null && linejoin != "round") {
+        if (linejoin != null && linejoin != "miter") {
             val joinName = when (linejoin) {
-                "miter" -> "MITER"
+                "round" -> "ROUND"
                 "bevel" -> "BEVEL"
-                else -> "ROUND"
+                else -> "MITER"
             }
             builder.add("strokeLinejoin = %T.%L,\n", lineJoinClass, joinName)
         }
+
+        // strokeMiterlimit - SVG spec default is 4
+        val strokeMiterlimit = attrs["stroke-miterlimit"]?.toFloatOrNull() ?: 4f
+        if (strokeMiterlimit != 4f) builder.add("strokeMiterlimit = %Lf,\n", strokeMiterlimit)
 
         // children
         builder.add("children = listOf(\n")

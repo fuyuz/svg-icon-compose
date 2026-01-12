@@ -104,19 +104,21 @@ internal object SvgXmlParser {
         val preserveAspectRatio = attrs["preserveAspectRatio"]?.let {
             PreserveAspectRatio.parse(it)
         } ?: PreserveAspectRatio.Default
-        val fill = parseColorAttribute(attrs["fill"])
-        val stroke = parseColorAttribute(attrs["stroke"]) ?: Color.Unspecified
-        val strokeWidth = attrs["stroke-width"]?.toFloatOrNull() ?: 2f
+        // SVG spec defaults: fill=black, stroke=none, stroke-width=1, linecap=butt, linejoin=miter, miterlimit=4
+        val fill = parseColorAttribute(attrs["fill"]) ?: Color.Black
+        val stroke = parseColorAttribute(attrs["stroke"])
+        val strokeWidth = attrs["stroke-width"]?.toFloatOrNull() ?: 1f
         val strokeLinecap = when (attrs["stroke-linecap"]?.lowercase()) {
-            "butt" -> LineCap.BUTT
+            "round" -> LineCap.ROUND
             "square" -> LineCap.SQUARE
-            else -> LineCap.ROUND
+            else -> LineCap.BUTT
         }
         val strokeLinejoin = when (attrs["stroke-linejoin"]?.lowercase()) {
-            "miter" -> LineJoin.MITER
+            "round" -> LineJoin.ROUND
             "bevel" -> LineJoin.BEVEL
-            else -> LineJoin.ROUND
+            else -> LineJoin.MITER
         }
+        val strokeMiterlimit = attrs["stroke-miterlimit"]?.toFloatOrNull() ?: 4f
 
         // Parse children with stylesheet
         val children = if (selfClosing) {
@@ -142,6 +144,7 @@ internal object SvgXmlParser {
             strokeWidth = strokeWidth,
             strokeLinecap = strokeLinecap,
             strokeLinejoin = strokeLinejoin,
+            strokeMiterlimit = strokeMiterlimit,
             children = children
         )
     }

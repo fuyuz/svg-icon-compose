@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Implemented `paint-order` attribute support for controlling fill/stroke drawing order (#40)
 - Added support for `inherit` keyword in style attributes (fill, stroke, opacity, stroke-width, etc.) (#61)
+- Added `strokeMiterlimit` property to `Svg` class with default value of 4 per SVG spec (#35)
+
+### Changed
+
+- Aligned default fill behavior with SVG spec: `fill` now defaults to `black` instead of `none` (#34)
+- Aligned default stroke properties with SVG spec (#35):
+  - `stroke` defaults to `none` (null) instead of `currentColor`
+  - `stroke-width` defaults to `1` instead of `2`
+  - `stroke-linecap` defaults to `butt` instead of `round`
+  - `stroke-linejoin` defaults to `miter` instead of `round`
+  - `stroke-miterlimit` defaults to `4`
 
 ### Fixed
 

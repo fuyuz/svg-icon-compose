@@ -47,7 +47,8 @@ internal fun DrawScope.drawSvg(svg: Svg, tint: Color, strokeWidthOverride: Float
     val defaultStroke = Stroke(
         width = strokeWidth,
         cap = svg.strokeLinecap.toCompose(),
-        join = svg.strokeLinejoin.toCompose()
+        join = svg.strokeLinejoin.toCompose(),
+        miter = svg.strokeMiterlimit
     )
 
     val fillColor = svg.fill?.let {
@@ -62,7 +63,7 @@ internal fun DrawScope.drawSvg(svg: Svg, tint: Color, strokeWidthOverride: Float
     val registry = collectDefs(svg.children, textMeasurer)
 
     val context = DrawContext(
-        strokeColor = strokeColor ?: tint,
+        strokeColor = strokeColor ?: Color.Transparent,
         fillColor = fillColor,
         stroke = defaultStroke,
         hasStroke = strokeColor != null,
