@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Implemented `paint-order` attribute support for controlling fill/stroke drawing order (#40)
 - Added support for `inherit` keyword in style attributes (fill, stroke, opacity, stroke-width, etc.) (#61)
 - Added `strokeMiterlimit` property to `Svg` class with default value of 4 per SVG spec (#35)
+- Added `visibility` attribute support (visible, hidden, collapse) (#59)
+- Added `display` attribute support (inline, block, none) (#59)
 
 ### Changed
 

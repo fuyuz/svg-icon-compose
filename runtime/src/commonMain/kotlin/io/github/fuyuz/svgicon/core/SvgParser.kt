@@ -1456,6 +1456,20 @@ internal object SvgXmlParser {
         val transformValue = mergedAttrs["transform"]
         val transform = if (isInherit(transformValue)) null else transformValue?.let { parseTransform(it) }
         val paintOrder = parsePaintOrder(mergedAttrs["paint-order"])
+        val visibilityValue = mergedAttrs["visibility"]
+        val visibility = if (isInherit(visibilityValue)) null else when (visibilityValue?.lowercase()) {
+            "visible" -> Visibility.VISIBLE
+            "hidden" -> Visibility.HIDDEN
+            "collapse" -> Visibility.COLLAPSE
+            else -> null
+        }
+        val displayValue = mergedAttrs["display"]
+        val display = if (isInherit(displayValue)) null else when (displayValue?.lowercase()) {
+            "inline" -> Display.INLINE
+            "block" -> Display.BLOCK
+            "none" -> Display.NONE
+            else -> null
+        }
 
         // Only create style if at least one attribute is present
         if (fill == null && fillOpacity == null && fillRule == null &&
@@ -1463,7 +1477,7 @@ internal object SvgXmlParser {
             strokeLinecap == null && strokeLinejoin == null &&
             strokeDasharray == null && strokeDashoffset == null &&
             strokeMiterlimit == null && opacity == null && transform == null &&
-            paintOrder == null) {
+            paintOrder == null && visibility == null && display == null) {
             return null
         }
 
@@ -1481,7 +1495,9 @@ internal object SvgXmlParser {
             strokeMiterlimit = strokeMiterlimit,
             opacity = opacity,
             transform = transform,
-            paintOrder = paintOrder
+            paintOrder = paintOrder,
+            visibility = visibility,
+            display = display
         )
     }
 

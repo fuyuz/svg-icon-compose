@@ -51,6 +51,8 @@ internal fun applyStyle(parent: DrawContext, style: SvgStyle): DrawContext {
     val vectorEffect = style.vectorEffect ?: parent.vectorEffect
     val clipPathId = style.clipPathId ?: parent.clipPathId
     val maskId = style.maskId ?: parent.maskId
+    val visibility = style.visibility ?: parent.visibility
+    val display = style.display ?: parent.display
 
     // Safely apply alpha to colors, handling special colors that can't be copied
     val finalStrokeColor = if (strokeColor.isSpecified) {
@@ -77,7 +79,9 @@ internal fun applyStyle(parent: DrawContext, style: SvgStyle): DrawContext {
         vectorEffect = vectorEffect,
         scaleFactor = parent.scaleFactor,
         clipPathId = clipPathId,
-        maskId = maskId
+        maskId = maskId,
+        visibility = visibility,
+        display = display
     )
 }
 

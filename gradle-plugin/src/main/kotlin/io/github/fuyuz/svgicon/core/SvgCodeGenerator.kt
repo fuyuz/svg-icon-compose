@@ -42,6 +42,8 @@ object SvgCodeGenerator {
     private val paintOrderClass = ClassName(corePackage, "PaintOrder")
     private val clipPathUnitsClass = ClassName(corePackage, "ClipPathUnits")
     private val maskUnitsClass = ClassName(corePackage, "MaskUnits")
+    private val visibilityClass = ClassName(corePackage, "Visibility")
+    private val displayClass = ClassName(corePackage, "Display")
     private val svgTransformClass = ClassName(corePackage, "SvgTransform")
     private val viewBoxClass = ClassName(corePackage, "ViewBox")
     private val preserveAspectRatioClass = ClassName(corePackage, "PreserveAspectRatio")
@@ -967,6 +969,26 @@ object SvgCodeGenerator {
             orderName?.let { styleParts.add(CodeBlock.of("paintOrder = %T.%L", paintOrderClass, it)) }
         }
 
+        mergedAttrs["visibility"]?.takeIf { it != "inherit" }?.lowercase()?.let { vis ->
+            val visName = when (vis) {
+                "visible" -> "VISIBLE"
+                "hidden" -> "HIDDEN"
+                "collapse" -> "COLLAPSE"
+                else -> null
+            }
+            visName?.let { styleParts.add(CodeBlock.of("visibility = %T.%L", visibilityClass, it)) }
+        }
+
+        mergedAttrs["display"]?.takeIf { it != "inherit" }?.lowercase()?.let { disp ->
+            val dispName = when (disp) {
+                "inline" -> "INLINE"
+                "block" -> "BLOCK"
+                "none" -> "NONE"
+                else -> null
+            }
+            dispName?.let { styleParts.add(CodeBlock.of("display = %T.%L", displayClass, it)) }
+        }
+
         if (styleParts.isEmpty()) {
             return element
         }
@@ -1271,6 +1293,26 @@ object SvgCodeGenerator {
         mergedAttrs["paint-order"]?.takeIf { it != "inherit" }?.let { paintOrder ->
             val orderName = parsePaintOrder(paintOrder)
             orderName?.let { styleParts.add(CodeBlock.of("paintOrder = %T.%L", paintOrderClass, it)) }
+        }
+
+        mergedAttrs["visibility"]?.takeIf { it != "inherit" }?.lowercase()?.let { vis ->
+            val visName = when (vis) {
+                "visible" -> "VISIBLE"
+                "hidden" -> "HIDDEN"
+                "collapse" -> "COLLAPSE"
+                else -> null
+            }
+            visName?.let { styleParts.add(CodeBlock.of("visibility = %T.%L", visibilityClass, it)) }
+        }
+
+        mergedAttrs["display"]?.takeIf { it != "inherit" }?.lowercase()?.let { disp ->
+            val dispName = when (disp) {
+                "inline" -> "INLINE"
+                "block" -> "BLOCK"
+                "none" -> "NONE"
+                else -> null
+            }
+            dispName?.let { styleParts.add(CodeBlock.of("display = %T.%L", displayClass, it)) }
         }
 
         if (styleParts.isEmpty()) {

@@ -187,6 +187,11 @@ private fun DrawScope.drawStyledElement(
     styled: SvgStyled
 ) {
     val newCtx = applyStyle(context.ctx, styled.style)
+
+    // Skip rendering if display is none or visibility is hidden/collapse
+    if (newCtx.display == Display.NONE) return
+    if (newCtx.visibility == Visibility.HIDDEN || newCtx.visibility == Visibility.COLLAPSE) return
+
     val drawingCtx = context.withCtx(newCtx)
 
     val clipPathId = newCtx.clipPathId
