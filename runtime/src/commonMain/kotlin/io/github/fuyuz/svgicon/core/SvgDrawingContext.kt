@@ -20,7 +20,9 @@ data class DrawContext(
     val vectorEffect: VectorEffect = VectorEffect.NONE,
     val scaleFactor: Float = 1f,
     val clipPathId: String? = null,
-    val maskId: String? = null
+    val maskId: String? = null,
+    val visibility: Visibility = Visibility.VISIBLE,
+    val display: Display = Display.INLINE
 )
 
 /**

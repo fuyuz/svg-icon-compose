@@ -3442,4 +3442,145 @@ class SvgParserTest {
         val circleInherit = svgInherit.children[0]
         assertIs<SvgCircle>(circleInherit)
     }
+
+    // ===========================================
+    // Visibility Attribute Tests
+    // ===========================================
+
+    @Test
+    fun parseVisibilityVisible() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" visibility="visible"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(Visibility.VISIBLE, (circle as SvgStyled).style.visibility)
+    }
+
+    @Test
+    fun parseVisibilityHidden() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" visibility="hidden"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(Visibility.HIDDEN, (circle as SvgStyled).style.visibility)
+    }
+
+    @Test
+    fun parseVisibilityCollapse() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" visibility="collapse"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(Visibility.COLLAPSE, (circle as SvgStyled).style.visibility)
+    }
+
+    @Test
+    fun parseVisibilityInherit() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" visibility="inherit"/>
+            </svg>
+        """.trimIndent())
+        // visibility="inherit" should result in no style
+        val circle = svg.children[0]
+        assertIs<SvgCircle>(circle)
+    }
+
+    @Test
+    fun parseVisibilityInStyleAttribute() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" style="visibility: hidden"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(Visibility.HIDDEN, (circle as SvgStyled).style.visibility)
+    }
+
+    // ===========================================
+    // Display Attribute Tests
+    // ===========================================
+
+    @Test
+    fun parseDisplayInline() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" display="inline"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(Display.INLINE, (circle as SvgStyled).style.display)
+    }
+
+    @Test
+    fun parseDisplayBlock() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" display="block"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(Display.BLOCK, (circle as SvgStyled).style.display)
+    }
+
+    @Test
+    fun parseDisplayNone() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" display="none"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(Display.NONE, (circle as SvgStyled).style.display)
+    }
+
+    @Test
+    fun parseDisplayInherit() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" display="inherit"/>
+            </svg>
+        """.trimIndent())
+        // display="inherit" should result in no style
+        val circle = svg.children[0]
+        assertIs<SvgCircle>(circle)
+    }
+
+    @Test
+    fun parseDisplayInStyleAttribute() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" style="display: none"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(Display.NONE, (circle as SvgStyled).style.display)
+    }
+
+    @Test
+    fun parseVisibilityAndDisplayCombined() {
+        val svg = svg("""
+            <svg>
+                <circle cx="12" cy="12" r="10" visibility="hidden" display="block"/>
+            </svg>
+        """.trimIndent())
+        val circle = svg.children[0]
+        assertIs<SvgStyled>(circle)
+        assertEquals(Visibility.HIDDEN, (circle as SvgStyled).style.visibility)
+        assertEquals(Display.BLOCK, circle.style.display)
+    }
 }

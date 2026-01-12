@@ -51,6 +51,26 @@ enum class MaskUnits {
 }
 
 /**
+ * SVG visibility values.
+ * Controls whether an element is rendered.
+ */
+enum class Visibility {
+    VISIBLE,   // Default: element is rendered
+    HIDDEN,    // Element is not rendered but still affects layout
+    COLLAPSE   // Same as hidden for most elements
+}
+
+/**
+ * SVG display values.
+ * Controls how an element participates in layout and rendering.
+ */
+enum class Display {
+    INLINE,    // Default: element is rendered inline
+    BLOCK,     // Element is rendered as a block
+    NONE       // Element is not rendered and does not affect layout
+}
+
+/**
  * SVG transform.
  */
 sealed interface SvgTransform {
@@ -94,6 +114,8 @@ sealed interface SvgTransform {
  * @param markerStart Marker at the start of a path/line (e.g., "url(#arrow)")
  * @param markerMid Marker at middle vertices of a path
  * @param markerEnd Marker at the end of a path/line
+ * @param visibility Controls whether the element is rendered (visible, hidden, collapse)
+ * @param display Controls how the element participates in layout (inline, block, none)
  */
 data class SvgStyle(
     val fill: Color? = null,
@@ -115,7 +137,9 @@ data class SvgStyle(
     val maskId: String? = null,
     val markerStart: String? = null,
     val markerMid: String? = null,
-    val markerEnd: String? = null
+    val markerEnd: String? = null,
+    val visibility: Visibility? = null,
+    val display: Display? = null
 ) {
     companion object {
         val Empty = SvgStyle()

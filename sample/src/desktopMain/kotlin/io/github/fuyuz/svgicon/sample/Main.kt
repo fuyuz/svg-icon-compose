@@ -4,7 +4,8 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -562,6 +563,7 @@ fun main() = application {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun App() {
     MaterialTheme(colorScheme = darkColorScheme()) {
@@ -585,9 +587,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     AllIcons.entries.forEach { (name, svg) ->
                         Column(
@@ -615,9 +617,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -663,9 +665,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(24.dp),
-                    verticalAlignment = Alignment.Bottom
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     listOf(16.dp, 24.dp, 32.dp, 48.dp, 64.dp).forEach { iconSize ->
                         Column(
@@ -693,9 +695,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(24.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     listOf(
                         Color.White,
@@ -720,9 +722,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Loader - rotation animation (infinite)
                     Column(
@@ -773,9 +775,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Click-to-animate Bell
                     var bellAnimating by remember { mutableStateOf(false) }
@@ -842,9 +844,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Reverse animation on release
                     val reverseAnimationState = rememberSvgIconAnimationState()
@@ -921,9 +923,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Original (no transform)
                     val originalSvg = remember {
@@ -1022,9 +1024,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Simple DSL check
                     Column(
@@ -1145,9 +1147,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // withStyle scope
                     Column(
@@ -1212,9 +1214,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Animated check (staggered)
                     Column(
@@ -1265,9 +1267,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Path morphing
                     Column(
@@ -1346,9 +1348,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Fill opacity
                     Column(
@@ -1427,9 +1429,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Star icon parsed from SVG string
                     val starSvg = remember {
@@ -1501,9 +1503,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Inline style: fill color
                     val inlineStyleFill = remember {
@@ -1596,9 +1598,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Class selector
                     val classSelector = remember {
@@ -1696,9 +1698,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Translate with X and Y values (Issue #30)
                     val translateXYSvg = remember {
@@ -1779,9 +1781,9 @@ fun App() {
                     color = Color.Gray
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Spin animation
                     val spinAnimation = remember {
