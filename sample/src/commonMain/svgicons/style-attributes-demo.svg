@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Demo: vector-effect attribute -->
+  <circle cx="6" cy="6" r="4" vector-effect="non-scaling-stroke"/>
+  <!-- Demo: clip-path attribute (reference only, clipPath element not defined here) -->
+  <rect x="14" y="2" width="8" height="8" clip-path="url(#demoClip)"/>
+  <!-- Demo: mask attribute (reference only, mask element not defined here) -->
+  <circle cx="6" cy="18" r="4" mask="url(#demoMask)"/>
+  <!-- Demo: marker attributes on a path -->
+  <path d="M14 14 L18 18 L22 14" marker-start="url(#markerStart)" marker-end="url(#markerEnd)"/>
+</svg>
