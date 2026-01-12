@@ -46,8 +46,14 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * Simple check icon using DSL.
+ * Uses stroke-based icon defaults (no fill, stroke=currentColor).
  */
 private val DslCheckIcon = Svg(
+    fill = null,
+    stroke = Color.Unspecified,
+    strokeWidth = 2f,
+    strokeLinecap = LineCap.ROUND,
+    strokeLinejoin = LineJoin.ROUND,
     children = listOf(
         SvgPath("M20 6L9 17l-5-5")
     )
@@ -57,6 +63,8 @@ private val DslCheckIcon = Svg(
  * Filled circle with border using SvgStyled.
  */
 private val DslFilledCircle = Svg(
+    fill = null,
+    stroke = null,
     children = listOf(
         SvgStyled(
             element = SvgCircle(12f, 12f, 10f),
@@ -73,13 +81,16 @@ private val DslFilledCircle = Svg(
  * Icon with custom stroke width and dashed line.
  */
 private val DslDashedRect = Svg(
+    fill = null,
+    stroke = Color.Unspecified,
+    strokeWidth = 2f,
+    strokeLinecap = LineCap.ROUND,
+    strokeLinejoin = LineJoin.ROUND,
     children = listOf(
         SvgStyled(
             element = SvgRect(4f, 4f, 16f, 16f, rx = 2f),
             style = SvgStyle(
-                strokeWidth = 2f,
-                strokeDasharray = listOf(4f, 2f),
-                strokeLinecap = LineCap.ROUND
+                strokeDasharray = listOf(4f, 2f)
             )
         )
     )
@@ -89,6 +100,7 @@ private val DslDashedRect = Svg(
  * Icon with transform (rotated square).
  */
 private val DslRotatedSquare = Svg(
+    fill = null,    // no default fill
     stroke = null,  // no stroke
     children = listOf(
         SvgStyled(
@@ -126,6 +138,7 @@ private val DslTextIcon = Svg(
  */
 private val DslBadgeIcon = Svg(
     viewBox = ViewBox(0f, 0f, 48f, 24f),
+    fill = null,
     stroke = null,
     children = listOf(
         // Background rounded rect
@@ -151,8 +164,14 @@ private val DslBadgeIcon = Svg(
 
 /**
  * Animated check icon with staggered animation using DSL.
+ * Uses stroke-based icon defaults for stroke draw animation.
  */
 private val DslAnimatedCheck = Svg(
+    fill = null,
+    stroke = Color.Unspecified,
+    strokeWidth = 2f,
+    strokeLinecap = LineCap.ROUND,
+    strokeLinejoin = LineJoin.ROUND,
     children = listOf(
         // Circle appears first
         SvgAnimated(
@@ -320,6 +339,11 @@ private val DslPathMorphIcon = Svg(
  * Circle radius animation.
  */
 private val DslCircleGrowIcon = Svg(
+    fill = null,
+    stroke = Color.Unspecified,
+    strokeWidth = 2f,
+    strokeLinecap = LineCap.ROUND,
+    strokeLinejoin = LineJoin.ROUND,
     children = listOf(
         SvgAnimated(
             element = SvgCircle(12f, 12f, 2f),
@@ -334,6 +358,11 @@ private val DslCircleGrowIcon = Svg(
  * Line animation - X1/Y1/X2/Y2.
  */
 private val DslLineAnimIcon = Svg(
+    fill = null,
+    stroke = Color.Unspecified,
+    strokeWidth = 2f,
+    strokeLinecap = LineCap.ROUND,
+    strokeLinejoin = LineJoin.ROUND,
     children = listOf(
         SvgAnimated(
             element = SvgLine(4f, 12f, 12f, 12f),
@@ -350,6 +379,11 @@ private val DslLineAnimIcon = Svg(
  * Rect size animation.
  */
 private val DslRectGrowIcon = Svg(
+    fill = null,
+    stroke = Color.Unspecified,
+    strokeWidth = 2f,
+    strokeLinecap = LineCap.ROUND,
+    strokeLinejoin = LineJoin.ROUND,
     children = listOf(
         SvgAnimated(
             element = SvgRect(10f, 10f, 4f, 4f),
@@ -367,6 +401,11 @@ private val DslRectGrowIcon = Svg(
  * Motion path animation - element moving along a path.
  */
 private val DslMotionPathIcon = Svg(
+    fill = null,
+    stroke = Color.Unspecified,
+    strokeWidth = 2f,
+    strokeLinecap = LineCap.ROUND,
+    strokeLinejoin = LineJoin.ROUND,
     children = listOf(
         // Static guide path
         SvgStyled(
@@ -391,6 +430,8 @@ private val DslMotionPathIcon = Svg(
  * Fill opacity animation.
  */
 private val DslFillOpacityIcon = Svg(
+    fill = null,
+    stroke = null,
     children = listOf(
         SvgAnimated(
             element = SvgStyled(
@@ -408,6 +449,11 @@ private val DslFillOpacityIcon = Svg(
  * Stroke dashoffset animation (marching ants).
  */
 private val DslDashOffsetIcon = Svg(
+    fill = null,
+    stroke = Color.Unspecified,
+    strokeWidth = 2f,
+    strokeLinecap = LineCap.ROUND,
+    strokeLinejoin = LineJoin.ROUND,
     children = listOf(
         SvgAnimated(
             element = SvgStyled(
@@ -425,6 +471,11 @@ private val DslDashOffsetIcon = Svg(
  * Skew animation.
  */
 private val DslSkewAnimIcon = Svg(
+    fill = null,
+    stroke = Color.Unspecified,
+    strokeWidth = 2f,
+    strokeLinecap = LineCap.ROUND,
+    strokeLinejoin = LineJoin.ROUND,
     children = listOf(
         SvgAnimated(
             element = SvgRect(6f, 6f, 12f, 12f),
@@ -445,6 +496,11 @@ private val DslSkewAnimIcon = Svg(
  * Animates from (0, 0) to (5, -5) - diagonal movement.
  */
 private val DslTranslateXYIcon = Svg(
+    fill = null,
+    stroke = Color.Unspecified,
+    strokeWidth = 2f,
+    strokeLinecap = LineCap.ROUND,
+    strokeLinejoin = LineJoin.ROUND,
     children = listOf(
         SvgAnimated(
             element = SvgCircle(12f, 12f, 4f),
@@ -467,6 +523,11 @@ private val DslTranslateXYIcon = Svg(
  * Both rotate and scale animate simultaneously with additive="sum".
  */
 private val DslAdditiveTransformsIcon = Svg(
+    fill = null,
+    stroke = Color.Unspecified,
+    strokeWidth = 2f,
+    strokeLinecap = LineCap.ROUND,
+    strokeLinejoin = LineJoin.ROUND,
     children = listOf(
         SvgAnimated(
             element = SvgRect(8f, 8f, 8f, 8f),

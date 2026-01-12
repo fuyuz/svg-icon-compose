@@ -1343,7 +1343,15 @@ fun AnimationBuilder<SvgPolyline>.morphPointsTo(
  * ```
  */
 inline fun svg(block: SvgBuilder.() -> Unit): Svg {
-    return Svg(children = SvgBuilder().apply(block).build())
+    // Use stroke-based icon defaults (different from SVG spec) for DSL convenience
+    return Svg(
+        fill = null,
+        stroke = Color.Unspecified,
+        strokeWidth = 2f,
+        strokeLinecap = LineCap.ROUND,
+        strokeLinejoin = LineJoin.ROUND,
+        children = SvgBuilder().apply(block).build()
+    )
 }
 
 /**
