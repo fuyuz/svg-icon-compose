@@ -21,6 +21,8 @@ data class AnimationEntry(val element: SvgElement, val animation: SvgAnimate, va
  */
 data class AnimatedElementState(
     var rotationAngle: Float = 0f,
+    var rotateCx: Float? = null,
+    var rotateCy: Float? = null,
     var scaleX: Float = 1f,
     var scaleY: Float = 1f,
     var translateX: Float = 0f,

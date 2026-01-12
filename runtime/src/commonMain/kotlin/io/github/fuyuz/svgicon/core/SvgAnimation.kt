@@ -481,7 +481,11 @@ sealed interface SvgAnimate {
         /** Y value for translate (to). Only used when type is TRANSLATE. */
         val toY: Float = 0f,
         /** Additive mode for combining with other transforms. */
-        val additive: AdditiveMode = AdditiveMode.REPLACE
+        val additive: AdditiveMode = AdditiveMode.REPLACE,
+        /** Center X for rotate. Only used when type is ROTATE. */
+        val cx: Float? = null,
+        /** Center Y for rotate. Only used when type is ROTATE. */
+        val cy: Float? = null
     ) : SvgAnimate
 
     // ============================================

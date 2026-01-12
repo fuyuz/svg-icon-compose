@@ -1378,6 +1378,42 @@ object SvgCodeGenerator {
             else -> return null
         }
 
+        // For rotate, we need to extract center point (cx, cy) as well
+        if (transformType == "ROTATE") {
+            val fromRotate: Triple<Float, Float?, Float?>?
+            val toRotate: Triple<Float, Float?, Float?>?
+
+            if (fromStr != null && toStr != null) {
+                fromRotate = parseRotateValue(fromStr)
+                toRotate = parseRotateValue(toStr)
+            } else if (valuesStr != null) {
+                val keyframes = valuesStr.split(";").mapNotNull { parseRotateValue(it.trim()) }
+                if (keyframes.size >= 2) {
+                    val angles = keyframes.map { it.first }
+                    val minAngle = angles.minOrNull() ?: return null
+                    val maxAngle = angles.maxOrNull() ?: return null
+                    val cx = keyframes.first().second
+                    val cy = keyframes.first().third
+                    fromRotate = Triple(minAngle, cx, cy)
+                    toRotate = Triple(maxAngle, cx, cy)
+                } else {
+                    fromRotate = keyframes.firstOrNull()
+                    toRotate = keyframes.lastOrNull()
+                }
+            } else {
+                fromRotate = fromStr?.let { parseRotateValue(it) }
+                toRotate = toStr?.let { parseRotateValue(it) }
+            }
+
+            if (fromRotate == null || toRotate == null) return null
+
+            return generateTransformCodeBlock(
+                transformType, fromRotate.first, toRotate.first, dur, delay, calcMode, keySplines,
+                fromRotate.second, fromRotate.third
+            )
+        }
+
+        // For other transform types
         val from: Float?
         val to: Float?
 
@@ -1462,7 +1498,9 @@ object SvgCodeGenerator {
         dur: Int,
         delay: Int,
         calcMode: String,
-        keySplines: List<Float>?
+        keySplines: List<Float>?,
+        cx: Float? = null,
+        cy: Float? = null
     ): CodeBlock {
         val builder = CodeBlock.builder()
         builder.add("%T.Transform(type = %T.%L, from = %Lf, to = %Lf, dur = %L.%M, delay = %L.%M",
@@ -1475,6 +1513,14 @@ object SvgCodeGenerator {
         if (keySplines != null && keySplines.size >= 4) {
             builder.add(", keySplines = %T(%Lf, %Lf, %Lf, %Lf)",
                 keySplinesClass, keySplines[0], keySplines[1], keySplines[2], keySplines[3])
+        }
+
+        // Add rotation center if specified
+        if (cx != null) {
+            builder.add(", cx = %Lf", cx)
+        }
+        if (cy != null) {
+            builder.add(", cy = %Lf", cy)
         }
 
         builder.add(")")
@@ -1767,6 +1813,20 @@ object SvgCodeGenerator {
     private fun parseTransformValue(valueStr: String?): Float? {
         if (valueStr == null) return null
         return valueStr.trim().split(Regex("[\\s,]+")).firstOrNull()?.toFloatOrNull()
+    }
+
+    /**
+     * Parse a rotate value string and extract angle, cx, cy.
+     * Format: "angle" or "angle cx cy"
+     * Returns Triple(angle, cx, cy) where cx and cy are null if not specified.
+     */
+    private fun parseRotateValue(valueStr: String): Triple<Float, Float?, Float?>? {
+        val parts = valueStr.trim().split(Regex("[\\s,]+")).mapNotNull { it.toFloatOrNull() }
+        if (parts.isEmpty()) return null
+        val angle = parts[0]
+        val cx = parts.getOrNull(1)
+        val cy = parts.getOrNull(2)
+        return Triple(angle, cx, cy)
     }
 
     private fun parseAspectRatioAlign(value: String): String {

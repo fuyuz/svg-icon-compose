@@ -2209,6 +2209,10 @@ class SvgParserTest {
         val anim = animated.animations[0]
         assertIs<SvgAnimate.Transform>(anim)
         assertEquals(TransformType.ROTATE, anim.type)
+        assertEquals(0f, anim.from)
+        assertEquals(360f, anim.to)
+        assertEquals(12f, anim.cx)
+        assertEquals(12f, anim.cy)
     }
 
     @Test
