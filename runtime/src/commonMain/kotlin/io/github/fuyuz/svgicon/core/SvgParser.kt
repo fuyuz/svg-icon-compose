@@ -1432,13 +1432,15 @@ internal object SvgXmlParser {
         val strokeMiterlimit = mergedAttrs["stroke-miterlimit"]?.toFloatOrNull()
         val opacity = mergedAttrs["opacity"]?.toFloatOrNull()
         val transform = mergedAttrs["transform"]?.let { parseTransform(it) }
+        val paintOrder = parsePaintOrder(mergedAttrs["paint-order"])
 
         // Only create style if at least one attribute is present
         if (fill == null && fillOpacity == null && fillRule == null &&
             stroke == null && strokeWidth == null && strokeOpacity == null &&
             strokeLinecap == null && strokeLinejoin == null &&
             strokeDasharray == null && strokeDashoffset == null &&
-            strokeMiterlimit == null && opacity == null && transform == null) {
+            strokeMiterlimit == null && opacity == null && transform == null &&
+            paintOrder == null) {
             return null
         }
 
@@ -1455,8 +1457,25 @@ internal object SvgXmlParser {
             strokeDashoffset = strokeDashoffset,
             strokeMiterlimit = strokeMiterlimit,
             opacity = opacity,
-            transform = transform
+            transform = transform,
+            paintOrder = paintOrder
         )
+    }
+
+    /**
+     * Parses SVG paint-order attribute.
+     * Supported values: "normal", "stroke", "fill", "stroke fill", "fill stroke"
+     * When stroke comes first, returns STROKE_FILL; otherwise FILL_STROKE (default).
+     */
+    private fun parsePaintOrder(value: String?): PaintOrder? {
+        if (value == null) return null
+        val trimmed = value.trim().lowercase()
+        return when {
+            trimmed == "normal" -> PaintOrder.FILL_STROKE
+            trimmed.startsWith("stroke") -> PaintOrder.STROKE_FILL
+            trimmed.startsWith("fill") -> PaintOrder.FILL_STROKE
+            else -> null
+        }
     }
 
     private fun parseDashArray(dashStr: String): List<Float>? {
