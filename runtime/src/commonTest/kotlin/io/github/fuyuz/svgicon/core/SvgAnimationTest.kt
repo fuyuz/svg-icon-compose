@@ -17,8 +17,9 @@ class SvgAnimationTest {
     // ===========================================
 
     @Test
-    fun defaultAnimationDurationIs500ms() {
-        assertEquals(500.milliseconds, DefaultAnimationDuration)
+    fun defaultAnimationDurationIsInfinite() {
+        // Per SVG/SMIL spec, unspecified dur defaults to "indefinite"
+        assertEquals(Duration.INFINITE, DefaultAnimationDuration)
     }
 
     // ===========================================
@@ -153,7 +154,8 @@ class SvgAnimationTest {
         assertFalse(anim.reverse)
         assertEquals(CalcMode.LINEAR, anim.calcMode)
         assertNull(anim.keySplines)
-        assertEquals(SvgAnimate.INFINITE, anim.iterations)
+        // Per SVG/SMIL spec, repeatCount defaults to 1 (single iteration)
+        assertEquals(1, anim.iterations)
         assertEquals(AnimationDirection.NORMAL, anim.direction)
         assertEquals(AnimationFillMode.NONE, anim.fillMode)
     }
@@ -435,7 +437,10 @@ class SvgAnimationTest {
         assertEquals(DefaultAnimationDuration, anim.dur)
         assertEquals(Duration.ZERO, anim.delay)
         assertEquals(MotionRotate.NONE, anim.rotate)
-        assertEquals(CalcMode.LINEAR, anim.calcMode)
+        // Per SVG/SMIL spec, animateMotion defaults to calcMode="paced"
+        assertEquals(CalcMode.PACED, anim.calcMode)
+        // Per SVG/SMIL spec, repeatCount defaults to 1 (single iteration)
+        assertEquals(1, anim.iterations)
     }
 
     @Test
