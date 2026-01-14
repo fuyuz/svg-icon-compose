@@ -165,8 +165,10 @@ internal fun LineCap.toCompose(): StrokeCap = when (this) {
 
 internal fun LineJoin.toCompose(): StrokeJoin = when (this) {
     LineJoin.MITER -> StrokeJoin.Miter
+    LineJoin.MITER_CLIP -> error("stroke-linejoin: miter-clip is not supported by Compose")
     LineJoin.ROUND -> StrokeJoin.Round
     LineJoin.BEVEL -> StrokeJoin.Bevel
+    LineJoin.ARCS -> error("stroke-linejoin: arcs is not supported by Compose")
 }
 
 internal fun FillRule.toCompose(): PathFillType = when (this) {

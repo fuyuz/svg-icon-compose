@@ -116,6 +116,8 @@ internal object SvgXmlParser {
         val strokeLinejoin = when (attrs["stroke-linejoin"]?.lowercase()) {
             "round" -> LineJoin.ROUND
             "bevel" -> LineJoin.BEVEL
+            "miter-clip" -> LineJoin.MITER_CLIP
+            "arcs" -> LineJoin.ARCS
             else -> LineJoin.MITER
         }
         val strokeMiterlimit = attrs["stroke-miterlimit"]?.toFloatOrNull() ?: 4f
@@ -1444,8 +1446,10 @@ internal object SvgXmlParser {
         val strokeLinejoinValue = mergedAttrs["stroke-linejoin"]
         val strokeLinejoin = if (isInherit(strokeLinejoinValue)) null else when (strokeLinejoinValue?.lowercase()) {
             "miter" -> LineJoin.MITER
+            "miter-clip" -> LineJoin.MITER_CLIP
             "round" -> LineJoin.ROUND
             "bevel" -> LineJoin.BEVEL
+            "arcs" -> LineJoin.ARCS
             else -> null
         }
         val strokeDasharrayValue = mergedAttrs["stroke-dasharray"]

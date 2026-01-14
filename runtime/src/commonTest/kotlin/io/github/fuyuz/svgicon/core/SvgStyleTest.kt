@@ -157,10 +157,12 @@ class SvgStyleTest {
 
     @Test
     fun lineJoinValues() {
-        assertEquals(3, LineJoin.entries.size)
+        assertEquals(5, LineJoin.entries.size)
         assertTrue(LineJoin.entries.contains(LineJoin.MITER))
+        assertTrue(LineJoin.entries.contains(LineJoin.MITER_CLIP))
         assertTrue(LineJoin.entries.contains(LineJoin.ROUND))
         assertTrue(LineJoin.entries.contains(LineJoin.BEVEL))
+        assertTrue(LineJoin.entries.contains(LineJoin.ARCS))
     }
 
     // ===========================================

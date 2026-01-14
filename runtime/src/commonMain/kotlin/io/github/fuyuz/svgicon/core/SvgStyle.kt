@@ -14,8 +14,17 @@ enum class LineCap { BUTT, ROUND, SQUARE }
 
 /**
  * SVG stroke-linejoin values.
+ *
+ * Note: MITER_CLIP and ARCS are SVG2 values. Compose only supports Miter, Round, and Bevel,
+ * so using MITER_CLIP or ARCS will throw an error at render time.
  */
-enum class LineJoin { MITER, ROUND, BEVEL }
+enum class LineJoin {
+    MITER,
+    MITER_CLIP,  // SVG2: Not supported by Compose
+    ROUND,
+    BEVEL,
+    ARCS         // SVG2: Not supported by Compose
+}
 
 /**
  * Paint order determines the order in which fill and stroke are painted.
