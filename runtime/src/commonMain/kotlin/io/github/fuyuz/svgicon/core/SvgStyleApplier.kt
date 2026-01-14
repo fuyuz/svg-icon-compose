@@ -165,8 +165,10 @@ internal fun LineCap.toCompose(): StrokeCap = when (this) {
 
 internal fun LineJoin.toCompose(): StrokeJoin = when (this) {
     LineJoin.MITER -> StrokeJoin.Miter
+    LineJoin.MITER_CLIP -> StrokeJoin.Miter  // SVG2: falls back to Miter
     LineJoin.ROUND -> StrokeJoin.Round
     LineJoin.BEVEL -> StrokeJoin.Bevel
+    LineJoin.ARCS -> StrokeJoin.Bevel  // SVG2: falls back to Bevel
 }
 
 internal fun FillRule.toCompose(): PathFillType = when (this) {

@@ -1725,6 +1725,22 @@ class SvgParserTest {
     }
 
     @Test
+    fun parseStrokeLinejoinMiterClip() {
+        val svg = svg("""<svg><path d="M0 0" stroke-linejoin="miter-clip"/></svg>""")
+        val styled = svg.children[0]
+        assertIs<SvgStyled>(styled)
+        assertEquals(LineJoin.MITER_CLIP, styled.style.strokeLinejoin)
+    }
+
+    @Test
+    fun parseStrokeLinejoinArcs() {
+        val svg = svg("""<svg><path d="M0 0" stroke-linejoin="arcs"/></svg>""")
+        val styled = svg.children[0]
+        assertIs<SvgStyled>(styled)
+        assertEquals(LineJoin.ARCS, styled.style.strokeLinejoin)
+    }
+
+    @Test
     fun parseStrokeDasharrayWithSpaces() {
         val svg = svg("""<svg><line x1="0" y1="0" x2="10" y2="10" stroke-dasharray="5 3 2"/></svg>""")
         val styled = svg.children[0]
@@ -3017,6 +3033,18 @@ class SvgParserTest {
     fun parseSvgWithStrokeLinejoinMiter() {
         val svg = svg("""<svg stroke-linejoin="miter"><path d="M0 0 L10 10"/></svg>""")
         assertEquals(LineJoin.MITER, svg.strokeLinejoin)
+    }
+
+    @Test
+    fun parseSvgWithStrokeLinejoinMiterClip() {
+        val svg = svg("""<svg stroke-linejoin="miter-clip"><path d="M0 0 L10 10"/></svg>""")
+        assertEquals(LineJoin.MITER_CLIP, svg.strokeLinejoin)
+    }
+
+    @Test
+    fun parseSvgWithStrokeLinejoinArcs() {
+        val svg = svg("""<svg stroke-linejoin="arcs"><path d="M0 0 L10 10"/></svg>""")
+        assertEquals(LineJoin.ARCS, svg.strokeLinejoin)
     }
 
     @Test

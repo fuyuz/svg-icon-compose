@@ -191,6 +191,8 @@ object SvgCodeGenerator {
             val joinName = when (linejoin) {
                 "round" -> "ROUND"
                 "bevel" -> "BEVEL"
+                "miter-clip" -> "MITER_CLIP"
+                "arcs" -> "ARCS"
                 else -> "MITER"
             }
             builder.add("strokeLinejoin = %T.%L,\n", lineJoinClass, joinName)
@@ -949,8 +951,10 @@ object SvgCodeGenerator {
         mergedAttrs["stroke-linejoin"]?.takeIf { it != "inherit" }?.lowercase()?.let { join ->
             val joinName = when (join) {
                 "miter" -> "MITER"
+                "miter-clip" -> "MITER_CLIP"
                 "bevel" -> "BEVEL"
                 "round" -> "ROUND"
+                "arcs" -> "ARCS"
                 else -> null
             }
             joinName?.let { styleParts.add(CodeBlock.of("strokeLinejoin = %T.%L", lineJoinClass, it)) }
@@ -1304,8 +1308,10 @@ object SvgCodeGenerator {
         mergedAttrs["stroke-linejoin"]?.takeIf { it != "inherit" }?.lowercase()?.let { join ->
             val joinName = when (join) {
                 "miter" -> "MITER"
+                "miter-clip" -> "MITER_CLIP"
                 "bevel" -> "BEVEL"
                 "round" -> "ROUND"
+                "arcs" -> "ARCS"
                 else -> null
             }
             joinName?.let { styleParts.add(CodeBlock.of("strokeLinejoin = %T.%L", lineJoinClass, it)) }
