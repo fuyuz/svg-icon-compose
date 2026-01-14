@@ -10,8 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - Added support for SVG2 `stroke-linejoin` values: `miter-clip` and `arcs` (#50)
-  - `miter-clip` falls back to `miter` at render time (Compose limitation)
-  - `arcs` falls back to `bevel` at render time (Compose limitation)
+  - These values are parsed but will throw an error at render time (Compose limitation)
 - Implemented `paint-order` attribute support for controlling fill/stroke drawing order (#40)
 - Added support for `inherit` keyword in style attributes (fill, stroke, opacity, stroke-width, etc.) (#61)
 - Added `strokeMiterlimit` property to `Svg` class with default value of 4 per SVG spec (#35)
