@@ -97,12 +97,13 @@ sealed interface SvgTransform {
  * These correspond to SVG presentation attributes.
  *
  * Color handling:
- * - Color.Unspecified = "currentColor" (uses tint from SvgIcon composable)
+ * - Color.Unspecified = "currentColor" (resolved to CSS color property, then tint)
  * - null = inherit from parent
  * - Any other Color = that specific color
  *
  * To explicitly set "none" (no fill/stroke), use a fully transparent color.
  *
+ * @param color CSS color property value (used to resolve currentColor)
  * @param fill Fill color (null = inherit, Unspecified = currentColor)
  * @param fillOpacity Fill opacity (0.0 - 1.0)
  * @param fillRule Fill rule (nonzero or evenodd)
@@ -127,6 +128,7 @@ sealed interface SvgTransform {
  * @param display Controls how the element participates in layout (inline, block, none)
  */
 data class SvgStyle(
+    val color: Color? = null,
     val fill: Color? = null,
     val fillOpacity: Float? = null,
     val fillRule: FillRule? = null,

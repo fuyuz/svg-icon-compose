@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Demo of CSS color property with currentColor -->
+  <!-- The outer group sets color=#00aa00 (green), child elements use currentColor -->
+  <g color="#00aa00">
+    <!-- This circle uses fill="currentColor", which resolves to green from parent -->
+    <circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/>
+    <!-- These paths use stroke="currentColor", which also resolves to green -->
+    <path d="M12 2v4"/>
+    <path d="M12 18v4"/>
+    <path d="M2 12h4"/>
+    <path d="M18 12h4"/>
+  </g>
+</svg>

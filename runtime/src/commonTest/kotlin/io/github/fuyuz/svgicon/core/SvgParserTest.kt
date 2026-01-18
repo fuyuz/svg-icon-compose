@@ -3848,4 +3848,121 @@ class SvgParserTest {
         assertIs<SvgStyled>(circle)
         assertEquals("myClip", (circle as SvgStyled).style.clipPathId)
     }
+
+    // ===========================================
+    // CSS color Property Tests
+    // ===========================================
+
+    @Test
+    fun parseColorPropertyAsAttribute() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" color="red"/>
+            </svg>
+        """.trimIndent())
+        val path = svg.children[0]
+        assertIs<SvgStyled>(path)
+        assertEquals(Color.Red, (path as SvgStyled).style.color)
+    }
+
+    @Test
+    fun parseColorPropertyInStyleAttribute() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" style="color: blue"/>
+            </svg>
+        """.trimIndent())
+        val path = svg.children[0]
+        assertIs<SvgStyled>(path)
+        assertEquals(Color.Blue, (path as SvgStyled).style.color)
+    }
+
+    @Test
+    fun parseColorPropertyHexValue() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" color="#ff00ff"/>
+            </svg>
+        """.trimIndent())
+        val path = svg.children[0]
+        assertIs<SvgStyled>(path)
+        assertEquals(Color.Magenta, (path as SvgStyled).style.color)
+    }
+
+    @Test
+    fun parseColorPropertyWithCurrentColor() {
+        // Using currentColor for color property itself is unusual but valid
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" color="currentColor"/>
+            </svg>
+        """.trimIndent())
+        val path = svg.children[0]
+        assertIs<SvgStyled>(path)
+        // currentColor is represented as Color.Unspecified
+        assertEquals(Color.Unspecified, (path as SvgStyled).style.color)
+    }
+
+    @Test
+    fun parseFillWithCurrentColorAndColorProperty() {
+        val svg = svg("""
+            <svg>
+                <g color="green">
+                    <path d="M0 0 L10 10" fill="currentColor"/>
+                </g>
+            </svg>
+        """.trimIndent())
+        val group = svg.children[0]
+        assertIs<SvgStyled>(group)
+        assertEquals(Color.Green, (group as SvgStyled).style.color)
+
+        val groupElement = (group as SvgStyled).element
+        assertIs<SvgGroup>(groupElement)
+        val path = (groupElement as SvgGroup).children[0]
+        assertIs<SvgStyled>(path)
+        // fill=currentColor is represented as Color.Unspecified
+        assertEquals(Color.Unspecified, (path as SvgStyled).style.fill)
+    }
+
+    @Test
+    fun parseStrokeWithCurrentColorAndColorProperty() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" color="yellow" stroke="currentColor"/>
+            </svg>
+        """.trimIndent())
+        val path = svg.children[0]
+        assertIs<SvgStyled>(path)
+        val style = (path as SvgStyled).style
+        assertEquals(Color.Yellow, style.color)
+        // stroke=currentColor is represented as Color.Unspecified
+        assertEquals(Color.Unspecified, style.stroke)
+    }
+
+    @Test
+    fun parseColorPropertyInherit() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" color="inherit"/>
+            </svg>
+        """.trimIndent())
+        val path = svg.children[0]
+        // color="inherit" means null (inherit from parent), so no SvgStyled wrapper if no other styles
+        assertIs<SvgPath>(path)
+    }
+
+    @Test
+    fun parseColorPropertyInStyleWithOtherAttributes() {
+        val svg = svg("""
+            <svg>
+                <path d="M0 0 L10 10" style="color: cyan; fill: currentColor; stroke-width: 2"/>
+            </svg>
+        """.trimIndent())
+        val path = svg.children[0]
+        assertIs<SvgStyled>(path)
+        val style = (path as SvgStyled).style
+        assertEquals(Color.Cyan, style.color)
+        assertEquals(Color.Unspecified, style.fill)
+        assertEquals(2f, style.strokeWidth)
+    }
 }

@@ -112,7 +112,8 @@ internal fun DrawScope.drawAnimatedSvg(
         fillColor = fillColor,
         stroke = defaultStroke,
         hasStroke = strokeColor != null,
-        scaleFactor = scaleX
+        scaleFactor = scaleX,
+        currentColor = tint  // tint is the fallback for currentColor when no CSS color property is set
     )
 
     translate(translateX, translateY) {

@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Added `visibility` attribute support (visible, hidden, collapse) (#59)
 - Added `display` attribute support (inline, block, none) (#59)
 - Added parsing support for style attributes: `clip-path`, `mask`, `marker-start`, `marker-mid`, `marker-end`, `vector-effect` (#39)
+- Added CSS `color` property support for proper `currentColor` resolution (#51)
+  - `currentColor` now resolves to the inherited `color` property value per SVG spec
+  - Falls back to tint color when no `color` property is set
 
 ### Changed
 

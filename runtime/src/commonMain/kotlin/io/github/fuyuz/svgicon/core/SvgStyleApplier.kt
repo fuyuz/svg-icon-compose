@@ -13,17 +13,50 @@ import androidx.compose.ui.graphics.drawscope.Stroke
  */
 
 internal fun applyStyle(parent: DrawContext, style: SvgStyle): DrawContext {
+    // Resolve currentColor: use style.color if set, otherwise inherit from parent
+    // Per SVG spec, "currentColor" refers to the CSS "color" property value
+    val currentColor = when (val c = style.color) {
+        null -> parent.currentColor  // inherit from parent
+        Color.Transparent -> parent.currentColor  // "none" doesn't apply to color property
+        else -> c  // use specified color (could be Color.Unspecified for "currentColor")
+    }
+
+    // Helper to resolve currentColor (Color.Unspecified) to actual color
+    fun resolveCurrentColor(color: Color?): Color? {
+        return when (color) {
+            Color.Unspecified -> if (currentColor.isSpecified) currentColor else parent.currentColor
+            else -> color
+        }
+    }
+
     val strokeColor = when (val c = style.stroke) {
-        null -> parent.strokeColor
-        Color.Unspecified -> parent.strokeColor
+        null -> {
+            // Inherit from parent. If parent's strokeColor matches parent's currentColor,
+            // it was derived from currentColor, so use the new currentColor instead.
+            if (parent.strokeColor == parent.currentColor && currentColor != parent.currentColor) {
+                currentColor
+            } else {
+                parent.strokeColor
+            }
+        }
+        Color.Unspecified -> resolveCurrentColor(c) ?: parent.strokeColor
         Color.Transparent -> parent.strokeColor  // "none" for stroke means don't draw, handled by hasStroke
         else -> c
     }
     val hasStroke = style.stroke != Color.Transparent && (style.stroke != null || parent.hasStroke)
 
     val fillColor = when (val c = style.fill) {
-        null -> parent.fillColor?.takeIf { it != Color.Transparent }  // inherit, but skip if parent is transparent
-        Color.Unspecified -> parent.strokeColor
+        null -> {
+            // Inherit from parent. If parent's fillColor matches parent's currentColor,
+            // it was derived from currentColor, so use the new currentColor instead.
+            val parentFill = parent.fillColor?.takeIf { it != Color.Transparent }
+            if (parentFill == parent.currentColor && currentColor != parent.currentColor) {
+                currentColor
+            } else {
+                parentFill
+            }
+        }
+        Color.Unspecified -> resolveCurrentColor(c) ?: parent.fillColor
         Color.Transparent -> null  // "none" means don't fill
         else -> c
     }?.takeIf { it != Color.Transparent }  // ensure we don't return Transparent as fillColor
@@ -54,13 +87,24 @@ internal fun applyStyle(parent: DrawContext, style: SvgStyle): DrawContext {
     val visibility = style.visibility ?: parent.visibility
     val display = style.display ?: parent.display
 
-    // Safely apply alpha to colors, handling special colors that can't be copied
-    val finalStrokeColor = if (strokeColor.isSpecified) {
-        strokeColor.copy(alpha = strokeColor.alpha * strokeOpacity * opacity)
+    // Resolve any remaining Color.Unspecified to currentColor, then apply alpha
+    val resolvedStrokeColor = if (strokeColor == Color.Unspecified) {
+        if (currentColor.isSpecified) currentColor else parent.currentColor
     } else {
         strokeColor
     }
-    val finalFillColor = fillColor?.let { color ->
+    val resolvedFillColor = if (fillColor == Color.Unspecified) {
+        if (currentColor.isSpecified) currentColor else parent.currentColor
+    } else {
+        fillColor
+    }
+
+    val finalStrokeColor = if (resolvedStrokeColor.isSpecified) {
+        resolvedStrokeColor.copy(alpha = resolvedStrokeColor.alpha * strokeOpacity * opacity)
+    } else {
+        resolvedStrokeColor
+    }
+    val finalFillColor = resolvedFillColor?.let { color ->
         if (color.isSpecified) {
             color.copy(alpha = color.alpha * fillOpacity * opacity)
         } else {
@@ -81,7 +125,8 @@ internal fun applyStyle(parent: DrawContext, style: SvgStyle): DrawContext {
         clipPathId = clipPathId,
         maskId = maskId,
         visibility = visibility,
-        display = display
+        display = display,
+        currentColor = currentColor
     )
 }
 

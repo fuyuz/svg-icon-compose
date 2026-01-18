@@ -1425,6 +1425,8 @@ internal object SvgXmlParser {
             attrs
         }
 
+        // Parse CSS color property (used to resolve currentColor)
+        val color = parseColorAttribute(mergedAttrs["color"])
         val fill = parseColorAttribute(mergedAttrs["fill"])
         val fillOpacity = parseFloatOrInherit(mergedAttrs["fill-opacity"])
         val fillRuleValue = mergedAttrs["fill-rule"]
@@ -1495,7 +1497,7 @@ internal object SvgXmlParser {
         val markerEnd = parseUrlReference(mergedAttrs["marker-end"])
 
         // Only create style if at least one attribute is present
-        if (fill == null && fillOpacity == null && fillRule == null &&
+        if (color == null && fill == null && fillOpacity == null && fillRule == null &&
             stroke == null && strokeWidth == null && strokeOpacity == null &&
             strokeLinecap == null && strokeLinejoin == null &&
             strokeDasharray == null && strokeDashoffset == null &&
@@ -1507,6 +1509,7 @@ internal object SvgXmlParser {
         }
 
         return SvgStyle(
+            color = color,
             fill = fill,
             fillOpacity = fillOpacity,
             fillRule = fillRule,
