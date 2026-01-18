@@ -15,6 +15,7 @@ class SvgStyleTest {
     @Test
     fun svgStyleDefaultValues() {
         val style = SvgStyle()
+        assertNull(style.color)
         assertNull(style.fill)
         assertNull(style.fillOpacity)
         assertNull(style.fillRule)
@@ -126,6 +127,12 @@ class SvgStyleTest {
     fun svgStyleWithFillRule() {
         val style = SvgStyle(fillRule = FillRule.EVENODD)
         assertEquals(FillRule.EVENODD, style.fillRule)
+    }
+
+    @Test
+    fun svgStyleWithColor() {
+        val style = SvgStyle(color = Color.Green)
+        assertEquals(Color.Green, style.color)
     }
 
     // ===========================================
@@ -322,5 +329,84 @@ class SvgStyleTest {
         assertEquals(2, result.size)
         assertEquals(5f, result[0])
         assertEquals(5f, result[1])
+    }
+
+    // ===========================================
+    // applyStyle currentColor Resolution Tests
+    // ===========================================
+
+    @Test
+    fun applyStyleCurrentColorInheritedFromColorProperty() {
+        // Initial context with tint as currentColor
+        val tint = Color.Blue
+        val initialContext = DrawContext(
+            strokeColor = Color.Transparent,
+            fillColor = null,
+            stroke = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f),
+            hasStroke = false,
+            currentColor = tint
+        )
+
+        // Parent style sets color property
+        val parentStyle = SvgStyle(color = Color.Green)
+        val parentContext = applyStyle(initialContext, parentStyle)
+
+        // Verify parent's currentColor is set to Color.Green
+        assertEquals(Color.Green, parentContext.currentColor)
+
+        // Child element uses currentColor for fill (Color.Unspecified = currentColor)
+        val childStyle = SvgStyle(fill = Color.Unspecified)
+        val childContext = applyStyle(parentContext, childStyle)
+
+        // Verify child's fillColor is resolved to parent's color property (Green)
+        assertEquals(Color.Green, childContext.fillColor)
+    }
+
+    @Test
+    fun applyStyleCurrentColorFallsBackToTint() {
+        // Initial context with tint as currentColor
+        val tint = Color.Red
+        val initialContext = DrawContext(
+            strokeColor = Color.Transparent,
+            fillColor = null,
+            stroke = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f),
+            hasStroke = false,
+            currentColor = tint
+        )
+
+        // Style uses currentColor for stroke without setting color property
+        val style = SvgStyle(stroke = Color.Unspecified)
+        val resultContext = applyStyle(initialContext, style)
+
+        // Verify strokeColor is resolved to tint (Red)
+        assertEquals(Color.Red, resultContext.strokeColor)
+    }
+
+    @Test
+    fun applyStyleCurrentColorInheritedThroughMultipleLevels() {
+        // Initial context with tint
+        val tint = Color.Blue
+        val initialContext = DrawContext(
+            strokeColor = Color.Transparent,
+            fillColor = null,
+            stroke = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f),
+            hasStroke = false,
+            currentColor = tint
+        )
+
+        // Level 1: sets color property to Cyan
+        val level1Style = SvgStyle(color = Color.Cyan)
+        val level1Context = applyStyle(initialContext, level1Style)
+        assertEquals(Color.Cyan, level1Context.currentColor)
+
+        // Level 2: no color property, should inherit from level 1
+        val level2Style = SvgStyle(strokeWidth = 3f)
+        val level2Context = applyStyle(level1Context, level2Style)
+        assertEquals(Color.Cyan, level2Context.currentColor)
+
+        // Level 3: uses currentColor for fill
+        val level3Style = SvgStyle(fill = Color.Unspecified)
+        val level3Context = applyStyle(level2Context, level3Style)
+        assertEquals(Color.Cyan, level3Context.fillColor)
     }
 }

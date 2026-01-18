@@ -8,6 +8,10 @@ import androidx.compose.ui.text.TextMeasurer
 
 /**
  * Context for SVG drawing operations.
+ *
+ * @param currentColor The resolved value for "currentColor" (CSS color property).
+ *                     When an element uses fill="currentColor" or stroke="currentColor",
+ *                     this value is used. Falls back to tint if not set.
  */
 data class DrawContext(
     val strokeColor: Color,
@@ -22,7 +26,8 @@ data class DrawContext(
     val clipPathId: String? = null,
     val maskId: String? = null,
     val visibility: Visibility = Visibility.VISIBLE,
-    val display: Display = Display.INLINE
+    val display: Display = Display.INLINE,
+    val currentColor: Color = Color.Unspecified
 )
 
 /**

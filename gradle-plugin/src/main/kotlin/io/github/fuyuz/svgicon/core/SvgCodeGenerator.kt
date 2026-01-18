@@ -1287,6 +1287,9 @@ object SvgCodeGenerator {
     private fun wrapWithStyleFromMergedAttrs(element: CodeBlock, mergedAttrs: Map<String, String>): CodeBlock {
         val styleParts = mutableListOf<CodeBlock>()
 
+        // CSS color property (used to resolve currentColor)
+        mergedAttrs["color"]?.takeIf { it != "inherit" }?.let { styleParts.add(generateColorCodeBlock("color", it)) }
+
         // fill/stroke: skip "inherit" (use parent's value)
         mergedAttrs["fill"]?.takeIf { it != "inherit" }?.let { styleParts.add(generateColorCodeBlock("fill", it)) }
         mergedAttrs["stroke"]?.takeIf { it != "inherit" }?.let { styleParts.add(generateColorCodeBlock("stroke", it)) }

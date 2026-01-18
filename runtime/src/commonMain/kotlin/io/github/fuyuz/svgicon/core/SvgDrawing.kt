@@ -51,6 +51,8 @@ internal fun DrawScope.drawSvg(svg: Svg, tint: Color, strokeWidthOverride: Float
         miter = svg.strokeMiterlimit
     )
 
+    // Resolve Color.Unspecified (currentColor) to tint at initialization.
+    // When a child element sets the CSS color property, applyStyle will override this.
     val fillColor = svg.fill?.let {
         when (it) {
             Color.Unspecified -> tint
@@ -67,7 +69,8 @@ internal fun DrawScope.drawSvg(svg: Svg, tint: Color, strokeWidthOverride: Float
         fillColor = fillColor,
         stroke = defaultStroke,
         hasStroke = strokeColor != null,
-        scaleFactor = scaleX
+        scaleFactor = scaleX,
+        currentColor = tint  // tint is the fallback for currentColor when no CSS color property is set
     )
 
     val drawingContext = SvgDrawingContext(context, registry)
